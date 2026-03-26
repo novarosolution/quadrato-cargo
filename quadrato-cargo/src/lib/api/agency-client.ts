@@ -1,0 +1,113 @@
+import { getApiBaseUrl } from "@/lib/api/base-url";
+
+export type AgencyBooking = {
+  id: string;
+  userId: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  routeType: string;
+  status: string;
+  consignmentNumber: string | null;
+  trackingNotes: string | null;
+  assignedAgency?: string | null;
+  agencyHandoverVerifiedAt?: string | null;
+  payload: unknown;
+};
+
+type ServerFetchResult<T> = { ok: true; data: T } | { ok: false };
+
+async function serverFetch<T>(
+  path: string,
+  cookieHeader: string,
+): Promise<ServerFetchResult<T>> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}${path}`, {
+      method: "GET",
+      headers: { Cookie: cookieHeader },
+      cache: "no-store",
+    });
+    if (!res.ok) return { ok: false };
+    return { ok: true, data: (await res.json()) as T };
+  } catch {
+    return { ok: false };
+  }
+}
+
+export async function fetchAgencyBookingsServer(cookieHeader: string) {
+  return serverFetch<{ ok: boolean; bookings: AgencyBooking[] }>(
+    "/api/agency/me/bookings",
+    cookieHeader,
+  );
+}
+
+export async function verifyAgencyHandoverApi(args: {
+  reference: string;
+  otpCode: string;
+}): Promise<
+  | { ok: true; message: string; booking?: AgencyBooking }
+  | { ok: false; error: string }
+> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/agency/verify-handover`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reference: args.reference,
+        otpCode: args.otpCode,
+      }),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      message?: string;
+      booking?: AgencyBooking;
+    };
+    if (res.ok && data.ok) {
+      return {
+        ok: true,
+        message: data.message || "Agency handover verified.",
+        booking: data.booking,
+      };
+    }
+    return { ok: false, error: data.message || "Failed to verify agency handover." };
+  } catch {
+    return {
+      ok: false,
+      error: "Cannot connect to server. Start backend and try again.",
+    };
+  }
+}
+
+export async function updateAgencyBookingApi(args: {
+  bookingId: string;
+  status: string;
+  trackingNotes: string;
+}): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
+  try {
+    const res = await fetch(
+      `${getApiBaseUrl()}/api/agency/me/bookings/${encodeURIComponent(args.bookingId)}`,
+      {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: args.status,
+          trackingNotes: args.trackingNotes,
+        }),
+      },
+    );
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      message?: string;
+    };
+    if (res.ok && data.ok) {
+      return { ok: true, message: data.message || "Agency update saved." };
+    }
+    return { ok: false, error: data.message || "Failed to update booking." };
+  } catch {
+    return {
+      ok: false,
+      error: "Cannot connect to server. Start backend and try again.",
+    };
+  }
+}

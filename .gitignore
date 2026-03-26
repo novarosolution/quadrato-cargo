@@ -1,0 +1,12 @@
+.DS_Store
+
+# Server
+server/node_modules/
+server/.env
+server/.env.*
+
+# Frontend/Next
+quadrato-cargo/.next/
+quadrato-cargo/node_modules/
+quadrato-cargo/.env
+quadrato-cargo/.env.*
