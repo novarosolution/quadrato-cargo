@@ -278,6 +278,11 @@ export async function updateSiteSettingsAdmin(
     pdfPrimaryColor: String(formData.get("pdfPrimaryColor") ?? "").trim(),
     pdfAccentColor: String(formData.get("pdfAccentColor") ?? "").trim(),
     pdfCardColor: String(formData.get("pdfCardColor") ?? "").trim(),
+    pdfHeaderSubtitle: String(formData.get("pdfHeaderSubtitle") ?? "").trim(),
+    pdfSupportEmail: String(formData.get("pdfSupportEmail") ?? "").trim(),
+    pdfSupportPhone: String(formData.get("pdfSupportPhone") ?? "").trim(),
+    pdfWebsite: String(formData.get("pdfWebsite") ?? "").trim(),
+    pdfWatermarkText: String(formData.get("pdfWatermarkText") ?? "").trim(),
     pdfFooterNote: String(formData.get("pdfFooterNote") ?? "").trim(),
   });
 

@@ -158,6 +158,11 @@ export type SiteSettings = {
   pdfPrimaryColor: string;
   pdfAccentColor: string;
   pdfCardColor: string;
+  pdfHeaderSubtitle: string;
+  pdfSupportEmail: string;
+  pdfSupportPhone: string;
+  pdfWebsite: string;
+  pdfWatermarkText: string;
   pdfFooterNote: string;
 };
 
@@ -178,6 +183,11 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
         pdfPrimaryColor: "#0f766e",
         pdfAccentColor: "#f97316",
         pdfCardColor: "#f8fafc",
+        pdfHeaderSubtitle: "International courier service",
+        pdfSupportEmail: "support@quadratocargo.com",
+        pdfSupportPhone: "+1 (555) 010-0199",
+        pdfWebsite: "https://quadratocargo.com",
+        pdfWatermarkText: "Quadrato Cargo",
         pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
       };
     }
@@ -194,6 +204,11 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
         pdfPrimaryColor: "#0f766e",
         pdfAccentColor: "#f97316",
         pdfCardColor: "#f8fafc",
+        pdfHeaderSubtitle: "International courier service",
+        pdfSupportEmail: "support@quadratocargo.com",
+        pdfSupportPhone: "+1 (555) 010-0199",
+        pdfWebsite: "https://quadratocargo.com",
+        pdfWatermarkText: "Quadrato Cargo",
         pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
       }
     );
@@ -209,6 +224,11 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
       pdfPrimaryColor: "#0f766e",
       pdfAccentColor: "#f97316",
       pdfCardColor: "#f8fafc",
+      pdfHeaderSubtitle: "International courier service",
+      pdfSupportEmail: "support@quadratocargo.com",
+      pdfSupportPhone: "+1 (555) 010-0199",
+      pdfWebsite: "https://quadratocargo.com",
+      pdfWatermarkText: "Quadrato Cargo",
       pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
     };
   }

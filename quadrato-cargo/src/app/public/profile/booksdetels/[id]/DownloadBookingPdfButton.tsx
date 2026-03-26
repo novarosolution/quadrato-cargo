@@ -10,19 +10,32 @@ type PdfSettings = {
   primaryColor: string;
   accentColor: string;
   cardColor: string;
+  headerSubtitle: string;
+  supportEmail: string;
+  supportPhone: string;
+  website: string;
+  watermarkText: string;
   footerNote: string;
 };
 
 type Props = {
   bookingId: string;
   bookingDateLabel: string;
+  updatedAtLabel: string;
   statusLabel: string;
   reference: string;
+  routeTypeLabel: string;
+  consignmentNumber: string;
   fromCity: string;
   toCity: string;
   senderName: string;
   recipientName: string;
   amountLabel: string;
+  weightLabel: string;
+  dimensionsLabel: string;
+  contentsLabel: string;
+  instructionsLabel: string;
+  trackingNotesLabel: string;
   agencyLabel: string;
   trackUrl: string;
   settings: PdfSettings;
@@ -49,13 +62,21 @@ function toHex(value: string, fallback: string) {
 export function DownloadBookingPdfButton({
   bookingId,
   bookingDateLabel,
+  updatedAtLabel,
   statusLabel,
   reference,
+  routeTypeLabel,
+  consignmentNumber,
   fromCity,
   toCity,
   senderName,
   recipientName,
   amountLabel,
+  weightLabel,
+  dimensionsLabel,
+  contentsLabel,
+  instructionsLabel,
+  trackingNotesLabel,
   agencyLabel,
   trackUrl,
   settings,
@@ -73,19 +94,201 @@ export function DownloadBookingPdfButton({
     const qrImageSize = 28;
     const qrCardX = pageWidth - marginX - qrCardSize;
     const qrCardY = 14;
+    const bottomReserve = 18;
 
     const safe = (value: string) => {
       const normalized = String(value ?? "").trim();
       return normalized.length > 0 ? normalized : "-";
     };
 
-    const getLines = (value: string, width: number) => doc.splitTextToSize(safe(value), width);
+    const getLines = (value: string, width: number) =>
+      doc.splitTextToSize(safe(value), width);
 
-    const drawCard = (y: number, h: number) => {
-      doc.setFillColor(cr, cg, cb);
+    const drawCard = (y: number, h: number, fillRgb?: [number, number, number]) => {
+      if (fillRgb) {
+        doc.setFillColor(fillRgb[0], fillRgb[1], fillRgb[2]);
+      } else {
+        doc.setFillColor(cr, cg, cb);
+      }
       doc.roundedRect(marginX, y, contentWidth, h, 3, 3, "F");
       doc.setDrawColor(226, 232, 240);
       doc.roundedRect(marginX, y, contentWidth, h, 3, 3);
+    };
+
+    const rowHeight = (linesCount: number) => 4.8 + linesCount * 4.4 + 2.2;
+
+    const drawPageFooter = () => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.2);
+      doc.setTextColor(100, 116, 139);
+      doc.text(safe(settings.footerNote), pageWidth / 2, pageHeight - 10, {
+        align: "center",
+      });
+    };
+
+    const drawSection = (
+      yStart: number,
+      title: string,
+      rows: Array<{ label: string; value: string }>,
+      fillRgb?: [number, number, number],
+    ) => {
+      const sectionPad = 4.6;
+      const labelW = 30;
+      const valueW = contentWidth - sectionPad * 2 - labelW - 2;
+      const normalizedRows = rows.map((row) => ({
+        label: row.label,
+        lines: getLines(row.value, valueW),
+      }));
+      const bodyHeight = normalizedRows.reduce(
+        (acc, row) => acc + rowHeight(row.lines.length),
+        0,
+      );
+      const sectionHeight = 10 + bodyHeight + sectionPad;
+
+      drawCard(yStart, sectionHeight, fillRgb);
+      doc.setTextColor(r, g, b);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11.4);
+      doc.text(title, marginX + sectionPad, yStart + 6.5);
+
+      let yRow = yStart + 12.3;
+      normalizedRows.forEach((row) => {
+        doc.setTextColor(51, 65, 85);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9.5);
+        doc.text(`${row.label}:`, marginX + sectionPad, yRow);
+
+        doc.setTextColor(17, 24, 39);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text(row.lines, marginX + sectionPad + labelW, yRow);
+        yRow += rowHeight(row.lines.length);
+      });
+
+      return yStart + sectionHeight;
+    };
+
+    const drawFirstPageHeader = (qrDataUrl: string | null) => {
+      const companyNameLines = doc.splitTextToSize(
+        safe(settings.companyName || "Quadrato Cargo"),
+        108,
+      );
+      const subtitleLines = doc.splitTextToSize(
+        safe(settings.headerSubtitle || "International courier service"),
+        108,
+      );
+      const companyAddressLines = doc.splitTextToSize(
+        safe(settings.companyAddress || "International courier service"),
+        108,
+      );
+      const referenceLine = `Ref: ${safe(reference)}`;
+      const headerTextHeight =
+        companyNameLines.length * 7 +
+        subtitleLines.length * 4.8 +
+        companyAddressLines.length * 4.5 +
+        12;
+      const headerHeight = Math.max(56, headerTextHeight + 12);
+
+      doc.setFillColor(r, g, b);
+      doc.rect(0, 0, pageWidth, headerHeight, "F");
+      doc.setFillColor(ar, ag, ab);
+      doc.rect(0, headerHeight - 3, pageWidth, 3, "F");
+
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(marginX + 2, 8, 20, 8, 2, 2, "F");
+      doc.setTextColor(r, g, b);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.2);
+      doc.text(safe(settings.logoText || "QR"), marginX + 12, 13.6, {
+        align: "center",
+      });
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text(companyNameLines, marginX + 28, 15);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.3);
+      doc.text(subtitleLines, marginX + 28, 15 + companyNameLines.length * 7 + 1);
+      doc.setFontSize(9.6);
+      doc.text(
+        companyAddressLines,
+        marginX + 28,
+        15 + companyNameLines.length * 7 + subtitleLines.length * 4.8 + 2,
+      );
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.2);
+      doc.text(
+        referenceLine,
+        marginX + 28,
+        15 +
+          companyNameLines.length * 7 +
+          subtitleLines.length * 4.8 +
+          companyAddressLines.length * 4.5 +
+          4,
+      );
+
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(qrCardX, qrCardY, qrCardSize, qrCardSize, 2.5, 2.5, "F");
+      doc.setDrawColor(ar, ag, ab);
+      doc.setLineWidth(0.6);
+      doc.roundedRect(qrCardX, qrCardY, qrCardSize, qrCardSize, 2.5, 2.5);
+
+      if (qrDataUrl) {
+        doc.addImage(
+          qrDataUrl,
+          "PNG",
+          qrCardX + (qrCardSize - qrImageSize) / 2,
+          qrCardY + 2,
+          qrImageSize,
+          qrImageSize,
+        );
+      }
+
+      doc.setTextColor(ar, ag, ab);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.text(
+        "SCAN TO TRACK",
+        qrCardX + qrCardSize / 2,
+        qrCardY + qrCardSize - 2.5,
+        {
+          align: "center",
+        },
+      );
+
+      const wmText = safe(settings.watermarkText || "Quadrato Cargo");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(31);
+      doc.text(wmText, pageWidth / 2, headerHeight + 38, {
+        align: "center",
+        angle: 24,
+      });
+
+      return headerHeight + 8;
+    };
+
+    const drawNextPageHeader = () => {
+      doc.setFillColor(r, g, b);
+      doc.rect(0, 0, pageWidth, 16, "F");
+      doc.setFillColor(ar, ag, ab);
+      doc.rect(0, 14, pageWidth, 2, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(safe(settings.companyName || "Quadrato Cargo"), marginX, 10.5);
+      return 22;
+    };
+
+    const ensureSpace = (y: number, neededHeight: number) => {
+      if (y + neededHeight <= pageHeight - bottomReserve) {
+        return y;
+      }
+      drawPageFooter();
+      doc.addPage();
+      return drawNextPageHeader();
     };
 
     const qrDataUrl = await QRCode.toDataURL(trackUrl, {
@@ -97,183 +300,73 @@ export function DownloadBookingPdfButton({
       },
     }).catch(() => null);
 
-    const companyNameLines = doc.splitTextToSize(
-      safe(settings.companyName || "Quadrato Cargo"),
-      110,
-    );
-    const companyAddressLines = doc.splitTextToSize(
-      safe(settings.companyAddress || "International courier service"),
-      110,
-    );
-    const referenceLine = `Ref: ${safe(reference)}`;
-    const headerTextHeight =
-      companyNameLines.length * 7 + companyAddressLines.length * 4.6 + 11;
-    const headerHeight = Math.max(48, headerTextHeight + 12);
-
-    doc.setFillColor(r, g, b);
-    doc.rect(0, 0, pageWidth, headerHeight, "F");
-    doc.setFillColor(ar, ag, ab);
-    doc.rect(0, headerHeight - 3, pageWidth, 3, "F");
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(marginX + 2, 8, 20, 8, 2, 2, "F");
-    doc.setTextColor(r, g, b);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9.2);
-    doc.text(safe(settings.logoText || "QR"), marginX + 12, 13.6, { align: "center" });
-
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text(companyNameLines, marginX + 28, 15);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(companyAddressLines, marginX + 28, 15 + companyNameLines.length * 7 + 1);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10.5);
-    doc.text(
-      referenceLine,
-      marginX + 28,
-      15 + companyNameLines.length * 7 + companyAddressLines.length * 4.6 + 4,
-    );
-
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(qrCardX, qrCardY, qrCardSize, qrCardSize, 2.5, 2.5, "F");
-    doc.setDrawColor(ar, ag, ab);
-    doc.setLineWidth(0.6);
-    doc.roundedRect(qrCardX, qrCardY, qrCardSize, qrCardSize, 2.5, 2.5);
-
-    if (qrDataUrl) {
-      doc.addImage(
-        qrDataUrl,
-        "PNG",
-        qrCardX + (qrCardSize - qrImageSize) / 2,
-        qrCardY + 2,
-        qrImageSize,
-        qrImageSize,
-      );
-    }
-
-    doc.setTextColor(ar, ag, ab);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.5);
-    doc.text("SCAN TO TRACK", qrCardX + qrCardSize / 2, qrCardY + qrCardSize - 2.5, {
-      align: "center",
-    });
-
+    let y = drawFirstPageHeader(qrDataUrl);
     doc.setTextColor(32, 32, 32);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
 
-    let y = headerHeight + 8;
-    const sectionPad = 4.5;
-    const labelW = 25;
-    const colGap = 6;
-    const colWidth = (contentWidth - sectionPad * 2 - colGap) / 2;
-    const col1X = marginX + sectionPad;
-    const col2X = col1X + colWidth + colGap;
-    const valueW = colWidth - labelW - 1;
+    y = ensureSpace(y, 74);
+    y =
+      drawSection(
+        y,
+        "Shipment Summary",
+        [
+          { label: "Booked At", value: bookingDateLabel },
+          { label: "Last Update", value: updatedAtLabel },
+          { label: "Status", value: statusLabel },
+          { label: "Route Type", value: routeTypeLabel },
+          { label: "From City", value: fromCity },
+          { label: "To City", value: toCity },
+          { label: "Sender", value: senderName },
+          { label: "Recipient", value: recipientName },
+          { label: "Agency", value: agencyLabel },
+        ],
+        [cr, cg, cb],
+      ) + 6;
 
-    const summaryRows = [
+    y = ensureSpace(y, 74);
+    y =
+      drawSection(
+        y,
+        "Parcel Details",
+        [
+          { label: "Declared Value", value: amountLabel },
+          { label: "Weight", value: weightLabel },
+          { label: "Dimensions", value: dimensionsLabel },
+          { label: "Contents", value: contentsLabel },
+          { label: "Instructions", value: instructionsLabel },
+        ],
+        [255, 255, 255],
+      ) + 6;
+
+    y = ensureSpace(y, 74);
+    y =
+      drawSection(
+        y,
+        "Tracking Details",
+        [
+          { label: "Reference", value: reference },
+          { label: "Booking ID", value: bookingId },
+          { label: "Consignment No", value: consignmentNumber },
+          { label: "Tracking URL", value: trackUrl },
+          { label: "Dispatch Notes", value: trackingNotesLabel },
+        ],
+        [cr, cg, cb],
+      ) + 6;
+
+    y = ensureSpace(y, 60);
+    drawSection(
+      y,
+      "Support & Contact",
       [
-        { label: "Date", value: bookingDateLabel },
-        { label: "Status", value: statusLabel },
+        { label: "Email", value: safe(settings.supportEmail) },
+        { label: "Phone", value: safe(settings.supportPhone) },
+        { label: "Website", value: safe(settings.website) },
       ],
-      [
-        { label: "From", value: fromCity },
-        { label: "To", value: toCity },
-      ],
-      [
-        { label: "Amount", value: amountLabel },
-        { label: "Agency", value: agencyLabel },
-      ],
-      [
-        { label: "Sender", value: senderName },
-        { label: "Recipient", value: recipientName },
-      ],
-    ];
-
-    const summaryBodyHeight = summaryRows.reduce((acc, row) => {
-      const leftLines = getLines(row[0].value, valueW).length;
-      const rightLines = getLines(row[1].value, valueW).length;
-      const lines = Math.max(leftLines, rightLines);
-      return acc + 5 + lines * 4.5 + 2.8;
-    }, 0);
-    const summaryHeight = 9 + summaryBodyHeight + sectionPad;
-
-    drawCard(y, summaryHeight);
-    doc.setTextColor(r, g, b);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11.5);
-    doc.text("Shipment Summary", col1X, y + 6.4);
-
-    let rowY = y + 12.2;
-    summaryRows.forEach((row) => {
-      const leftLines = getLines(row[0].value, valueW);
-      const rightLines = getLines(row[1].value, valueW);
-      const lines = Math.max(leftLines.length, rightLines.length);
-
-      doc.setTextColor(51, 65, 85);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9.5);
-      doc.text(`${row[0].label}:`, col1X, rowY);
-      doc.text(`${row[1].label}:`, col2X, rowY);
-
-      doc.setTextColor(17, 24, 39);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.text(leftLines, col1X + labelW, rowY);
-      doc.text(rightLines, col2X + labelW, rowY);
-
-      rowY += 5 + lines * 4.5 + 2.8;
-    });
-
-    y += summaryHeight + 6;
-
-    const detailsLabelW = 30;
-    const detailsValueW = contentWidth - sectionPad * 2 - detailsLabelW - 2;
-    const detailRows = [
-      { label: "Reference", value: reference },
-      { label: "Booking ID", value: bookingId },
-      { label: "Tracking URL", value: trackUrl },
-    ];
-    const detailsBodyHeight = detailRows.reduce((acc, item) => {
-      const lines = getLines(item.value, detailsValueW).length;
-      return acc + 5 + lines * 4.5 + 2.8;
-    }, 0);
-    const detailsHeight = 9 + detailsBodyHeight + sectionPad;
-
-    drawCard(y, detailsHeight);
-    doc.setTextColor(r, g, b);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11.5);
-    doc.text("Tracking Details", marginX + sectionPad, y + 6.4);
-
-    let detailsY = y + 12.2;
-    detailRows.forEach((item) => {
-      const lines = getLines(item.value, detailsValueW);
-      doc.setTextColor(51, 65, 85);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9.5);
-      doc.text(`${item.label}:`, marginX + sectionPad, detailsY);
-
-      doc.setTextColor(17, 24, 39);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.text(lines, marginX + sectionPad + detailsLabelW, detailsY);
-      detailsY += 5 + lines.length * 4.5 + 2.8;
-    });
-
-    const footerY = Math.min(pageHeight - 10, y + detailsHeight + 10);
-    doc.setFontSize(9.8);
-    doc.setTextColor(90, 90, 90);
-    doc.text(
-      settings.footerNote || "Thank you for choosing Quadrato Cargo.",
-      pageWidth / 2,
-      footerY,
-      { align: "center" },
+      [255, 255, 255],
     );
 
+    drawPageFooter();
     doc.save(`courier-details-${reference || bookingId}.pdf`);
   };
 

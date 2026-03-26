@@ -68,6 +68,11 @@ export type AdminSiteSettings = {
   pdfPrimaryColor: string;
   pdfAccentColor: string;
   pdfCardColor: string;
+  pdfHeaderSubtitle: string;
+  pdfSupportEmail: string;
+  pdfSupportPhone: string;
+  pdfWebsite: string;
+  pdfWatermarkText: string;
   pdfFooterNote: string;
 };
 

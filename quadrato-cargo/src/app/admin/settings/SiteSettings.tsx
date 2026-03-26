@@ -196,6 +196,91 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
 
         <div className="md:col-span-2">
           <label
+            htmlFor="pdf-header-subtitle"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Header subtitle
+          </label>
+          <input
+            id="pdf-header-subtitle"
+            name="pdfHeaderSubtitle"
+            type="text"
+            defaultValue={initialSettings.pdfHeaderSubtitle}
+            placeholder="International courier service"
+            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="pdf-support-email"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Support email
+          </label>
+          <input
+            id="pdf-support-email"
+            name="pdfSupportEmail"
+            type="text"
+            defaultValue={initialSettings.pdfSupportEmail}
+            placeholder="support@quadratocargo.com"
+            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="pdf-support-phone"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Support phone
+          </label>
+          <input
+            id="pdf-support-phone"
+            name="pdfSupportPhone"
+            type="text"
+            defaultValue={initialSettings.pdfSupportPhone}
+            placeholder="+1 (555) 010-0199"
+            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="pdf-website"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Website
+          </label>
+          <input
+            id="pdf-website"
+            name="pdfWebsite"
+            type="text"
+            defaultValue={initialSettings.pdfWebsite}
+            placeholder="https://quadratocargo.com"
+            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="pdf-watermark-text"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Watermark text
+          </label>
+          <input
+            id="pdf-watermark-text"
+            name="pdfWatermarkText"
+            type="text"
+            defaultValue={initialSettings.pdfWatermarkText}
+            placeholder="Quadrato Cargo"
+            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label
             htmlFor="pdf-footer-note"
             className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
           >

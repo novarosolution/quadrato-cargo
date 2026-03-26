@@ -76,6 +76,12 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
     primaryColor: siteSettings.pdfPrimaryColor || "#0f766e",
     accentColor: siteSettings.pdfAccentColor || "#f97316",
     cardColor: siteSettings.pdfCardColor || "#f8fafc",
+    headerSubtitle:
+      siteSettings.pdfHeaderSubtitle || "International courier service",
+    supportEmail: siteSettings.pdfSupportEmail || "support@quadratocargo.com",
+    supportPhone: siteSettings.pdfSupportPhone || "+1 (555) 010-0199",
+    website: siteSettings.pdfWebsite || "https://quadratocargo.com",
+    watermarkText: siteSettings.pdfWatermarkText || "Quadrato Cargo",
     footerNote:
       siteSettings.pdfFooterNote || "Thank you for choosing Quadrato Cargo.",
   };
@@ -256,13 +262,25 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                 <DownloadBookingPdfButton
                   bookingId={row.id}
                   bookingDateLabel={dateFmt.format(row.createdAt)}
+                  updatedAtLabel={dateFmt.format(row.updatedAt)}
                   statusLabel={BOOKING_STATUS_LABELS[st]}
                   reference={reference}
+                  routeTypeLabel={row.routeType || "-"}
+                  consignmentNumber={row.consignmentNumber || "-"}
                   fromCity={preview.senderCity || "-"}
                   toCity={preview.recipientCity || "-"}
                   senderName={preview.senderName || "-"}
                   recipientName={preview.recipientName || "-"}
                   amountLabel={preview.declaredValue || "-"}
+                  weightLabel={preview.weightKg ? `${preview.weightKg} kg` : "-"}
+                  dimensionsLabel={
+                    preview.dimensionsCm
+                      ? `${preview.dimensionsCm.l || "?"} x ${preview.dimensionsCm.w || "?"} x ${preview.dimensionsCm.h || "?"} cm`
+                      : "-"
+                  }
+                  contentsLabel={preview.contents || "-"}
+                  instructionsLabel={preview.instructions || "-"}
+                  trackingNotesLabel={row.trackingNotes || "-"}
                   agencyLabel={row.assignedAgency || "-"}
                   trackUrl={trackUrl}
                   settings={pdfSettings}
