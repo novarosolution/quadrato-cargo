@@ -101,7 +101,11 @@ export function DownloadBookingPdfButton({
       });
 
       if (!response.ok) {
-        throw new Error("Unable to generate PDF right now.");
+        const data = (await response.json().catch(() => ({}))) as {
+          message?: string;
+          error?: string;
+        };
+        throw new Error(data.message || data.error || "Unable to generate PDF right now.");
       }
 
       const blob = await response.blob();
@@ -116,8 +120,10 @@ export function DownloadBookingPdfButton({
       anchor.click();
       anchor.remove();
       URL.revokeObjectURL(downloadUrl);
-    } catch {
-      setDownloadError("PDF download failed. Please try again.");
+    } catch (error) {
+      setDownloadError(
+        error instanceof Error ? error.message : "PDF download failed. Please try again.",
+      );
     } finally {
       setIsDownloading(false);
     }

@@ -22,37 +22,37 @@ const contactSchema = z.object({
 
 const pdfRequestSchema = z.object({
   bookingId: z.string().trim().min(1),
-  bookingDateLabel: z.string().trim().min(1),
-  updatedAtLabel: z.string().trim().min(1),
-  statusLabel: z.string().trim().min(1),
-  reference: z.string().trim().min(1),
-  routeTypeLabel: z.string().trim().min(1),
-  consignmentNumber: z.string().trim().min(1),
-  fromCity: z.string().trim().min(1),
-  toCity: z.string().trim().min(1),
-  senderName: z.string().trim().min(1),
-  recipientName: z.string().trim().min(1),
-  amountLabel: z.string().trim().min(1),
-  weightLabel: z.string().trim().min(1),
-  dimensionsLabel: z.string().trim().min(1),
-  contentsLabel: z.string().trim().min(1),
-  instructionsLabel: z.string().trim().min(1),
-  trackingNotesLabel: z.string().trim().min(1),
-  agencyLabel: z.string().trim().min(1),
-  trackUrl: z.string().trim().url(),
+  bookingDateLabel: z.string().trim().default(""),
+  updatedAtLabel: z.string().trim().default(""),
+  statusLabel: z.string().trim().default(""),
+  reference: z.string().trim().default(""),
+  routeTypeLabel: z.string().trim().default(""),
+  consignmentNumber: z.string().trim().default(""),
+  fromCity: z.string().trim().default(""),
+  toCity: z.string().trim().default(""),
+  senderName: z.string().trim().default(""),
+  recipientName: z.string().trim().default(""),
+  amountLabel: z.string().trim().default(""),
+  weightLabel: z.string().trim().default(""),
+  dimensionsLabel: z.string().trim().default(""),
+  contentsLabel: z.string().trim().default(""),
+  instructionsLabel: z.string().trim().default(""),
+  trackingNotesLabel: z.string().trim().default(""),
+  agencyLabel: z.string().trim().default(""),
+  trackUrl: z.string().trim().min(1),
   settings: z.object({
-    companyName: z.string().trim().min(1),
-    companyAddress: z.string().trim().min(1),
-    logoText: z.string().trim().min(1),
-    primaryColor: z.string().trim().min(1),
-    accentColor: z.string().trim().min(1),
-    cardColor: z.string().trim().min(1),
-    headerSubtitle: z.string().trim().min(1),
-    supportEmail: z.string().trim().min(1),
-    supportPhone: z.string().trim().min(1),
-    website: z.string().trim().min(1),
-    watermarkText: z.string().trim().min(1),
-    footerNote: z.string().trim().min(1)
+    companyName: z.string().trim().default("Quadrato Cargo"),
+    companyAddress: z.string().trim().default(""),
+    logoText: z.string().trim().default("QC"),
+    primaryColor: z.string().trim().default("#0f766e"),
+    accentColor: z.string().trim().default("#16a34a"),
+    cardColor: z.string().trim().default("#f8fafc"),
+    headerSubtitle: z.string().trim().default("International courier service"),
+    supportEmail: z.string().trim().default("support@quadratocargo.com"),
+    supportPhone: z.string().trim().default("+1 (555) 010-0199"),
+    website: z.string().trim().default("https://quadratocargo.com"),
+    watermarkText: z.string().trim().default("Quadrato Cargo"),
+    footerNote: z.string().trim().default("Thank you for choosing Quadrato Cargo.")
   })
 });
 
@@ -378,7 +378,8 @@ export async function generateBookingPdf(req, res, next) {
       return sendError(res, "Invalid PDF data payload.", 400);
     }
 
-    const qrDataUrl = await QRCode.toDataURL(parsed.data.trackUrl, {
+    const safeTrackUrl = String(parsed.data.trackUrl || "").trim();
+    const qrDataUrl = await QRCode.toDataURL(safeTrackUrl || "https://quadratocargo.com", {
       margin: 1,
       width: 220,
       color: {
@@ -409,6 +410,14 @@ export async function generateBookingPdf(req, res, next) {
     );
     return res.status(200).send(pdfBuffer);
   } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "name" in error &&
+      error.name === "ZodError"
+    ) {
+      return sendError(res, "Invalid PDF data payload.", 400);
+    }
     return next(error);
   } finally {
     if (browser) {
