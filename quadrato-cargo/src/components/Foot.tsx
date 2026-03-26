@@ -202,6 +202,24 @@ export function Footer() {
                   <dd className="mt-1 text-muted">+1 (555) 010-0199</dd>
                 </div>
                 <div>
+                  <dt className="font-medium text-ink">Email</dt>
+                  <dd className="mt-1 space-y-1 text-muted">
+                    <a
+                      href="mailto:info@quadratocargo.com"
+                      title="info@quadratocargo.com"
+                      className="block transition hover:text-teal"
+                    >
+                      info
+                    </a>
+                    <a
+                      href="mailto:support@quadratocargo.com"
+                      className="block transition hover:text-teal"
+                    >
+                      support@quadratocargo.com
+                    </a>
+                  </dd>
+                </div>
+                <div>
                   <dt className="font-medium text-ink">Hours</dt>
                   <dd className="mt-1 text-muted">Mon–Fri 7:00–19:00 local</dd>
                 </div>

@@ -1,11 +1,13 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Container } from "@/components/Wrap";
 import { SectionHeading } from "@/components/Heading";
 import { easeOutExpo, scaleIn, springSoft } from "@/lib/motion";
 import { useMotionPreferences } from "@/lib/motion-preferences";
+import { getApiBaseUrl } from "@/lib/api/base-url";
 import {
   homeHeroCallToActionData,
   homeHeroStatData,
@@ -66,6 +68,7 @@ const secondaryCtaClass =
 export function HomeView() {
   const reduce = useReducedMotion();
   const { allowHoverMotion } = useMotionPreferences();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   // Keep one source of truth for motion gating so every section degrades consistently.
   const hoverMotion = allowHoverMotion && !reduce;
   const ctaHoverUp = hoverMotion ? { y: -3 } : undefined;
@@ -82,6 +85,40 @@ export function HomeView() {
   const sectionLinkTap = hoverMotion ? { scale: 0.98 } : undefined;
   const contactCtaHover = hoverMotion ? { scale: 1.04 } : undefined;
   const contactCtaTap = hoverMotion ? { scale: 0.97 } : undefined;
+  const heroCtas = useMemo(
+    () =>
+      isLoggedIn
+        ? homeHeroCallToActionData.filter((cta) => cta.href !== "/public/register")
+        : homeHeroCallToActionData,
+    [isLoggedIn],
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    async function checkSession() {
+      try {
+        const res = await fetch(`${getApiBaseUrl()}/api/auth/me`, {
+          credentials: "include",
+          cache: "no-store",
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          user?: { id?: string } | null;
+        };
+        if (!active) return;
+        setIsLoggedIn(Boolean(res.ok && data.ok && data.user?.id));
+      } catch {
+        if (!active) return;
+        setIsLoggedIn(false);
+      }
+    }
+
+    checkSession();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <>
@@ -145,7 +182,7 @@ export function HomeView() {
                 variants={heroItem}
                 className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
               >
-                {homeHeroCallToActionData.map((heroCallToAction) => (
+                {heroCtas.map((heroCallToAction) => (
                   <motion.div
                     key={heroCallToAction.href}
                     className="inline-flex w-full min-[480px]:w-auto"
@@ -153,16 +190,26 @@ export function HomeView() {
                     whileTap={ctaTapScale}
                     transition={springSoft}
                   >
+                    {(() => {
+                      const highlightLoggedInCta =
+                        isLoggedIn &&
+                        (heroCallToAction.href === "/public/book" ||
+                          heroCallToAction.href === "/public/contact");
+                      const usePrimaryStyle =
+                        heroCallToAction.kind === "primary" || highlightLoggedInCta;
+                      return (
                     <Link
                       href={heroCallToAction.href}
                       className={`${
-                        heroCallToAction.kind === "primary"
+                        usePrimaryStyle
                           ? "btn-primary inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent-deep via-accent to-accent-hover px-7 py-4 text-center text-sm font-semibold text-white shadow-lg shadow-accent/25"
                           : secondaryCtaClass
                       } w-full min-[480px]:w-auto`}
                     >
                       {heroCallToAction.label}
                     </Link>
+                      );
+                    })()}
                   </motion.div>
                 ))}
               </motion.div>
@@ -170,20 +217,32 @@ export function HomeView() {
                 variants={heroItem}
                 className="mt-5 max-w-xl text-sm leading-relaxed text-muted"
               >
-                Anyone can sign up here — no admin needed. After you{" "}
-                <Link href="/public/register" className="font-medium text-teal hover:underline">
-                  register
-                </Link>
-                , use{" "}
-                <Link href="/public/login" className="font-medium text-teal hover:underline">
-                  Log in
-                </Link>{" "}
-                anytime. Your{" "}
-                <Link href="/public/profile" className="font-medium text-teal hover:underline">
-                  profile
-                </Link>{" "}
-                stores your details, bookings, status, and consignment data when
-                you book while signed in.
+                {isLoggedIn ? (
+                  <>
+                    You are signed in. Open your{" "}
+                    <Link href="/public/profile" className="font-medium text-teal hover:underline">
+                      profile
+                    </Link>{" "}
+                    to view your details, bookings, status, and consignment data.
+                  </>
+                ) : (
+                  <>
+                    Anyone can sign up here — no admin needed. After you{" "}
+                    <Link href="/public/register" className="font-medium text-teal hover:underline">
+                      register
+                    </Link>
+                    , use{" "}
+                    <Link href="/public/login" className="font-medium text-teal hover:underline">
+                      Log in
+                    </Link>{" "}
+                    anytime. Your{" "}
+                    <Link href="/public/profile" className="font-medium text-teal hover:underline">
+                      profile
+                    </Link>{" "}
+                    stores your details, bookings, status, and consignment data when
+                    you book while signed in.
+                  </>
+                )}
               </motion.p>
               <motion.ul
                 variants={statList}
