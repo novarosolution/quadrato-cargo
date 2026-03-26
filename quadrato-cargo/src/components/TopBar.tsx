@@ -231,7 +231,7 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-border bg-canvas/75 backdrop-blur-2xl backdrop-saturate-150">
       <div className="mx-auto grid h-[4.25rem] max-w-7xl grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
         <Link
-          href="/"
+          href="/public"
           className="group flex min-w-0 max-w-full items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal sm:gap-2.5"
         >
           <motion.span

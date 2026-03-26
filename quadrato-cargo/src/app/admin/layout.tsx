@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeBtn";
-import { isAdminSessionValid } from "@/lib/admin-auth";
 import { AdminLogoutButton } from "./dashboard/LogoutB";
 import { AdminNav } from "./dashboard/Nav";
 
@@ -19,10 +17,6 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  if (!(await isAdminSessionValid())) {
-    redirect("/admin/login");
-  }
-
   return (
     <div className="app-shell min-h-screen bg-canvas text-ink">
       <div className="sticky top-0 z-30 border-b border-border bg-surface-elevated/85 backdrop-blur-md">

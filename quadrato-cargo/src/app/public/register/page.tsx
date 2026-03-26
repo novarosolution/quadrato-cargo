@@ -60,7 +60,7 @@ export default async function RegisterPage({ searchParams }: PageProps) {
             <RegisterForm redirectTo={redirectAfterRegister} />
           </div>
           <p className="mt-8 text-center text-xs text-muted-soft">
-            <Link href="/" className="underline-offset-2 hover:underline">
+            <Link href="/public" className="underline-offset-2 hover:underline">
               Back to home
             </Link>
           </p>

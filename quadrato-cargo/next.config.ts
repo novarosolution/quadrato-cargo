@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  outputFileTracingRoot: path.resolve(__dirname),
   async rewrites() {
     const backendBaseRaw =
       process.env.BACKEND_API_BASE_URL?.trim() ||

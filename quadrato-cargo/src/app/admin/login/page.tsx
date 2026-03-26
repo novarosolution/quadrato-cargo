@@ -29,7 +29,7 @@ export default async function AdminLoginPage() {
           <AdminLoginForm />
         </div>
         <p className="mt-8 text-center text-xs text-muted-soft">
-          <Link href="/" className="underline-offset-2 hover:underline">
+          <Link href="/public" className="underline-offset-2 hover:underline">
             Back to site
           </Link>
         </p>

@@ -282,7 +282,7 @@ export default async function ProfilePage() {
 
             <div className="mt-8 flex flex-col gap-3 border-t border-border pt-8 sm:flex-row sm:flex-wrap">
               <Link
-                href="/"
+                href="/public"
                 className="inline-flex flex-1 items-center justify-center rounded-2xl border border-ghost-border bg-ghost-fill px-6 py-3.5 text-center text-sm font-semibold text-ink transition hover:border-teal/35 hover:bg-pill-hover sm:flex-none"
               >
                 Home
