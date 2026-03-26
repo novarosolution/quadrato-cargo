@@ -66,6 +66,8 @@ export type AdminSiteSettings = {
   pdfCompanyAddress: string;
   pdfLogoText: string;
   pdfPrimaryColor: string;
+  pdfAccentColor: string;
+  pdfCardColor: string;
   pdfFooterNote: string;
 };
 

@@ -156,6 +156,8 @@ export type SiteSettings = {
   pdfCompanyAddress: string;
   pdfLogoText: string;
   pdfPrimaryColor: string;
+  pdfAccentColor: string;
+  pdfCardColor: string;
   pdfFooterNote: string;
 };
 
@@ -174,6 +176,8 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
         pdfCompanyAddress: "",
         pdfLogoText: "QR",
         pdfPrimaryColor: "#0f766e",
+        pdfAccentColor: "#f97316",
+        pdfCardColor: "#f8fafc",
         pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
       };
     }
@@ -188,6 +192,8 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
         pdfCompanyAddress: "",
         pdfLogoText: "QR",
         pdfPrimaryColor: "#0f766e",
+        pdfAccentColor: "#f97316",
+        pdfCardColor: "#f8fafc",
         pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
       }
     );
@@ -201,6 +207,8 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
       pdfCompanyAddress: "",
       pdfLogoText: "QR",
       pdfPrimaryColor: "#0f766e",
+      pdfAccentColor: "#f97316",
+      pdfCardColor: "#f8fafc",
       pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
     };
   }

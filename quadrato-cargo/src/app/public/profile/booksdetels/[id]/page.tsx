@@ -74,6 +74,8 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
     companyAddress: siteSettings.pdfCompanyAddress || "",
     logoText: siteSettings.pdfLogoText || "QR",
     primaryColor: siteSettings.pdfPrimaryColor || "#0f766e",
+    accentColor: siteSettings.pdfAccentColor || "#f97316",
+    cardColor: siteSettings.pdfCardColor || "#f8fafc",
     footerNote:
       siteSettings.pdfFooterNote || "Thank you for choosing Quadrato Cargo.",
   };

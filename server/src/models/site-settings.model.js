@@ -8,6 +8,8 @@ export function normalizeSiteSettings(row) {
     pdfCompanyAddress: String(row?.pdfCompanyAddress ?? "").trim(),
     pdfLogoText: String(row?.pdfLogoText ?? "QR").trim(),
     pdfPrimaryColor: String(row?.pdfPrimaryColor ?? "#0f766e").trim(),
+    pdfAccentColor: String(row?.pdfAccentColor ?? "#f97316").trim(),
+    pdfCardColor: String(row?.pdfCardColor ?? "#f8fafc").trim(),
     pdfFooterNote: String(row?.pdfFooterNote ?? "Thank you for choosing Quadrato Cargo.").trim()
   };
 }
@@ -29,6 +31,8 @@ export const siteSettingsModelSchema = {
         pdfCompanyAddress: { bsonType: ["string", "null"] },
         pdfLogoText: { bsonType: ["string", "null"] },
         pdfPrimaryColor: { bsonType: ["string", "null"] },
+        pdfAccentColor: { bsonType: ["string", "null"] },
+        pdfCardColor: { bsonType: ["string", "null"] },
         pdfFooterNote: { bsonType: ["string", "null"] },
         updatedAt: { bsonType: ["date", "null"] }
       }

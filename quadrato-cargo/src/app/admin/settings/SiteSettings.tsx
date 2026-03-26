@@ -160,6 +160,40 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
           />
         </div>
 
+        <div>
+          <label
+            htmlFor="pdf-accent-color"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Accent color
+          </label>
+          <input
+            id="pdf-accent-color"
+            name="pdfAccentColor"
+            type="text"
+            defaultValue={initialSettings.pdfAccentColor}
+            placeholder="#f97316"
+            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label
+            htmlFor="pdf-card-color"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Card background color
+          </label>
+          <input
+            id="pdf-card-color"
+            name="pdfCardColor"
+            type="text"
+            defaultValue={initialSettings.pdfCardColor}
+            placeholder="#f8fafc"
+            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          />
+        </div>
+
         <div className="md:col-span-2">
           <label
             htmlFor="pdf-footer-note"

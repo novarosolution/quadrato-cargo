@@ -1,12 +1,15 @@
 "use client";
 
 import { jsPDF } from "jspdf";
+import QRCode from "qrcode";
 
 type PdfSettings = {
   companyName: string;
   companyAddress: string;
   logoText: string;
   primaryColor: string;
+  accentColor: string;
+  cardColor: string;
   footerNote: string;
 };
 
@@ -37,6 +40,12 @@ function parseRgb(hexOrFallback: string) {
   ] as const;
 }
 
+function toHex(value: string, fallback: string) {
+  const raw = String(value || "").trim();
+  const match = raw.match(/^#?([0-9a-fA-F]{6})$/);
+  return match ? `#${match[1]}` : fallback;
+}
+
 export function DownloadBookingPdfButton({
   bookingId,
   bookingDateLabel,
@@ -54,39 +63,55 @@ export function DownloadBookingPdfButton({
   const onDownload = async () => {
     const doc = new jsPDF({ unit: "mm", format: "a4" });
     const [r, g, b] = parseRgb(settings.primaryColor);
+    const [ar, ag, ab] = parseRgb(settings.accentColor);
+    const [cr, cg, cb] = parseRgb(settings.cardColor);
+    const qrDataUrl = await QRCode.toDataURL(trackUrl, {
+      width: 512,
+      margin: 1,
+      color: {
+        dark: toHex(settings.primaryColor, "#0f766e"),
+        light: "#ffffff",
+      },
+    }).catch(() => null);
 
     doc.setFillColor(r, g, b);
-    doc.rect(0, 0, 210, 28, "F");
+    doc.rect(0, 0, 210, 34, "F");
 
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(15);
-    doc.text(settings.companyName || "Quadrato Cargo", 18, 14);
-    doc.setFontSize(10);
+    doc.setFontSize(17);
+    doc.text(settings.companyName || "Quadrato Cargo", 16, 14);
+    doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
-    doc.text(settings.companyAddress || "International Courier", 18, 20);
+    doc.text(settings.companyAddress || "International courier service", 16, 20);
+    doc.text(`Ref: ${reference}`, 16, 27);
 
     doc.setDrawColor(220, 220, 220);
     doc.setLineWidth(0.4);
-    doc.roundedRect(155, 8, 36, 16, 2, 2);
+    doc.roundedRect(163, 8, 30, 20, 2, 2);
     doc.setTextColor(30, 30, 30);
-    doc.setFontSize(12);
+    doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
-    doc.text(settings.logoText || "QR", 173, 18, { align: "center" });
+    doc.text(settings.logoText || "QR", 178, 20, { align: "center" });
 
     doc.setTextColor(32, 32, 32);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
+    doc.setFontSize(10.5);
 
-    let y = 40;
+    let y = 44;
     const leftX = 18;
-    const rightX = 112;
+    const rightX = 106;
+
+    doc.setFillColor(cr, cg, cb);
+    doc.roundedRect(14, y - 8, 182, 52, 3, 3, "F");
+    doc.setDrawColor(224, 224, 224);
+    doc.roundedRect(14, y - 8, 182, 52, 3, 3);
 
     const writePair = (label: string, value: string, x: number, yy: number) => {
       doc.setFont("helvetica", "bold");
       doc.text(label, x, yy);
       doc.setFont("helvetica", "normal");
-      doc.text(value || "-", x + 32, yy);
+      doc.text(value || "-", x + 28, yy);
     };
 
     writePair("Date:", bookingDateLabel, leftX, y);
@@ -98,7 +123,7 @@ export function DownloadBookingPdfButton({
     writePair("Amount:", amountLabel, leftX, y);
     writePair("Agency:", agencyLabel, rightX, y);
 
-    y += 14;
+    y += 13;
     doc.setFont("helvetica", "bold");
     doc.text("Sender", leftX, y);
     doc.text("Recipient", rightX, y);
@@ -108,6 +133,11 @@ export function DownloadBookingPdfButton({
     doc.text(recipientName || "-", rightX, y);
 
     y += 14;
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(14, y - 7, 182, 50, 3, 3, "F");
+    doc.setDrawColor(224, 224, 224);
+    doc.roundedRect(14, y - 7, 182, 50, 3, 3);
+
     doc.setFont("helvetica", "bold");
     doc.text("Reference", leftX, y);
     doc.setFont("helvetica", "normal");
@@ -123,9 +153,20 @@ export function DownloadBookingPdfButton({
     doc.setFont("helvetica", "bold");
     doc.text("Tracking URL", leftX, y);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    const wrappedUrl = doc.splitTextToSize(trackUrl, 160);
+    doc.setFontSize(9.5);
+    const wrappedUrl = doc.splitTextToSize(trackUrl, 114);
     doc.text(wrappedUrl, leftX + 32, y);
+
+    if (qrDataUrl) {
+      doc.setDrawColor(ar, ag, ab);
+      doc.setLineWidth(0.6);
+      doc.roundedRect(157, y - 4, 32, 32, 2, 2);
+      doc.addImage(qrDataUrl, "PNG", 160, y - 1, 26, 26);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(ar, ag, ab);
+      doc.text("SCAN TO TRACK", 173, y + 30, { align: "center" });
+    }
 
     doc.setFontSize(10);
     doc.setTextColor(90, 90, 90);
