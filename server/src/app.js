@@ -19,6 +19,7 @@ import courierRoutes from "./routes/courier.routes.js";
 export function createApp() {
   const app = express();
   app.set("trust proxy", 1);
+  const allowList = new Set(env.corsOrigins);
 
   app.use(
     helmet({
@@ -38,10 +39,15 @@ export function createApp() {
     );
   }
   app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
-
+  
   app.use(
     cors({
-      origin: env.frontendOrigin,
+      origin(origin, callback) {
+        if (!origin) return callback(null, true);
+        const normalized = String(origin).replace(/\/+$/, "");
+        if (allowList.has(normalized)) return callback(null, true);
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+      },
       credentials: true
     })
   );

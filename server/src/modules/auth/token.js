@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { env, isProd } from "../../config/env.js";
+import { env } from "../../config/env.js";
 
 export function signAuthToken(user) {
   return jwt.sign(
@@ -21,8 +21,9 @@ export function verifyAuthToken(token) {
 export function setAuthCookie(res, token) {
   res.cookie(env.authCookieName, token, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: isProd,
+    sameSite: env.cookieSameSite,
+    secure: env.cookieSecure,
+    domain: env.cookieDomain,
     path: "/",
     maxAge: 1000 * 60 * 60 * 24 * 7
   });
@@ -31,8 +32,9 @@ export function setAuthCookie(res, token) {
 export function clearAuthCookie(res) {
   res.clearCookie(env.authCookieName, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: isProd,
+    sameSite: env.cookieSameSite,
+    secure: env.cookieSecure,
+    domain: env.cookieDomain,
     path: "/"
   });
 }
@@ -59,8 +61,9 @@ export function verifyAdminToken(token) {
 export function setAdminCookie(res, token) {
   res.cookie(env.adminCookieName, token, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: isProd,
+    sameSite: env.cookieSameSite,
+    secure: env.cookieSecure,
+    domain: env.cookieDomain,
     path: "/",
     maxAge: 1000 * 60 * 60 * 24 * 7
   });
@@ -69,8 +72,9 @@ export function setAdminCookie(res, token) {
 export function clearAdminCookie(res) {
   res.clearCookie(env.adminCookieName, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: isProd,
+    sameSite: env.cookieSameSite,
+    secure: env.cookieSecure,
+    domain: env.cookieDomain,
     path: "/"
   });
 }
