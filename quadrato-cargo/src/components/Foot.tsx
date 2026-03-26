@@ -209,7 +209,7 @@ export function Footer() {
                       title="info@quadratocargo.com"
                       className="block transition hover:text-teal"
                     >
-                      info
+                      info@quadratocargo.com
                     </a>
                     <a
                       href="mailto:support@quadratocargo.com"
