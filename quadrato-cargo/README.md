@@ -23,7 +23,13 @@ npm install
 npm run dev
 ```
 
-Set `NEXT_PUBLIC_API_BASE_URL` in frontend env to your backend URL (default `http://localhost:4000`).
+Set `NEXT_PUBLIC_API_BASE_URL` in frontend env to your API URL (default `http://localhost:4010`).
+
+For production cross-domain deploys (frontend domain != backend domain), use same-origin API proxy:
+
+- Set frontend `NEXT_PUBLIC_API_BASE_URL` to your frontend domain (for example `https://www.quadratocargo.com`)
+- Set frontend `BACKEND_API_BASE_URL` to backend domain (for example `https://api.quadratocargo.com`)
+- Keep backend CORS/cookie envs aligned (`CORS_ORIGIN`, `COOKIE_SAMESITE=none`, `COOKIE_SECURE=true`)
 
 Open [http://localhost:3000](http://localhost:3000).
 
