@@ -66,6 +66,89 @@ export function DownloadBookingPdfButton({
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
+  const runFallbackPdf = async () => {
+    const [{ jsPDF }, QRCodeModule] = await Promise.all([
+      import("jspdf"),
+      import("qrcode"),
+    ]);
+    const QRCode = QRCodeModule.default;
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const safe = (value: string) => {
+      const v = String(value ?? "").trim();
+      return v.length ? v : "-";
+    };
+    const wrapped = (value: string, width: number) =>
+      doc.splitTextToSize(safe(value), width);
+
+    doc.setFillColor(15, 118, 110);
+    doc.rect(0, 0, 210, 32, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text(safe(settings.companyName), 14, 13);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(safe(settings.headerSubtitle), 14, 19);
+    doc.text(`Ref: ${safe(reference)}`, 14, 25);
+
+    const qrDataUrl = await QRCode.toDataURL(trackUrl, { width: 240, margin: 1 }).catch(
+      () => null,
+    );
+    if (qrDataUrl) {
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(164, 6, 38, 24, 2, 2, "F");
+      doc.addImage(qrDataUrl, "PNG", 170, 8, 18, 18);
+      doc.setTextColor(15, 118, 110);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.text("SCAN", 190, 27, { align: "center" });
+    }
+
+    let y = 40;
+    const drawPair = (label: string, value: string, x: number, yy: number) => {
+      doc.setTextColor(55, 65, 81);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(label, x, yy);
+      doc.setTextColor(17, 24, 39);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text(wrapped(value, 60), x + 28, yy);
+    };
+
+    drawPair("Booked:", bookingDateLabel, 14, y);
+    drawPair("Update:", updatedAtLabel, 106, y);
+    y += 10;
+    drawPair("Status:", statusLabel, 14, y);
+    drawPair("Route:", routeTypeLabel, 106, y);
+    y += 10;
+    drawPair("From:", fromCity, 14, y);
+    drawPair("To:", toCity, 106, y);
+    y += 10;
+    drawPair("Sender:", senderName, 14, y);
+    drawPair("Recipient:", recipientName, 106, y);
+    y += 10;
+    drawPair("Amount:", amountLabel, 14, y);
+    drawPair("Agency:", agencyLabel, 106, y);
+    y += 14;
+    drawPair("Booking ID:", bookingId, 14, y);
+    y += 10;
+    drawPair("Track URL:", trackUrl, 14, y);
+
+    y += 20;
+    drawPair("Contents:", contentsLabel, 14, y);
+    y += 10;
+    drawPair("Instructions:", instructionsLabel, 14, y);
+    y += 10;
+    drawPair("Dispatch Notes:", trackingNotesLabel, 14, y);
+
+    doc.setTextColor(100, 116, 139);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(safe(settings.footerNote), 105, 286, { align: "center" });
+    doc.save(`courier-details-${safe(reference || bookingId).replace(/[^a-zA-Z0-9-_]/g, "-")}.pdf`);
+  };
+
   const onDownload = async () => {
     setIsDownloading(true);
     setDownloadError(null);
@@ -121,9 +204,16 @@ export function DownloadBookingPdfButton({
       anchor.remove();
       URL.revokeObjectURL(downloadUrl);
     } catch (error) {
-      setDownloadError(
-        error instanceof Error ? error.message : "PDF download failed. Please try again.",
-      );
+      try {
+        await runFallbackPdf();
+        setDownloadError(
+          "Server PDF unavailable, downloaded fallback PDF instead.",
+        );
+      } catch {
+        setDownloadError(
+          error instanceof Error ? error.message : "PDF download failed. Please try again.",
+        );
+      }
     } finally {
       setIsDownloading(false);
     }
