@@ -62,6 +62,11 @@ export type AdminSiteSettings = {
   announcementText: string;
   announcementCtaLabel: string;
   announcementCtaHref: string;
+  pdfCompanyName: string;
+  pdfCompanyAddress: string;
+  pdfLogoText: string;
+  pdfPrimaryColor: string;
+  pdfFooterNote: string;
 };
 
 export type AdminMonthlyReport = {

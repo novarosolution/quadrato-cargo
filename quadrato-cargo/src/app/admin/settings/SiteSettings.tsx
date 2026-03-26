@@ -18,7 +18,7 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
     <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
       <h2 className="font-display text-lg font-semibold">Website announcement bar</h2>
       <p className="mt-2 text-sm text-muted">
-        Control a live banner visible to all site visitors.
+        Control live banner + customer PDF receipt style.
       </p>
 
       <form action={formAction} className="mt-6 grid gap-4 md:grid-cols-2">
@@ -79,6 +79,100 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
             type="text"
             defaultValue={initialSettings.announcementCtaHref}
             placeholder="/public/tsking"
+            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          />
+        </div>
+
+        <div className="mt-2 border-t border-border-strong pt-5 md:col-span-2">
+          <h3 className="font-display text-base font-semibold text-ink">
+            Customer PDF receipt template
+          </h3>
+          <p className="mt-1 text-sm text-muted">
+            These values appear when users download booking details PDF.
+          </p>
+        </div>
+
+        <div>
+          <label
+            htmlFor="pdf-company-name"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Company name
+          </label>
+          <input
+            id="pdf-company-name"
+            name="pdfCompanyName"
+            type="text"
+            defaultValue={initialSettings.pdfCompanyName}
+            placeholder="Quadrato Cargo"
+            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="pdf-logo-text"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Logo text
+          </label>
+          <input
+            id="pdf-logo-text"
+            name="pdfLogoText"
+            type="text"
+            defaultValue={initialSettings.pdfLogoText}
+            placeholder="QR"
+            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label
+            htmlFor="pdf-company-address"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Company address
+          </label>
+          <input
+            id="pdf-company-address"
+            name="pdfCompanyAddress"
+            type="text"
+            defaultValue={initialSettings.pdfCompanyAddress}
+            placeholder="Company address line"
+            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="pdf-primary-color"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Primary color
+          </label>
+          <input
+            id="pdf-primary-color"
+            name="pdfPrimaryColor"
+            type="text"
+            defaultValue={initialSettings.pdfPrimaryColor}
+            placeholder="#0f766e"
+            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label
+            htmlFor="pdf-footer-note"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Footer note
+          </label>
+          <input
+            id="pdf-footer-note"
+            name="pdfFooterNote"
+            type="text"
+            defaultValue={initialSettings.pdfFooterNote}
+            placeholder="Thank you for choosing Quadrato Cargo."
             className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
           />
         </div>

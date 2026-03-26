@@ -3,7 +3,12 @@ export function normalizeSiteSettings(row) {
     announcementEnabled: Boolean(row?.announcementEnabled),
     announcementText: String(row?.announcementText ?? "").trim(),
     announcementCtaLabel: String(row?.announcementCtaLabel ?? "").trim(),
-    announcementCtaHref: String(row?.announcementCtaHref ?? "").trim()
+    announcementCtaHref: String(row?.announcementCtaHref ?? "").trim(),
+    pdfCompanyName: String(row?.pdfCompanyName ?? "Quadrato Cargo").trim(),
+    pdfCompanyAddress: String(row?.pdfCompanyAddress ?? "").trim(),
+    pdfLogoText: String(row?.pdfLogoText ?? "QR").trim(),
+    pdfPrimaryColor: String(row?.pdfPrimaryColor ?? "#0f766e").trim(),
+    pdfFooterNote: String(row?.pdfFooterNote ?? "Thank you for choosing Quadrato Cargo.").trim()
   };
 }
 
@@ -20,6 +25,11 @@ export const siteSettingsModelSchema = {
         announcementText: { bsonType: ["string", "null"] },
         announcementCtaLabel: { bsonType: ["string", "null"] },
         announcementCtaHref: { bsonType: ["string", "null"] },
+        pdfCompanyName: { bsonType: ["string", "null"] },
+        pdfCompanyAddress: { bsonType: ["string", "null"] },
+        pdfLogoText: { bsonType: ["string", "null"] },
+        pdfPrimaryColor: { bsonType: ["string", "null"] },
+        pdfFooterNote: { bsonType: ["string", "null"] },
         updatedAt: { bsonType: ["date", "null"] }
       }
     }

@@ -152,6 +152,11 @@ export type SiteSettings = {
   announcementText: string;
   announcementCtaLabel: string;
   announcementCtaHref: string;
+  pdfCompanyName: string;
+  pdfCompanyAddress: string;
+  pdfLogoText: string;
+  pdfPrimaryColor: string;
+  pdfFooterNote: string;
 };
 
 export async function fetchSiteSettings(): Promise<SiteSettings> {
@@ -165,6 +170,11 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
         announcementText: "",
         announcementCtaLabel: "",
         announcementCtaHref: "",
+        pdfCompanyName: "Quadrato Cargo",
+        pdfCompanyAddress: "",
+        pdfLogoText: "QR",
+        pdfPrimaryColor: "#0f766e",
+        pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
       };
     }
     const data = (await res.json()) as { ok?: boolean; settings?: SiteSettings };
@@ -174,6 +184,11 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
         announcementText: "",
         announcementCtaLabel: "",
         announcementCtaHref: "",
+        pdfCompanyName: "Quadrato Cargo",
+        pdfCompanyAddress: "",
+        pdfLogoText: "QR",
+        pdfPrimaryColor: "#0f766e",
+        pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
       }
     );
   } catch {
@@ -182,6 +197,11 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
       announcementText: "",
       announcementCtaLabel: "",
       announcementCtaHref: "",
+      pdfCompanyName: "Quadrato Cargo",
+      pdfCompanyAddress: "",
+      pdfLogoText: "QR",
+      pdfPrimaryColor: "#0f766e",
+      pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
     };
   }
 }

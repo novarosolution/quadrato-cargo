@@ -15,7 +15,9 @@ import {
   fetchProfileBookingDetailServer,
   fetchProfileBookingPickupOtpServer,
 } from "@/lib/api/profile-client";
+import { fetchSiteSettings } from "@/lib/api/public-client";
 import { getSiteUrl } from "@/lib/site";
+import { DownloadBookingPdfButton } from "./DownloadBookingPdfButton";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -40,9 +42,10 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
   }
 
   const cookieHeader = (await cookies()).toString();
-  const [bookingRes, otpRes] = await Promise.all([
+  const [bookingRes, otpRes, siteSettings] = await Promise.all([
     fetchProfileBookingDetailServer(cookieHeader, id),
     fetchProfileBookingPickupOtpServer(cookieHeader, id),
+    fetchSiteSettings(),
   ]);
   const row = bookingRes.ok
     ? {
@@ -66,6 +69,14 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
     width: 220
   }).catch(() => null);
   const pickupOtp = otpRes.ok ? otpRes.data.pickupOtp : null;
+  const pdfSettings = {
+    companyName: siteSettings.pdfCompanyName || "Quadrato Cargo",
+    companyAddress: siteSettings.pdfCompanyAddress || "",
+    logoText: siteSettings.pdfLogoText || "QR",
+    primaryColor: siteSettings.pdfPrimaryColor || "#0f766e",
+    footerNote:
+      siteSettings.pdfFooterNote || "Thank you for choosing Quadrato Cargo.",
+  };
 
   return (
     <div>
@@ -240,6 +251,20 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                 >
                   Open tracking page
                 </Link>
+                <DownloadBookingPdfButton
+                  bookingId={row.id}
+                  bookingDateLabel={dateFmt.format(row.createdAt)}
+                  statusLabel={BOOKING_STATUS_LABELS[st]}
+                  reference={reference}
+                  fromCity={preview.senderCity || "-"}
+                  toCity={preview.recipientCity || "-"}
+                  senderName={preview.senderName || "-"}
+                  recipientName={preview.recipientName || "-"}
+                  amountLabel={preview.declaredValue || "-"}
+                  agencyLabel={row.assignedAgency || "-"}
+                  trackUrl={trackUrl}
+                  settings={pdfSettings}
+                />
               </div>
             </div>
           </div>

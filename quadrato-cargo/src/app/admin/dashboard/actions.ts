@@ -272,6 +272,11 @@ export async function updateSiteSettingsAdmin(
     announcementText: String(formData.get("announcementText") ?? "").trim(),
     announcementCtaLabel: String(formData.get("announcementCtaLabel") ?? "").trim(),
     announcementCtaHref: String(formData.get("announcementCtaHref") ?? "").trim(),
+    pdfCompanyName: String(formData.get("pdfCompanyName") ?? "").trim(),
+    pdfCompanyAddress: String(formData.get("pdfCompanyAddress") ?? "").trim(),
+    pdfLogoText: String(formData.get("pdfLogoText") ?? "").trim(),
+    pdfPrimaryColor: String(formData.get("pdfPrimaryColor") ?? "").trim(),
+    pdfFooterNote: String(formData.get("pdfFooterNote") ?? "").trim(),
   });
 
   if (!result.ok) {
