@@ -71,6 +71,45 @@ function normalizeHex(color, fallback) {
   return match ? `#${match[1]}` : fallback;
 }
 
+async function launchPdfBrowser() {
+  const launchArgs = [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    "--no-zygote",
+    "--single-process"
+  ];
+  const preferredExecutablePath =
+    process.env.PUPPETEER_EXECUTABLE_PATH || process.env.GOOGLE_CHROME_BIN;
+
+  try {
+    return await puppeteer.launch({
+      headless: true,
+      args: launchArgs,
+      executablePath: preferredExecutablePath || undefined
+    });
+  } catch (primaryError) {
+    try {
+      const [{ default: puppeteerCore }, chromiumModule] = await Promise.all([
+        import("puppeteer-core"),
+        import("@sparticuz/chromium")
+      ]);
+      const chromium = chromiumModule.default || chromiumModule;
+      const chromiumPath =
+        preferredExecutablePath || (await chromium.executablePath());
+      return await puppeteerCore.launch({
+        headless: true,
+        executablePath: chromiumPath,
+        args: [...chromium.args, ...launchArgs]
+      });
+    } catch (secondaryError) {
+      const error = new Error("Unable to launch PDF browser in this environment.");
+      error.cause = secondaryError || primaryError;
+      throw error;
+    }
+  }
+}
+
 function buildPdfHtml(input, qrDataUrl) {
   const primary = normalizeHex(input.settings.primaryColor, "#0f766e");
   const accent = normalizeHex(input.settings.accentColor, "#16a34a");
@@ -389,10 +428,7 @@ export async function generateBookingPdf(req, res, next) {
     });
     const html = buildPdfHtml(parsed.data, qrDataUrl);
 
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"]
-    });
+    browser = await launchPdfBrowser();
     const page = await browser.newPage();
     await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 2 });
     await page.setContent(html, { waitUntil: "networkidle0" });
@@ -417,6 +453,13 @@ export async function generateBookingPdf(req, res, next) {
       error.name === "ZodError"
     ) {
       return sendError(res, "Invalid PDF data payload.", 400);
+    }
+    if (error instanceof Error && error.message.includes("Unable to launch PDF browser")) {
+      return sendError(
+        res,
+        "PDF engine is not available on server. Configure Chrome/Puppeteer runtime.",
+        500
+      );
     }
     return next(error);
   } finally {

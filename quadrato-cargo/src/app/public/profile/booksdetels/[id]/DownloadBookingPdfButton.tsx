@@ -206,9 +206,7 @@ export function DownloadBookingPdfButton({
     } catch (error) {
       try {
         await runFallbackPdf();
-        setDownloadError(
-          "Server PDF unavailable, downloaded fallback PDF instead.",
-        );
+        setDownloadError(null);
       } catch {
         setDownloadError(
           error instanceof Error ? error.message : "PDF download failed. Please try again.",
