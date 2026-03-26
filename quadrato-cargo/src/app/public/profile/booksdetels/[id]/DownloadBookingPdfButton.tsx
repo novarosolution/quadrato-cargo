@@ -202,20 +202,168 @@ export function DownloadBookingPdfButton({
       return yStart + sectionHeight;
     };
 
+    const drawIconBubble = (x: number, y: number, glyph: string) => {
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(203, 213, 225);
+      doc.circle(x, y, 2.6, "FD");
+      doc.setTextColor(100, 116, 139);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.text(glyph, x, y + 0.6, { align: "center" });
+    };
+
+    const drawShipmentSummaryCard = (yStart: number) => {
+      const sectionPad = 4.8;
+      const topBandHeight = 26;
+      const rows: Array<Array<{ icon: string; label: string; value: string }>> = [
+        [
+          { icon: "D", label: "Booked At", value: bookingDateLabel },
+          { icon: "U", label: "Last Update", value: updatedAtLabel },
+        ],
+        [
+          { icon: "S", label: "Status", value: statusLabel },
+          { icon: "R", label: "Route", value: routeTypeLabel },
+        ],
+        [
+          { icon: "F", label: "From City", value: fromCity },
+          { icon: "T", label: "To City", value: toCity },
+        ],
+        [
+          { icon: "SN", label: "Sender", value: senderName },
+          { icon: "RN", label: "Recipient", value: recipientName },
+        ],
+        [{ icon: "A", label: "Agency", value: agencyLabel }],
+      ];
+
+      const colGap = 10;
+      const colWidth = (contentWidth - sectionPad * 2 - colGap) / 2;
+      const leftX = marginX + sectionPad;
+      const rightX = leftX + colWidth + colGap;
+      const labelW = 30;
+      const valueW = colWidth - labelW - 4;
+      const rowGap = 4.8;
+
+      const rowHeights = rows.map((pair) => {
+        if (pair.length === 1) {
+          const lines = getLines(pair[0].value, contentWidth - sectionPad * 2 - labelW - 4);
+          return 4.5 + lines.length * 4.4 + 2.4;
+        }
+        const leftLines = getLines(pair[0].value, valueW).length;
+        const rightLines = getLines(pair[1].value, valueW).length;
+        return 4.5 + Math.max(leftLines, rightLines) * 4.4 + 2.4;
+      });
+
+      const bodyHeight = rowHeights.reduce((acc, h) => acc + h + rowGap, 0);
+      const cardHeight = 10 + topBandHeight + 6 + bodyHeight + sectionPad;
+
+      drawCard(yStart, cardHeight, [255, 255, 255]);
+      doc.setTextColor(r, g, b);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11.8);
+      doc.text("Shipment Summary", marginX + sectionPad + 8, yStart + 6.8);
+      drawIconBubble(marginX + sectionPad + 2.7, yStart + 5.9, "S");
+
+      const bandY = yStart + 10;
+      doc.setFillColor(248, 250, 252);
+      doc.roundedRect(marginX + sectionPad, bandY, contentWidth - sectionPad * 2, topBandHeight, 2, 2, "F");
+
+      const bandCenterX = pageWidth / 2;
+      doc.setDrawColor(226, 232, 240);
+      doc.line(marginX + sectionPad + 55, bandY + 13, bandCenterX - 11, bandY + 13);
+      doc.line(bandCenterX + 11, bandY + 13, pageWidth - marginX - sectionPad - 55, bandY + 13);
+
+      drawIconBubble(marginX + sectionPad + 3, bandY + 8.8, "D");
+      doc.setTextColor(30, 41, 59);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.2);
+      doc.text("Booked", marginX + sectionPad + 8.2, bandY + 7.4);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.8);
+      doc.text(fitSingleLine(bookingDateLabel, 44, 8.8), marginX + sectionPad + 8.2, bandY + 12.2);
+
+      drawIconBubble(pageWidth - marginX - sectionPad - 49, bandY + 8.8, "U");
+      doc.setTextColor(30, 41, 59);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.2);
+      doc.text("Last Update", pageWidth - marginX - sectionPad - 44, bandY + 7.4);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.8);
+      doc.text(fitSingleLine(updatedAtLabel, 44, 8.8), pageWidth - marginX - sectionPad - 44, bandY + 12.2);
+
+      doc.setFillColor(236, 253, 245);
+      doc.circle(bandCenterX, bandY + 13, 7, "F");
+      doc.setDrawColor(187, 247, 208);
+      doc.circle(bandCenterX, bandY + 13, 6, "D");
+      doc.setTextColor(5, 150, 105);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.6);
+      doc.text("S", bandCenterX, bandY + 13.7, { align: "center" });
+      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(9.2);
+      doc.text(
+        fitSingleLine(`Status: ${statusLabel}`, 60, 9.2, "bold"),
+        bandCenterX,
+        bandY + 20.4,
+        { align: "center" },
+      );
+
+      doc.setDrawColor(226, 232, 240);
+      doc.line(marginX + sectionPad, bandY + topBandHeight + 2.5, pageWidth - marginX - sectionPad, bandY + topBandHeight + 2.5);
+
+      let rowY = bandY + topBandHeight + 8;
+      rows.forEach((pair, idx) => {
+        if (pair.length === 1) {
+          const item = pair[0];
+          drawIconBubble(leftX + 2.5, rowY - 0.2, item.icon);
+          doc.setTextColor(31, 41, 55);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(9.7);
+          doc.text(`${item.label}:`, leftX + 7.6, rowY);
+          doc.setTextColor(17, 24, 39);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10.2);
+          doc.text(getLines(item.value, contentWidth - sectionPad * 2 - labelW - 4), leftX + labelW + 2, rowY);
+        } else {
+          const left = pair[0];
+          const right = pair[1];
+          drawIconBubble(leftX + 2.5, rowY - 0.2, left.icon);
+          drawIconBubble(rightX + 2.5, rowY - 0.2, right.icon);
+
+          doc.setTextColor(31, 41, 55);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(9.7);
+          doc.text(`${left.label}:`, leftX + 7.6, rowY);
+          doc.text(`${right.label}:`, rightX + 7.6, rowY);
+
+          const leftLines = getLines(left.value, valueW);
+          const rightLines = getLines(right.value, valueW);
+          doc.setTextColor(17, 24, 39);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10.2);
+          doc.text(leftLines, leftX + labelW + 2, rowY);
+          doc.text(rightLines, rightX + labelW + 2, rowY);
+        }
+        rowY += rowHeights[idx] + rowGap;
+      });
+
+      return yStart + cardHeight;
+    };
+
     const drawFirstPageHeader = (qrDataUrl: string | null) => {
+      const logoText = fitSingleLine(settings.logoText || "QC", 16, 8.6, "bold");
       const companyNameLines = doc.splitTextToSize(
         safe(settings.companyName || "Quadrato Cargo"),
-        108,
+        94,
       );
       const subtitleLine = fitSingleLine(
         settings.headerSubtitle || "International courier service",
-        108,
+        94,
         10.3,
         "normal",
       );
       const companyAddressLines = doc.splitTextToSize(
         safe(settings.companyAddress || "International courier service"),
-        108,
+        94,
       );
       const referenceLine = `Ref: ${safe(reference)}`;
       const headerTextHeight =
@@ -230,34 +378,40 @@ export function DownloadBookingPdfButton({
       doc.setFillColor(ar, ag, ab);
       doc.rect(0, headerHeight - 3, pageWidth, 3, "F");
 
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(marginX + 2, 8, 20, 8, 2, 2, "F");
-      doc.setTextColor(r, g, b);
+      const logoCx = marginX + 10;
+      const logoCy = 14;
+      doc.setFillColor(241, 245, 249);
+      doc.circle(logoCx, logoCy, 9.3, "F");
+      doc.setFillColor(226, 232, 240);
+      doc.circle(logoCx, logoCy, 7.8, "F");
+      doc.setFillColor(203, 213, 225);
+      doc.circle(logoCx, logoCy, 6.2, "F");
+      doc.setTextColor(71, 85, 105);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(9.2);
-      doc.text(safe(settings.logoText || "QR"), marginX + 12, 13.6, {
+      doc.setFontSize(8.6);
+      doc.text(logoText, logoCx, logoCy + 0.8, {
         align: "center",
       });
 
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
-      doc.text(companyNameLines, marginX + 28, 15);
+      doc.text(companyNameLines, marginX + 22, 15);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10.3);
-      doc.text(subtitleLine, marginX + 28, 15 + companyNameLines.length * 7 + 1);
+      doc.text(subtitleLine, marginX + 22, 15 + companyNameLines.length * 7 + 1);
       doc.setFontSize(9.6);
       doc.text(
         companyAddressLines,
-        marginX + 28,
+        marginX + 22,
         15 + companyNameLines.length * 7 + 6.8,
       );
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10.2);
       doc.text(
         referenceLine,
-        marginX + 28,
+        marginX + 22,
         15 +
           companyNameLines.length * 7 +
           4.8 +
@@ -271,16 +425,16 @@ export function DownloadBookingPdfButton({
         4.8 +
         companyAddressLines.length * 4.5 +
         12;
-      const statusChip = fitSingleLine(`STATUS ${statusLabel}`, 48, 8.4, "bold");
-      const routeChip = fitSingleLine(`ROUTE ${routeTypeLabel}`, 48, 8.4, "bold");
+      const statusChip = fitSingleLine(`STATUS ${statusLabel}`, 50, 8.4, "bold");
+      const routeChip = fitSingleLine(`ROUTE ${routeTypeLabel}`, 50, 8.4, "bold");
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(marginX + 28, chipY - 4, 52, 8, 2, 2, "F");
-      doc.roundedRect(marginX + 84, chipY - 4, 52, 8, 2, 2, "F");
+      doc.roundedRect(marginX + 22, chipY - 4, 54, 8, 2, 2, "F");
+      doc.roundedRect(marginX + 80, chipY - 4, 54, 8, 2, 2, "F");
       doc.setTextColor(r, g, b);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8.4);
-      doc.text(statusChip, marginX + 54, chipY + 1.2, { align: "center" });
-      doc.text(routeChip, marginX + 110, chipY + 1.2, { align: "center" });
+      doc.text(statusChip, marginX + 49, chipY + 1.2, { align: "center" });
+      doc.text(routeChip, marginX + 107, chipY + 1.2, { align: "center" });
 
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(qrCardX, qrCardY, qrCardSize, qrCardSize, 2.5, 2.5, "F");
@@ -358,24 +512,8 @@ export function DownloadBookingPdfButton({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
 
-    y = ensureSpace(y, 74);
-    y =
-      drawSection(
-        y,
-        "Shipment Summary",
-        [
-          { label: "Booked At", value: bookingDateLabel },
-          { label: "Last Update", value: updatedAtLabel },
-          { label: "Status", value: statusLabel },
-          { label: "Route Type", value: routeTypeLabel },
-          { label: "From City", value: fromCity },
-          { label: "To City", value: toCity },
-          { label: "Sender", value: senderName },
-          { label: "Recipient", value: recipientName },
-          { label: "Agency", value: agencyLabel },
-        ],
-        [cr, cg, cb],
-      ) + 6;
+    y = ensureSpace(y, 110);
+    y = drawShipmentSummaryCard(y) + 6;
 
     y = ensureSpace(y, 74);
     y =
