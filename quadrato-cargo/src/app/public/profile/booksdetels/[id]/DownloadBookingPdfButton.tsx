@@ -104,6 +104,23 @@ export function DownloadBookingPdfButton({
     const getLines = (value: string, width: number) =>
       doc.splitTextToSize(safe(value), width);
 
+    const fitSingleLine = (
+      value: string,
+      maxWidth: number,
+      size: number,
+      style: "normal" | "bold" = "normal",
+    ) => {
+      const input = safe(value);
+      doc.setFont("helvetica", style);
+      doc.setFontSize(size);
+      if (doc.getTextWidth(input) <= maxWidth) return input;
+      let trimmed = input;
+      while (trimmed.length > 1 && doc.getTextWidth(`${trimmed}...`) > maxWidth) {
+        trimmed = trimmed.slice(0, -1);
+      }
+      return `${trimmed}...`;
+    };
+
     const drawCard = (y: number, h: number, fillRgb?: [number, number, number]) => {
       if (fillRgb) {
         doc.setFillColor(fillRgb[0], fillRgb[1], fillRgb[2]);
@@ -135,6 +152,13 @@ export function DownloadBookingPdfButton({
       const sectionPad = 4.6;
       const labelW = 30;
       const valueW = contentWidth - sectionPad * 2 - labelW - 2;
+      const iconByTitle: Record<string, string> = {
+        "Shipment Summary": "S",
+        "Parcel Details": "P",
+        "Tracking Details": "T",
+        "Support & Contact": "C",
+      };
+      const sectionIcon = iconByTitle[title] || "I";
       const normalizedRows = rows.map((row) => ({
         label: row.label,
         lines: getLines(row.value, valueW),
@@ -146,10 +170,20 @@ export function DownloadBookingPdfButton({
       const sectionHeight = 10 + bodyHeight + sectionPad;
 
       drawCard(yStart, sectionHeight, fillRgb);
+      doc.setFillColor(255, 255, 255);
+      doc.circle(marginX + sectionPad + 2.7, yStart + 5.5, 2.6, "F");
+      doc.setTextColor(r, g, b);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.8);
+      doc.text(sectionIcon, marginX + sectionPad + 2.7, yStart + 6.5, {
+        align: "center",
+      });
       doc.setTextColor(r, g, b);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11.4);
-      doc.text(title, marginX + sectionPad, yStart + 6.5);
+      doc.text(title, marginX + sectionPad + 7.2, yStart + 6.5);
+      doc.setDrawColor(223, 230, 237);
+      doc.line(marginX + sectionPad, yStart + 8.4, pageWidth - marginX - sectionPad, yStart + 8.4);
 
       let yRow = yStart + 12.3;
       normalizedRows.forEach((row) => {
@@ -173,9 +207,11 @@ export function DownloadBookingPdfButton({
         safe(settings.companyName || "Quadrato Cargo"),
         108,
       );
-      const subtitleLines = doc.splitTextToSize(
-        safe(settings.headerSubtitle || "International courier service"),
+      const subtitleLine = fitSingleLine(
+        settings.headerSubtitle || "International courier service",
         108,
+        10.3,
+        "normal",
       );
       const companyAddressLines = doc.splitTextToSize(
         safe(settings.companyAddress || "International courier service"),
@@ -184,9 +220,9 @@ export function DownloadBookingPdfButton({
       const referenceLine = `Ref: ${safe(reference)}`;
       const headerTextHeight =
         companyNameLines.length * 7 +
-        subtitleLines.length * 4.8 +
+        4.8 +
         companyAddressLines.length * 4.5 +
-        12;
+        18;
       const headerHeight = Math.max(56, headerTextHeight + 12);
 
       doc.setFillColor(r, g, b);
@@ -210,12 +246,12 @@ export function DownloadBookingPdfButton({
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10.3);
-      doc.text(subtitleLines, marginX + 28, 15 + companyNameLines.length * 7 + 1);
+      doc.text(subtitleLine, marginX + 28, 15 + companyNameLines.length * 7 + 1);
       doc.setFontSize(9.6);
       doc.text(
         companyAddressLines,
         marginX + 28,
-        15 + companyNameLines.length * 7 + subtitleLines.length * 4.8 + 2,
+        15 + companyNameLines.length * 7 + 6.8,
       );
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10.2);
@@ -224,10 +260,27 @@ export function DownloadBookingPdfButton({
         marginX + 28,
         15 +
           companyNameLines.length * 7 +
-          subtitleLines.length * 4.8 +
+          4.8 +
           companyAddressLines.length * 4.5 +
-          4,
+          8,
       );
+
+      const chipY =
+        15 +
+        companyNameLines.length * 7 +
+        4.8 +
+        companyAddressLines.length * 4.5 +
+        12;
+      const statusChip = fitSingleLine(`STATUS ${statusLabel}`, 48, 8.4, "bold");
+      const routeChip = fitSingleLine(`ROUTE ${routeTypeLabel}`, 48, 8.4, "bold");
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(marginX + 28, chipY - 4, 52, 8, 2, 2, "F");
+      doc.roundedRect(marginX + 84, chipY - 4, 52, 8, 2, 2, "F");
+      doc.setTextColor(r, g, b);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.4);
+      doc.text(statusChip, marginX + 54, chipY + 1.2, { align: "center" });
+      doc.text(routeChip, marginX + 110, chipY + 1.2, { align: "center" });
 
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(qrCardX, qrCardY, qrCardSize, qrCardSize, 2.5, 2.5, "F");
