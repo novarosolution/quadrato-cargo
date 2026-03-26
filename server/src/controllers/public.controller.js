@@ -72,12 +72,11 @@ function normalizeHex(color, fallback) {
 }
 
 async function launchPdfBrowser() {
-  const launchArgs = [
+  const safeArgs = [
     "--no-sandbox",
     "--disable-setuid-sandbox",
     "--disable-dev-shm-usage",
-    "--no-zygote",
-    "--single-process"
+    "--no-zygote"
   ];
   const preferredExecutablePath =
     process.env.PUPPETEER_EXECUTABLE_PATH || process.env.GOOGLE_CHROME_BIN;
@@ -85,10 +84,20 @@ async function launchPdfBrowser() {
   try {
     return await puppeteer.launch({
       headless: true,
-      args: launchArgs,
-      executablePath: preferredExecutablePath || undefined
+      executablePath: preferredExecutablePath || undefined,
+      timeout: 15000
     });
   } catch (primaryError) {
+    try {
+      return await puppeteer.launch({
+        headless: true,
+        args: safeArgs,
+        executablePath: preferredExecutablePath || undefined,
+        timeout: 15000
+      });
+    } catch {
+      // Try serverless Chromium as final fallback.
+    }
     try {
       const [{ default: puppeteerCore }, chromiumModule] = await Promise.all([
         import("puppeteer-core"),
@@ -100,7 +109,7 @@ async function launchPdfBrowser() {
       return await puppeteerCore.launch({
         headless: true,
         executablePath: chromiumPath,
-        args: [...chromium.args, ...launchArgs]
+        args: [...chromium.args, ...safeArgs]
       });
     } catch (secondaryError) {
       const error = new Error("Unable to launch PDF browser in this environment.");
@@ -439,12 +448,13 @@ export async function generateBookingPdf(req, res, next) {
     });
 
     const filenameSafeRef = parsed.data.reference.replace(/[^a-zA-Z0-9-_]/g, "-");
+    const pdfBinary = Buffer.from(pdfBuffer);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="courier-details-${filenameSafeRef || parsed.data.bookingId}.pdf"`
     );
-    return res.status(200).send(pdfBuffer);
+    return res.status(200).send(pdfBinary);
   } catch (error) {
     if (
       error &&
