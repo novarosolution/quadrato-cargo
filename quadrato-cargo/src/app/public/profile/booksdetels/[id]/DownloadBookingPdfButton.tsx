@@ -19,6 +19,8 @@ type PdfSettings = {
 };
 
 type Props = {
+  template?: "invoice" | "tracking";
+  buttonLabel?: string;
   bookingId: string;
   bookingDateLabel: string;
   updatedAtLabel: string;
@@ -29,7 +31,13 @@ type Props = {
   fromCity: string;
   toCity: string;
   senderName: string;
+  senderAddress: string;
+  senderPhone: string;
+  senderEmail: string;
   recipientName: string;
+  recipientAddress: string;
+  recipientPhone: string;
+  recipientEmail: string;
   amountLabel: string;
   weightLabel: string;
   dimensionsLabel: string;
@@ -42,6 +50,8 @@ type Props = {
 };
 
 export function DownloadBookingPdfButton({
+  template = "invoice",
+  buttonLabel = "Download PDF",
   bookingId,
   bookingDateLabel,
   updatedAtLabel,
@@ -52,7 +62,13 @@ export function DownloadBookingPdfButton({
   fromCity,
   toCity,
   senderName,
+  senderAddress,
+  senderPhone,
+  senderEmail,
   recipientName,
+  recipientAddress,
+  recipientPhone,
+  recipientEmail,
   amountLabel,
   weightLabel,
   dimensionsLabel,
@@ -160,6 +176,7 @@ export function DownloadBookingPdfButton({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          template,
           bookingId,
           bookingDateLabel,
           updatedAtLabel,
@@ -170,7 +187,13 @@ export function DownloadBookingPdfButton({
           fromCity,
           toCity,
           senderName,
+          senderAddress,
+          senderPhone,
+          senderEmail,
           recipientName,
+          recipientAddress,
+          recipientPhone,
+          recipientEmail,
           amountLabel,
           weightLabel,
           dimensionsLabel,
@@ -225,7 +248,7 @@ export function DownloadBookingPdfButton({
         disabled={isDownloading}
         className="inline-flex rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-sm font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {isDownloading ? "Preparing PDF..." : "Download PDF"}
+        {isDownloading ? "Preparing PDF..." : buttonLabel}
       </button>
       {downloadError ? (
         <p className="text-xs text-rose-400">{downloadError}</p>

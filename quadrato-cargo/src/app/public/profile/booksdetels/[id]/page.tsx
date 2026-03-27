@@ -260,6 +260,8 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                   Open tracking page
                 </Link>
                 <DownloadBookingPdfButton
+                  template="invoice"
+                  buttonLabel="Download Invoice PDF"
                   bookingId={row.id}
                   bookingDateLabel={dateFmt.format(row.createdAt)}
                   updatedAtLabel={dateFmt.format(row.updatedAt)}
@@ -270,7 +272,83 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                   fromCity={preview.senderCity || "-"}
                   toCity={preview.recipientCity || "-"}
                   senderName={preview.senderName || "-"}
+                  senderAddress={
+                    [
+                      preview.senderStreet,
+                      preview.senderCity,
+                      preview.senderPostal,
+                      preview.senderCountry,
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "-"
+                  }
+                  senderPhone={preview.senderPhone || "-"}
+                  senderEmail={preview.senderEmail || "-"}
                   recipientName={preview.recipientName || "-"}
+                  recipientAddress={
+                    [
+                      preview.recipientStreet,
+                      preview.recipientCity,
+                      preview.recipientPostal,
+                      preview.recipientCountry,
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "-"
+                  }
+                  recipientPhone={preview.recipientPhone || "-"}
+                  recipientEmail={preview.recipientEmail || "-"}
+                  amountLabel={preview.declaredValue || "-"}
+                  weightLabel={preview.weightKg ? `${preview.weightKg} kg` : "-"}
+                  dimensionsLabel={
+                    preview.dimensionsCm
+                      ? `${preview.dimensionsCm.l || "?"} x ${preview.dimensionsCm.w || "?"} x ${preview.dimensionsCm.h || "?"} cm`
+                      : "-"
+                  }
+                  contentsLabel={preview.contents || "-"}
+                  instructionsLabel={preview.instructions || "-"}
+                  trackingNotesLabel={row.trackingNotes || "-"}
+                  agencyLabel={row.assignedAgency || "-"}
+                  trackUrl={trackUrl}
+                  settings={pdfSettings}
+                />
+                <DownloadBookingPdfButton
+                  template="tracking"
+                  buttonLabel="Download Tracking PDF"
+                  bookingId={row.id}
+                  bookingDateLabel={dateFmt.format(row.createdAt)}
+                  updatedAtLabel={dateFmt.format(row.updatedAt)}
+                  statusLabel={BOOKING_STATUS_LABELS[st]}
+                  reference={reference}
+                  routeTypeLabel={row.routeType || "-"}
+                  consignmentNumber={row.consignmentNumber || "-"}
+                  fromCity={preview.senderCity || "-"}
+                  toCity={preview.recipientCity || "-"}
+                  senderName={preview.senderName || "-"}
+                  senderAddress={
+                    [
+                      preview.senderStreet,
+                      preview.senderCity,
+                      preview.senderPostal,
+                      preview.senderCountry,
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "-"
+                  }
+                  senderPhone={preview.senderPhone || "-"}
+                  senderEmail={preview.senderEmail || "-"}
+                  recipientName={preview.recipientName || "-"}
+                  recipientAddress={
+                    [
+                      preview.recipientStreet,
+                      preview.recipientCity,
+                      preview.recipientPostal,
+                      preview.recipientCountry,
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "-"
+                  }
+                  recipientPhone={preview.recipientPhone || "-"}
+                  recipientEmail={preview.recipientEmail || "-"}
                   amountLabel={preview.declaredValue || "-"}
                   weightLabel={preview.weightKg ? `${preview.weightKg} kg` : "-"}
                   dimensionsLabel={

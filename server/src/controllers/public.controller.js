@@ -1,6 +1,7 @@
 import { z } from "zod";
 import puppeteer from "puppeteer";
 import QRCode from "qrcode";
+import bwipjs from "bwip-js";
 import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
 import { env } from "../config/env.js";
 import { getDb } from "../db/mongo.js";
@@ -21,6 +22,7 @@ const contactSchema = z.object({
 });
 
 const pdfRequestSchema = z.object({
+  template: z.enum(["invoice", "tracking"]).default("invoice"),
   bookingId: z.string().trim().min(1),
   bookingDateLabel: z.string().trim().default(""),
   updatedAtLabel: z.string().trim().default(""),
@@ -30,7 +32,13 @@ const pdfRequestSchema = z.object({
   consignmentNumber: z.string().trim().default(""),
   fromCity: z.string().trim().default(""),
   toCity: z.string().trim().default(""),
+  senderAddress: z.string().trim().default(""),
+  senderPhone: z.string().trim().default(""),
+  senderEmail: z.string().trim().default(""),
   senderName: z.string().trim().default(""),
+  recipientAddress: z.string().trim().default(""),
+  recipientPhone: z.string().trim().default(""),
+  recipientEmail: z.string().trim().default(""),
   recipientName: z.string().trim().default(""),
   amountLabel: z.string().trim().default(""),
   weightLabel: z.string().trim().default(""),
@@ -119,10 +127,27 @@ async function launchPdfBrowser() {
   }
 }
 
-function buildPdfHtml(input, qrDataUrl) {
+function buildPdfHtml(input, qrDataUrl, barcodeDataUrl) {
   const primary = normalizeHex(input.settings.primaryColor, "#0f766e");
   const accent = normalizeHex(input.settings.accentColor, "#16a34a");
   const card = normalizeHex(input.settings.cardColor, "#f8fafc");
+  const amountRaw = String(input.amountLabel || "").trim();
+  const amountNumber = Number.parseFloat(amountRaw.replace(/[^0-9.-]/g, ""));
+  const amount = Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : amountRaw || "0.00";
+  const weightRaw = String(input.weightLabel || "").trim();
+  const weightNumber = Number.parseFloat(weightRaw.replace(/[^0-9.-]/g, ""));
+  const weight = Number.isFinite(weightNumber) ? weightNumber : 0;
+  const [length = "-", width = "-", height = "-"] = String(input.dimensionsLabel || "")
+    .replace(/cm/gi, "")
+    .split("x")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  const volumetric = Number.isFinite(weightNumber) ? weightNumber : "-";
+  const fixedCharge = Number.isFinite(amountNumber) ? (amountNumber * 0.05).toFixed(2) : "-";
+  const declaredValue = amount;
+  const safeReference = String(input.reference || input.bookingId || "").trim() || input.bookingId;
+  const subtotal = Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : amount;
+  const declaredTotal = Number.isFinite(amountNumber) ? (amountNumber * 1.03).toFixed(2) : amount;
   const data = {
     ...input,
     settings: {
@@ -130,15 +155,19 @@ function buildPdfHtml(input, qrDataUrl) {
       primary,
       accent,
       card
-    }
+    },
+    amount,
+    weight,
+    length,
+    width,
+    height,
+    volumetric,
+    fixedCharge,
+    declaredValue,
+    subtotal,
+    declaredTotal,
+    safeReference
   };
-
-  const row = (label, value) => `
-    <div class="cell">
-      <div class="label">${esc(label)}</div>
-      <div class="value">${esc(value)}</div>
-    </div>
-  `;
 
   return `<!doctype html>
 <html>
@@ -152,179 +181,460 @@ function buildPdfHtml(input, qrDataUrl) {
         color: #0f172a;
         background: #ffffff;
       }
-      .page {
-        padding: 24px;
-      }
-      .header {
+      .page { padding: 22px; }
+      .top {
         display: grid;
-        grid-template-columns: 1fr 150px;
-        gap: 16px;
+        grid-template-columns: 1.2fr 1fr 1fr;
         align-items: start;
+        column-gap: 16px;
       }
       .brand {
-        border-radius: 18px;
-        padding: 18px 20px;
-        background: linear-gradient(135deg, ${data.settings.primary}, #0b5f58);
-        color: #fff;
-        position: relative;
-        overflow: hidden;
-      }
-      .brand::after {
-        content: "${esc(data.settings.watermarkText)}";
-        position: absolute;
-        right: 14px;
-        bottom: 6px;
-        font-size: 14px;
-        opacity: .15;
-        letter-spacing: .5px;
-      }
-      .logo-chip {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 40px;
-        height: 26px;
-        border-radius: 8px;
-        background: rgba(255,255,255,.18);
-        border: 1px solid rgba(255,255,255,.35);
-        font-weight: 700;
-        margin-bottom: 10px;
-        padding: 0 10px;
-      }
-      .company { font-size: 42px; line-height: 1; font-family: "Times New Roman", serif; margin: 0; }
-      .subtitle { margin-top: 4px; font-size: 18px; color: #fef3c7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .address { margin-top: 6px; font-size: 13px; opacity: .95; }
-      .ref { margin-top: 10px; font-size: 26px; font-weight: 700; }
-      .chips { margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
-      .chip {
-        border-radius: 999px;
-        padding: 8px 14px;
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: .2px;
-        background: #fff;
         color: ${data.settings.primary};
-      }
-      .qr {
-        border-radius: 14px;
-        border: 1px solid #e2e8f0;
-        background: #fff;
-        padding: 12px;
-        text-align: center;
-        box-shadow: 0 10px 20px rgba(2,6,23,.08);
-      }
-      .qr img { width: 120px; height: 120px; display: block; margin: 0 auto; }
-      .qr .caption { margin-top: 8px; font-weight: 700; color: #334155; }
-      .card {
-        margin-top: 18px;
-        border-radius: 16px;
-        border: 1px solid #e2e8f0;
-        background: ${data.settings.card};
-        padding: 18px;
-      }
-      .card h2 {
-        margin: 0 0 12px;
-        font-size: 24px;
-        color: #0f172a;
-      }
-      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; }
-      .cell .label {
-        font-size: 12px;
+        font-size: 46px;
         font-weight: 700;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: .4px;
-        margin-bottom: 4px;
+        font-family: "Times New Roman", serif;
+        margin-top: 8px;
       }
-      .cell .value {
-        font-size: 17px;
+      .company-meta {
+        text-align: center;
+        font-size: 15px;
         line-height: 1.35;
-        color: #0f172a;
-        word-break: break-word;
       }
-      .full { grid-column: 1 / -1; }
-      .muted { color: #334155; }
-      .support {
+      .barcode {
+        text-align: right;
+      }
+      .barcode img {
+        width: 245px;
+        height: 82px;
+        object-fit: contain;
+        border: 1px solid #d4d4d8;
+        padding: 4px;
+        background: #fff;
+      }
+      .barcode .code {
+        margin-top: 2px;
+        font-size: 42px;
+        font-family: "Courier New", monospace;
+      }
+      .separator {
+        margin: 12px 0 16px;
+        border-top: 1px solid #d4d4d8;
+      }
+      .meta-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 16px;
+      }
+      .billto {
+        font-size: 16px;
+        line-height: 1.38;
+      }
+      .billto .title { font-weight: 700; margin-bottom: 4px; }
+      .mini-table {
+        border: 1px solid #57534e;
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 15px;
+      }
+      .mini-table td {
+        border: 1px solid #57534e;
+        padding: 6px 8px;
+      }
+      .mini-table td:first-child {
+        background: #64737e;
+        color: #fff;
+        width: 38%;
+        font-weight: 600;
+      }
+      .detail-table {
+        margin-top: 14px;
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 15px;
+      }
+      .detail-table th, .detail-table td {
+        border: 1px solid #57534e;
+        padding: 7px 6px;
+        vertical-align: top;
+      }
+      .detail-table th {
+        background: #64737e;
+        color: #fff;
+        text-align: left;
+        font-weight: 700;
+      }
+      .totals-wrap {
         margin-top: 16px;
-        padding-top: 12px;
-        border-top: 1px solid #e2e8f0;
-        font-size: 14px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .totals-left, .totals-right {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 16px;
+      }
+      .totals-left td, .totals-right td {
+        border: 1px solid #57534e;
+        padding: 6px 8px;
+      }
+      .charges-table {
+        margin-top: 14px;
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 16px;
+      }
+      .charges-table th, .charges-table td {
+        border: 1px solid #57534e;
+        padding: 8px 6px;
+      }
+      .charges-table th {
+        background: #64737e;
+        color: #fff;
+        text-align: left;
+      }
+      .terms-title {
+        margin-top: 14px;
+        border-top: 1px solid #57534e;
+        border-bottom: 1px solid #57534e;
+        text-align: center;
+        letter-spacing: 8px;
+        padding: 6px 0;
+        font-weight: 700;
+        color: #334155;
+      }
+      .terms-text {
+        margin-top: 8px;
+        font-size: 13px;
+        line-height: 1.45;
         color: #334155;
       }
       .footer {
-        margin-top: 18px;
+        margin-top: 10px;
         text-align: center;
-        font-size: 13px;
+        font-size: 12px;
         color: #64748b;
       }
     </style>
   </head>
   <body>
     <div class="page">
-      <section class="header">
-        <div class="brand">
-          <div class="logo-chip">${esc(data.settings.logoText)}</div>
-          <h1 class="company">${esc(data.settings.companyName)}</h1>
-          <div class="subtitle">${esc(data.settings.headerSubtitle)}</div>
-          <div class="address">${esc(data.settings.companyAddress)}</div>
-          <div class="ref">Reference: ${esc(data.reference)}</div>
-          <div class="chips">
-            <div class="chip">Status ${esc(data.statusLabel)}</div>
-            <div class="chip">Route ${esc(data.routeTypeLabel)}</div>
-          </div>
+      <section class="top">
+        <div>
+          <div class="brand">${esc(data.settings.companyName)}</div>
         </div>
+        <div class="company-meta">
+          <div>TIN: ${esc(data.bookingId)}</div>
+          <div>Phone: ${esc(data.settings.supportPhone)}</div>
+          <div>Email: ${esc(data.settings.supportEmail)}</div>
+          <div>Street: ${esc(data.settings.companyAddress)}</div>
+        </div>
+        <div class="barcode">
+          <img src="${esc(barcodeDataUrl)}" alt="Invoice barcode" />
+          <div class="code">${esc(data.safeReference)}</div>
+        </div>
+      </section>
+
+      <div class="separator"></div>
+
+      <section class="meta-grid">
+        <div class="billto">
+          <div class="title">Bill to</div>
+          <div><strong>${esc(data.recipientName)}</strong></div>
+          <div>${esc(data.recipientAddress || data.toCity)}</div>
+          <div>${esc(data.recipientPhone)}</div>
+          <div>${esc(data.recipientEmail)}</div>
+        </div>
+        <table class="mini-table">
+          <tr><td>Shipping mode</td><td>${esc(data.routeTypeLabel)}</td></tr>
+          <tr><td>Courier company</td><td>${esc(data.agencyLabel)}</td></tr>
+          <tr><td>Service Mode</td><td>${esc(data.statusLabel)}</td></tr>
+          <tr><td>Shipping Date</td><td>${esc(data.bookingDateLabel)}</td></tr>
+          <tr><td>Invoice #</td><td><strong>${esc(data.safeReference)}</strong></td></tr>
+        </table>
+      </section>
+
+      <table class="detail-table">
+        <thead>
+          <tr>
+            <th>Amount</th>
+            <th>Description</th>
+            <th>Weight</th>
+            <th>Length</th>
+            <th>Width</th>
+            <th>Height</th>
+            <th>Weight Vol.</th>
+            <th>Fixed charge</th>
+            <th>DecValue</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>${esc(data.amount)}</td>
+            <td>${esc(data.contentsLabel)}</td>
+            <td>${esc(String(data.weight))}</td>
+            <td>${esc(data.length)}</td>
+            <td>${esc(data.width)}</td>
+            <td>${esc(data.height)}</td>
+            <td>${esc(String(data.volumetric))}</td>
+            <td>${esc(data.fixedCharge)}</td>
+            <td>${esc(data.declaredValue)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="totals-wrap">
+        <table class="totals-left">
+          <tr><td><strong>Price kg: ${esc(String(data.weight))}</strong></td><td><strong>Weight: ${esc(String(data.weight))}</strong></td></tr>
+          <tr><td><strong>Volumetric weight: ${esc(String(data.volumetric))}</strong></td><td><strong>Total weight calculation: ${esc(String(data.weight))}</strong></td></tr>
+        </table>
+        <table class="totals-right">
+          <tr><td><strong>Subtotal</strong></td><td>${esc(data.subtotal)}</td></tr>
+        </table>
+      </div>
+
+      <table class="charges-table">
+        <thead>
+          <tr>
+            <th>Discount 0 %</th>
+            <th>Shipping Insurance</th>
+            <th>Customs Duties</th>
+            <th>Tax</th>
+            <th>Declared total value</th>
+            <th>Declared value</th>
+            <th>Total envio</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>0</td>
+            <td>${esc(data.fixedCharge)}</td>
+            <td>1</td>
+            <td>0</td>
+            <td>${esc(data.declaredTotal)}</td>
+            <td>${esc(data.declaredValue)}</td>
+            <td>INR ${esc(data.subtotal)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="terms-title">TERMS</div>
+      <div class="terms-text">
+        ACCEPTED: The sender declares that shipment details are accurate and no prohibited items are included. In case of customs checks, the client is responsible for duties and supporting documents. Courier transit timelines may vary by route, service mode, and destination compliance checks.
+      </div>
+
+      <section style="display:none">
         <div class="qr">
           <img src="${esc(qrDataUrl)}" alt="Tracking QR" />
           <div class="caption">SCAN TO TRACK</div>
         </div>
       </section>
 
-      <section class="card">
-        <h2>Shipment Summary</h2>
-        <div class="grid">
-          ${row("Booked At", data.bookingDateLabel)}
-          ${row("Last Update", data.updatedAtLabel)}
-          ${row("Status", data.statusLabel)}
-          ${row("Route", data.routeTypeLabel)}
-          ${row("From City", data.fromCity)}
-          ${row("To City", data.toCity)}
-          ${row("Sender", data.senderName)}
-          ${row("Recipient", data.recipientName)}
-          ${row("Agency", data.agencyLabel)}
-          ${row("Declared Value", data.amountLabel)}
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Parcel & Tracking</h2>
-        <div class="grid">
-          ${row("Weight", data.weightLabel)}
-          ${row("Dimensions", data.dimensionsLabel)}
-          ${row("Consignment No", data.consignmentNumber)}
-          ${row("Booking ID", data.bookingId)}
-          <div class="cell full">
-            <div class="label">Contents</div>
-            <div class="value">${esc(data.contentsLabel)}</div>
-          </div>
-          <div class="cell full">
-            <div class="label">Instructions</div>
-            <div class="value">${esc(data.instructionsLabel)}</div>
-          </div>
-          <div class="cell full">
-            <div class="label">Dispatch Notes</div>
-            <div class="value">${esc(data.trackingNotesLabel)}</div>
-          </div>
-          <div class="cell full">
-            <div class="label">Tracking URL</div>
-            <div class="value muted">${esc(data.trackUrl)}</div>
-          </div>
-        </div>
-        <div class="support">
-          <strong>Support:</strong> ${esc(data.settings.supportEmail)} | ${esc(data.settings.supportPhone)} | ${esc(data.settings.website)}
-        </div>
-      </section>
-
       <div class="footer">${esc(data.settings.footerNote)}</div>
+    </div>
+  </body>
+</html>`;
+}
+
+function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
+  const primary = normalizeHex(input.settings.primaryColor, "#0f766e");
+  const safeReference = String(input.reference || input.bookingId || "").trim() || input.bookingId;
+  const routeLine = `${input.fromCity || "-"} - ${input.toCity || "-"}`;
+
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+        color: #111827;
+        background: #fff;
+      }
+      .page {
+        width: 100%;
+        padding: 16px 20px 20px;
+      }
+      .top {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        column-gap: 14px;
+        align-items: start;
+      }
+      .brand {
+        color: ${primary};
+        font-weight: 700;
+        font-size: 38px;
+        font-family: "Times New Roman", serif;
+        line-height: 1;
+      }
+      .meta {
+        text-align: right;
+        font-size: 14px;
+        line-height: 1.35;
+      }
+      .barcode-wrap {
+        margin-top: 10px;
+        text-align: center;
+      }
+      .barcode-wrap img {
+        width: 100%;
+        max-width: 730px;
+        height: 80px;
+        object-fit: contain;
+      }
+      .barcode-id {
+        font-family: "Courier New", monospace;
+        font-size: 24px;
+        margin-top: 4px;
+      }
+      .code-big {
+        margin-top: 8px;
+        text-align: center;
+        font-size: 62px;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: 1px;
+      }
+      .package-ref {
+        margin-top: 16px;
+        font-size: 19px;
+        font-weight: 700;
+      }
+      .line {
+        margin-top: 10px;
+        font-size: 20px;
+        text-align: center;
+        color: #1f2937;
+      }
+      .service {
+        margin-top: 12px;
+        text-align: center;
+        font-size: 21px;
+      }
+      .service strong {
+        letter-spacing: .4px;
+      }
+      .pay-wrap {
+        margin-top: 18px;
+        text-align: center;
+      }
+      .pay-title {
+        font-size: 44px;
+      }
+      .badge {
+        display: inline-block;
+        margin-top: 8px;
+        background: #16a34a;
+        color: #fff;
+        padding: 7px 18px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 20px;
+      }
+      .route {
+        margin-top: 22px;
+        text-align: center;
+        font-size: 62px;
+        font-weight: 700;
+        line-height: 1.05;
+      }
+      .people {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 18px;
+      }
+      .person h4 {
+        margin: 0 0 6px;
+        text-align: center;
+        font-size: 20px;
+        color: #6b7280;
+      }
+      .person .name {
+        text-align: center;
+        font-weight: 700;
+        font-size: 47px;
+        line-height: 1.08;
+        margin-bottom: 6px;
+      }
+      .person .block {
+        text-align: center;
+        font-size: 41px;
+        line-height: 1.18;
+      }
+      .qr-row {
+        margin-top: 16px;
+      }
+      .qr-row img {
+        width: 145px;
+        height: 145px;
+      }
+      .footer {
+        margin-top: 12px;
+        text-align: center;
+        font-size: 14px;
+        color: #6b7280;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <section class="top">
+        <div class="brand">${esc(input.settings.companyName)}</div>
+        <div class="meta">
+          <div>${esc(input.settings.headerSubtitle)}</div>
+          <div>${esc(input.settings.companyAddress)}</div>
+          <div>Phone: ${esc(input.settings.supportPhone)}</div>
+        </div>
+      </section>
+
+      <div class="barcode-wrap">
+        <img src="${esc(barcodeDataUrl)}" alt="Tracking Barcode" />
+        <div class="barcode-id">${esc(safeReference)}</div>
+      </div>
+      <div class="code-big">${esc(safeReference)}</div>
+
+      <div class="package-ref">PACKAGE REFERENCE:</div>
+      <div class="line">
+        Date: ${esc(input.bookingDateLabel)} | Amount: ${esc(input.amountLabel)} | Weight: ${esc(input.weightLabel)} | Cost: ${esc(input.amountLabel)}
+      </div>
+      <div class="line">
+        Length: ${esc(input.dimensionsLabel)}
+      </div>
+
+      <div class="service">
+        <strong>SERVICE REFERENCE</strong> ${esc(input.statusLabel)} | ${esc(input.agencyLabel)}
+      </div>
+
+      <div class="pay-wrap">
+        <div class="pay-title">Payment status</div>
+        <span class="badge">Paid</span>
+      </div>
+
+      <div class="route">${esc(routeLine)}</div>
+
+      <section class="people">
+        <div class="person">
+          <h4>Sender</h4>
+          <div class="name">${esc(input.senderName)}</div>
+          <div class="block">${esc(input.senderAddress)}</div>
+          <div class="block">${esc(input.senderPhone)}</div>
+        </div>
+        <div class="person">
+          <h4>Recipient</h4>
+          <div class="name">${esc(input.recipientName)}</div>
+          <div class="block">${esc(input.recipientAddress)}</div>
+          <div class="block">${esc(input.recipientPhone)}</div>
+        </div>
+      </section>
+
+      <div class="qr-row">
+        <img src="${esc(qrDataUrl)}" alt="Tracking QR" />
+      </div>
+      <div class="footer">${esc(input.settings.footerNote)}</div>
     </div>
   </body>
 </html>`;
@@ -435,7 +745,19 @@ export async function generateBookingPdf(req, res, next) {
         light: "#ffffff"
       }
     });
-    const html = buildPdfHtml(parsed.data, qrDataUrl);
+    const barcodePng = await bwipjs.toBuffer({
+      bcid: "code128",
+      text: String(parsed.data.reference || parsed.data.bookingId || "QC-INVOICE"),
+      scale: 3,
+      height: 16,
+      includetext: false,
+      backgroundcolor: "FFFFFF"
+    });
+    const barcodeDataUrl = `data:image/png;base64,${barcodePng.toString("base64")}`;
+    const html =
+      parsed.data.template === "tracking"
+        ? buildTrackingPdfHtml(parsed.data, qrDataUrl, barcodeDataUrl)
+        : buildPdfHtml(parsed.data, qrDataUrl, barcodeDataUrl);
 
     browser = await launchPdfBrowser();
     const page = await browser.newPage();
