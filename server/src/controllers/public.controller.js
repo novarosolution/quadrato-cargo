@@ -192,124 +192,150 @@ function buildPdfHtml(input, qrDataUrl, barcodeDataUrl) {
         color: #0f172a;
         background: #ffffff;
       }
-      .page { padding: 22px; }
+      .page {
+        padding: 22px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #ffffff;
+      }
       .top {
         display: grid;
-        grid-template-columns: 1.2fr 1fr 1fr;
-        align-items: start;
-        column-gap: 16px;
+        grid-template-columns: 1.25fr 1fr 1fr;
+        align-items: center;
+        column-gap: 14px;
       }
       .brand {
         color: ${data.settings.primary};
-        font-size: 46px;
+        font-size: 38px;
         font-weight: 700;
         font-family: "Times New Roman", serif;
-        margin-top: 8px;
+        margin-top: 0;
       }
       .company-meta {
-        text-align: center;
-        font-size: 15px;
-        line-height: 1.35;
+        text-align: left;
+        font-size: 13px;
+        line-height: 1.4;
+        color: #475569;
       }
       .barcode {
         text-align: right;
       }
       .barcode img {
-        width: 245px;
-        height: 82px;
+        width: 230px;
+        height: 72px;
         object-fit: contain;
-        border: 1px solid #d4d4d8;
-        padding: 4px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 6px;
         background: #fff;
       }
       .barcode .code {
-        margin-top: 2px;
-        font-size: 42px;
+        margin-top: 4px;
+        font-size: 28px;
         font-family: "Courier New", monospace;
+        letter-spacing: .7px;
       }
       .separator {
-        margin: 12px 0 16px;
-        border-top: 1px solid #d4d4d8;
+        margin: 12px 0 14px;
+        border-top: 1px solid #e2e8f0;
       }
       .meta-grid {
         display: grid;
         grid-template-columns: 1.2fr 1fr;
-        gap: 16px;
+        gap: 14px;
       }
       .billto {
-        font-size: 16px;
+        font-size: 14px;
         line-height: 1.38;
+        background: ${data.settings.card};
+        border: 1px solid #dbeafe;
+        border-radius: 10px;
+        padding: 10px 12px;
       }
-      .billto .title { font-weight: 700; margin-bottom: 4px; }
+      .billto .title {
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: ${data.settings.primary};
+      }
       .mini-table {
-        border: 1px solid #57534e;
+        border: 1px solid #cbd5e1;
         border-collapse: collapse;
         width: 100%;
-        font-size: 15px;
+        font-size: 13px;
+        border-radius: 10px;
+        overflow: hidden;
       }
       .mini-table td {
-        border: 1px solid #57534e;
-        padding: 6px 8px;
+        border: 1px solid #cbd5e1;
+        padding: 7px 8px;
       }
       .mini-table td:first-child {
-        background: #64737e;
+        background: ${data.settings.primary};
         color: #fff;
-        width: 38%;
+        width: 42%;
         font-weight: 600;
       }
       .detail-table {
         margin-top: 14px;
         width: 100%;
         border-collapse: collapse;
-        font-size: 15px;
+        font-size: 13px;
+        border-radius: 10px;
+        overflow: hidden;
       }
       .detail-table th, .detail-table td {
-        border: 1px solid #57534e;
+        border: 1px solid #cbd5e1;
         padding: 7px 6px;
         vertical-align: top;
       }
       .detail-table th {
-        background: #64737e;
+        background: ${data.settings.primary};
         color: #fff;
         text-align: left;
         font-weight: 700;
       }
+      .detail-table tbody tr:nth-child(even) { background: #f8fafc; }
       .totals-wrap {
         margin-top: 16px;
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 16px;
+        gap: 12px;
       }
       .totals-left, .totals-right {
         width: 100%;
         border-collapse: collapse;
-        font-size: 16px;
+        font-size: 13px;
+        border-radius: 10px;
+        overflow: hidden;
       }
       .totals-left td, .totals-right td {
-        border: 1px solid #57534e;
-        padding: 6px 8px;
+        border: 1px solid #cbd5e1;
+        padding: 7px 8px;
       }
       .charges-table {
         margin-top: 14px;
         width: 100%;
         border-collapse: collapse;
-        font-size: 16px;
+        font-size: 13px;
+        border-radius: 10px;
+        overflow: hidden;
       }
       .charges-table th, .charges-table td {
-        border: 1px solid #57534e;
+        border: 1px solid #cbd5e1;
         padding: 8px 6px;
       }
       .charges-table th {
-        background: #64737e;
+        background: ${data.settings.primary};
         color: #fff;
         text-align: left;
       }
+      .charges-table tbody tr:nth-child(even) { background: #f8fafc; }
       .terms-title {
         margin-top: 14px;
-        border-top: 1px solid #57534e;
-        border-bottom: 1px solid #57534e;
+        border-top: 1px solid #cbd5e1;
+        border-bottom: 1px solid #cbd5e1;
         text-align: center;
-        letter-spacing: 8px;
+        letter-spacing: 3px;
         padding: 6px 0;
         font-weight: 700;
         color: #334155;
@@ -467,127 +493,155 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
       }
       .page {
         width: 100%;
-        padding: 16px 20px 20px;
+        padding: 18px 20px 20px;
       }
       .top {
         display: grid;
-        grid-template-columns: 1.2fr 1fr;
-        column-gap: 14px;
-        align-items: start;
+        grid-template-columns: 1fr auto;
+        column-gap: 10px;
+        align-items: center;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 10px;
       }
       .brand {
         color: ${primary};
         font-weight: 700;
-        font-size: 38px;
+        font-size: 30px;
         font-family: "Times New Roman", serif;
         line-height: 1;
       }
       .meta {
         text-align: right;
-        font-size: 14px;
-        line-height: 1.35;
+        font-size: 12px;
+        line-height: 1.3;
+        color: #4b5563;
       }
       .barcode-wrap {
-        margin-top: 10px;
+        margin-top: 12px;
         text-align: center;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 10px 10px 8px;
+        background: #fafafa;
       }
       .barcode-wrap img {
         width: 100%;
-        max-width: 730px;
-        height: 80px;
+        max-width: 710px;
+        height: 72px;
         object-fit: contain;
       }
       .barcode-id {
         font-family: "Courier New", monospace;
-        font-size: 24px;
+        font-size: 18px;
+        letter-spacing: .6px;
         margin-top: 4px;
       }
       .code-big {
-        margin-top: 8px;
+        margin-top: 10px;
         text-align: center;
-        font-size: 62px;
-        line-height: 1;
+        font-size: 42px;
+        line-height: 1.05;
         font-weight: 800;
         letter-spacing: 1px;
+        color: #111827;
       }
       .package-ref {
-        margin-top: 16px;
-        font-size: 19px;
+        margin-top: 14px;
+        font-size: 14px;
         font-weight: 700;
+        color: #374151;
       }
       .line {
-        margin-top: 10px;
-        font-size: 20px;
+        margin-top: 8px;
+        font-size: 14px;
         text-align: center;
-        color: #1f2937;
+        color: #374151;
       }
       .service {
         margin-top: 12px;
         text-align: center;
-        font-size: 21px;
+        font-size: 15px;
+        color: #111827;
       }
       .service strong {
         letter-spacing: .4px;
       }
       .pay-wrap {
-        margin-top: 18px;
+        margin-top: 14px;
         text-align: center;
       }
       .pay-title {
-        font-size: 44px;
+        font-size: 20px;
+        font-weight: 500;
       }
       .badge {
         display: inline-block;
-        margin-top: 8px;
+        margin-top: 6px;
         background: #16a34a;
         color: #fff;
-        padding: 7px 18px;
-        border-radius: 10px;
+        padding: 4px 12px;
+        border-radius: 8px;
         font-weight: 700;
-        font-size: 20px;
+        font-size: 14px;
       }
       .route {
-        margin-top: 22px;
+        margin-top: 18px;
         text-align: center;
-        font-size: 62px;
+        font-size: 36px;
         font-weight: 700;
-        line-height: 1.05;
+        line-height: 1.15;
+        color: #111827;
       }
       .people {
-        margin-top: 16px;
+        margin-top: 14px;
         display: grid;
         grid-template-columns: 1fr 1fr;
-        column-gap: 18px;
+        column-gap: 12px;
+      }
+      .person {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px 10px 12px;
       }
       .person h4 {
-        margin: 0 0 6px;
+        margin: 0 0 4px;
         text-align: center;
-        font-size: 20px;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: .45px;
         color: #6b7280;
       }
       .person .name {
         text-align: center;
         font-weight: 700;
-        font-size: 47px;
-        line-height: 1.08;
-        margin-bottom: 6px;
+        font-size: 24px;
+        line-height: 1.2;
+        margin-bottom: 5px;
       }
       .person .block {
         text-align: center;
-        font-size: 41px;
-        line-height: 1.18;
+        font-size: 14px;
+        line-height: 1.35;
+        color: #1f2937;
+        word-break: break-word;
       }
       .qr-row {
-        margin-top: 16px;
+        margin-top: 12px;
+        display: flex;
+        justify-content: flex-end;
       }
       .qr-row img {
-        width: 145px;
-        height: 145px;
+        width: 110px;
+        height: 110px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 4px;
       }
       .footer {
-        margin-top: 12px;
+        margin-top: 8px;
         text-align: center;
-        font-size: 14px;
+        font-size: 11px;
         color: #6b7280;
       }
     </style>
@@ -614,7 +668,7 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
         Date: ${esc(input.bookingDateLabel)} | Amount: ${esc(input.amountLabel)} | Weight: ${esc(input.weightLabel)} | Cost: ${esc(input.amountLabel)}
       </div>
       <div class="line">
-        Length: ${esc(input.dimensionsLabel)}
+        Dimensions: ${esc(input.dimensionsLabel)}
       </div>
 
       <div class="service">
