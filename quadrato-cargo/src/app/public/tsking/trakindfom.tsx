@@ -1,7 +1,11 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { BOOKING_STATUS_LABELS, normalizeBookingStatus } from "@/lib/booking-status";
+import {
+  BOOKING_STATUS_LABELS,
+  type BookingStatusId,
+  normalizeBookingStatus,
+} from "@/lib/booking-status";
 import { fetchPublicTracking } from "@/lib/api/public-client";
 
 type State =
@@ -19,6 +23,40 @@ type State =
         createdAt: string;
       };
     };
+
+const TRACKING_FLOW: Array<{
+  id: BookingStatusId;
+  hint: string;
+}> = [
+  { id: "submitted", hint: "Parcel created and submitted successfully." },
+  { id: "confirmed", hint: "Shipment details confirmed by dispatch." },
+  { id: "serviceability_check", hint: "Serviceability check in progress." },
+  { id: "serviceable", hint: "Route is serviceable for pickup." },
+  { id: "pickup_scheduled", hint: "Pickup slot assigned." },
+  { id: "out_for_pickup", hint: "Pickup agent is on the way." },
+  { id: "picked_up", hint: "Parcel has been picked up from sender." },
+  { id: "agency_processing", hint: "Processing at regional hub." },
+  { id: "in_transit", hint: "Shipment is moving to destination region." },
+  { id: "out_for_delivery", hint: "Out for delivery to recipient." },
+  { id: "delivery_attempted", hint: "Delivery attempt recorded." },
+  { id: "on_hold", hint: "Shipment is temporarily on hold." },
+  { id: "delivered", hint: "Shipment delivered successfully." },
+  { id: "cancelled", hint: "Shipment has been cancelled." },
+];
+
+function statusIndex(status: BookingStatusId) {
+  const index = TRACKING_FLOW.findIndex((x) => x.id === status);
+  return index < 0 ? 0 : index;
+}
+
+function prettyDate(raw: string) {
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(d);
+}
 
 export function TrackOrderForm({ initialReference = "" }: { initialReference?: string }) {
   const [state, setState] = useState<State>({ kind: "idle" });
@@ -87,34 +125,90 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
       ) : null}
 
       {state.kind === "success" ? (
-        <div className="space-y-3 rounded-2xl border border-border bg-surface-elevated/70 p-5">
-          <p className="text-sm text-muted-soft">
-            Reference <span className="font-mono text-muted">{state.data.id}</span>
-          </p>
-          <p className="text-sm">
-            <span className="text-muted-soft">Status: </span>
-            <span className="font-medium text-teal">
-              {BOOKING_STATUS_LABELS[normalizeBookingStatus(state.data.status)]}
-            </span>
-          </p>
-          <p className="text-sm text-muted">
-            Route: <span className="capitalize">{state.data.routeType}</span>
-          </p>
-          {state.data.consignmentNumber ? (
-            <p className="text-sm text-muted">
-              Consignment:{" "}
-              <span className="font-mono text-ink">{state.data.consignmentNumber}</span>
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-border bg-surface-elevated/70 p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-soft">
+                  Parcel tracking no.
+                </p>
+                <p className="font-mono text-base font-semibold text-ink">
+                  {state.data.consignmentNumber || state.data.id}
+                </p>
+              </div>
+              <span className="inline-flex items-center rounded-full border border-teal/30 bg-teal/10 px-3 py-1 text-xs font-semibold text-teal">
+                {BOOKING_STATUS_LABELS[normalizeBookingStatus(state.data.status)]}
+              </span>
+            </div>
+            <p className="mt-3 text-sm text-muted">
+              Route:{" "}
+              <span className="font-medium capitalize text-ink">{state.data.routeType}</span>
             </p>
-          ) : null}
-          {state.data.trackingNotes ? (
-            <p className="whitespace-pre-wrap text-sm text-muted">
-              {state.data.trackingNotes}
+            <p className="mt-1 text-sm text-muted">
+              Created: <span className="text-ink">{prettyDate(state.data.createdAt)}</span>
             </p>
-          ) : (
-            <p className="text-sm text-muted">
-              No tracking notes yet. Dispatch will update this soon.
+            <p className="mt-1 text-xs text-muted-soft">
+              Reference:{" "}
+              <span className="font-mono text-muted">{state.data.id}</span>
             </p>
-          )}
+          </div>
+
+          <div className="rounded-2xl border border-border bg-surface-elevated/70 p-4 sm:p-5">
+            <ol className="relative ml-2 border-l border-border-strong pl-4">
+              {TRACKING_FLOW.map((step, idx) => {
+                const normalized = normalizeBookingStatus(state.data.status);
+                const currentIdx = statusIndex(normalized);
+                const done = idx < currentIdx;
+                const current = idx === currentIdx;
+                const visible = idx <= currentIdx + 2;
+                if (!visible) return null;
+
+                return (
+                  <li key={step.id} className="relative mb-5 last:mb-0">
+                    <span
+                      className={`absolute -left-[1.19rem] top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold ${
+                        current
+                          ? "border-teal bg-teal text-white"
+                          : done
+                            ? "border-teal/30 bg-teal/15 text-teal"
+                            : "border-border-strong bg-canvas text-muted-soft"
+                      }`}
+                    >
+                      {done || current ? "✓" : "•"}
+                    </span>
+                    <div
+                      className={`rounded-xl border px-3 py-2 ${
+                        current
+                          ? "border-teal/35 bg-teal/10"
+                          : done
+                            ? "border-border-strong bg-canvas/40"
+                            : "border-border bg-canvas/20"
+                      }`}
+                    >
+                      <p className="text-sm font-semibold text-ink">
+                        {BOOKING_STATUS_LABELS[step.id]}
+                      </p>
+                      <p className="mt-1 text-xs text-muted">{step.hint}</p>
+                      {current && state.data.trackingNotes ? (
+                        <p className="mt-2 whitespace-pre-wrap text-xs text-ink">
+                          {state.data.trackingNotes}
+                        </p>
+                      ) : null}
+                      <p className="mt-2 text-[11px] text-muted-soft">
+                        {idx === 0
+                          ? prettyDate(state.data.createdAt)
+                          : current
+                            ? "Current status"
+                            : done
+                              ? "Completed"
+                              : "Pending"}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
         </div>
       ) : null}
     </div>

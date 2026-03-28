@@ -79,6 +79,15 @@ function normalizeHex(color, fallback) {
   return match ? `#${match[1]}` : fallback;
 }
 
+function buildCustomerCode(reference, bookingId) {
+  const seed = String(bookingId || reference || "").trim() || "0";
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) % 10000000000;
+  }
+  return `QC${String(hash).padStart(10, "0")}`;
+}
+
 async function launchPdfBrowser() {
   const safeArgs = [
     "--no-sandbox",
@@ -146,6 +155,7 @@ function buildPdfHtml(input, qrDataUrl, barcodeDataUrl) {
   const fixedCharge = Number.isFinite(amountNumber) ? (amountNumber * 0.05).toFixed(2) : "-";
   const declaredValue = amount;
   const safeReference = String(input.reference || input.bookingId || "").trim() || input.bookingId;
+  const customerCode = buildCustomerCode(safeReference, input.bookingId);
   const subtotal = Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : amount;
   const declaredTotal = Number.isFinite(amountNumber) ? (amountNumber * 1.03).toFixed(2) : amount;
   const data = {
@@ -166,7 +176,8 @@ function buildPdfHtml(input, qrDataUrl, barcodeDataUrl) {
     declaredValue,
     subtotal,
     declaredTotal,
-    safeReference
+    safeReference,
+    customerCode
   };
 
   return `<!doctype html>
@@ -350,7 +361,7 @@ function buildPdfHtml(input, qrDataUrl, barcodeDataUrl) {
           <tr><td>Courier company</td><td>${esc(data.agencyLabel)}</td></tr>
           <tr><td>Service Mode</td><td>${esc(data.statusLabel)}</td></tr>
           <tr><td>Shipping Date</td><td>${esc(data.bookingDateLabel)}</td></tr>
-          <tr><td>Invoice #</td><td><strong>${esc(data.safeReference)}</strong></td></tr>
+          <tr><td>Invoice #</td><td><strong>${esc(data.customerCode)}</strong></td></tr>
         </table>
       </section>
 
@@ -439,6 +450,7 @@ function buildPdfHtml(input, qrDataUrl, barcodeDataUrl) {
 function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
   const primary = normalizeHex(input.settings.primaryColor, "#0f766e");
   const safeReference = String(input.reference || input.bookingId || "").trim() || input.bookingId;
+  const customerCode = buildCustomerCode(safeReference, input.bookingId);
   const routeLine = `${input.fromCity || "-"} - ${input.toCity || "-"}`;
 
   return `<!doctype html>
@@ -593,9 +605,9 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
 
       <div class="barcode-wrap">
         <img src="${esc(barcodeDataUrl)}" alt="Tracking Barcode" />
-        <div class="barcode-id">${esc(safeReference)}</div>
+        <div class="barcode-id">${esc(customerCode)}</div>
       </div>
-      <div class="code-big">${esc(safeReference)}</div>
+      <div class="code-big">${esc(customerCode)}</div>
 
       <div class="package-ref">PACKAGE REFERENCE:</div>
       <div class="line">
