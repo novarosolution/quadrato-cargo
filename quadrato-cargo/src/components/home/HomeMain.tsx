@@ -1,7 +1,8 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { PackageCheck, Search } from "lucide-react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Container } from "@/components/Wrap";
 import { SectionHeading } from "@/components/Heading";
@@ -69,6 +70,8 @@ export function HomeView() {
   const reduce = useReducedMotion();
   const { allowHoverMotion } = useMotionPreferences();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [quickReference, setQuickReference] = useState("");
+  const [quickTrackError, setQuickTrackError] = useState("");
   // Keep one source of truth for motion gating so every section degrades consistently.
   const hoverMotion = allowHoverMotion && !reduce;
   const ctaHoverUp = hoverMotion ? { y: -3 } : undefined;
@@ -88,8 +91,10 @@ export function HomeView() {
   const heroCtas = useMemo(
     () =>
       isLoggedIn
-        ? homeHeroCallToActionData.filter((cta) => cta.href !== "/public/register")
-        : homeHeroCallToActionData,
+        ? homeHeroCallToActionData.filter(
+            (cta) => cta.href !== "/public/register" && cta.href !== "/public/service"
+          )
+        : homeHeroCallToActionData.filter((cta) => cta.href !== "/public/service"),
     [isLoggedIn],
   );
 
@@ -120,9 +125,45 @@ export function HomeView() {
     };
   }, []);
 
+  function onQuickTrackSubmit(ev: FormEvent<HTMLFormElement>) {
+    ev.preventDefault();
+    const value = quickReference.trim();
+    if (!value) {
+      setQuickTrackError("Enter your booking ID or consignment number.");
+      return;
+    }
+    if (!/^[a-zA-Z0-9-]{6,40}$/.test(value)) {
+      setQuickTrackError("Use 6-40 letters, numbers, or hyphens.");
+      return;
+    }
+    setQuickTrackError("");
+    window.location.assign(`/public/tsking?reference=${encodeURIComponent(value)}`);
+  }
+
   return (
     <>
-      <section className="relative overflow-hidden border-b border-border">
+      <nav
+        aria-label="Quick actions"
+        className="fixed bottom-5 right-4 z-40 flex flex-col gap-3"
+      >
+        <Link
+          href="/public/book"
+          title="Book Courier"
+          className="group inline-flex h-14 w-14 items-center justify-center rounded-full border border-border-strong bg-surface-elevated/80 text-ink shadow-2xl shadow-black/35 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-teal/45 hover:text-teal"
+        >
+          <PackageCheck className="h-6 w-6" strokeWidth={1.9} aria-hidden />
+          <span className="sr-only">Book Courier</span>
+        </Link>
+        <Link
+          href="/public/tsking"
+          title="Track Courier"
+          className="group inline-flex h-14 w-14 items-center justify-center rounded-full border border-border-strong bg-surface-elevated/80 text-ink shadow-2xl shadow-black/35 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-accent/45 hover:text-accent-hover"
+        >
+          <Search className="h-6 w-6" strokeWidth={1.9} aria-hidden />
+          <span className="sr-only">Track Courier</span>
+        </Link>
+      </nav>
+      <section className="relative overflow-hidden border-b border-border page-section">
         <div
           className="pointer-events-none absolute -right-32 top-0 h-[500px] w-[500px] rounded-full bg-accent/10 blur-[90px]"
           aria-hidden
@@ -131,7 +172,7 @@ export function HomeView() {
           className="pointer-events-none absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-teal/10 blur-[70px]"
           aria-hidden
         />
-        <Container wide className="relative py-16 sm:py-24 lg:py-28">
+        <Container wide className="relative">
           <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-16">
             <motion.div
               initial="hidden"
@@ -156,36 +197,24 @@ export function HomeView() {
                 <span className="text-gradient">doorstep</span>
                 <span className="text-ink">
                   {" "}
-                  — out of country courier, with pickup in as little as ~10
-                  minutes.
+                  — international courier with quick pickup.
                 </span>
               </motion.h1>
               <motion.p
                 variants={heroItem}
                 className="mt-6 max-w-xl text-lg leading-relaxed text-muted"
               >
-                Book with your PIN or postal code: instant collection or a
-                scheduled window. Our backend routes logistics staff to you
-                where serviceable, then manages export, customs, and carrier
-                handoff — with consignment numbers and QR-oriented delivery
-                receipts.
-              </motion.p>
-              <motion.p
-                variants={heroItem}
-                className="mt-3 max-w-xl text-xs leading-relaxed text-muted-soft"
-              >
-                ~10 minutes is a target for eligible instant pickups, not a
-                guarantee. The rest of our experience follows traditional
-                logistics patterns alongside this doorstep collection model.
+                Book with your PIN or postal code, choose instant or scheduled
+                pickup, and track your shipment with clear status updates.
               </motion.p>
               <motion.div
                 variants={heroItem}
-                className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+                className="mt-9 grid max-w-xl gap-3 sm:grid-cols-3"
               >
                 {heroCtas.map((heroCallToAction) => (
                   <motion.div
                     key={heroCallToAction.href}
-                    className="inline-flex w-full min-[480px]:w-auto"
+                    className="inline-flex w-full"
                     whileHover={ctaHoverUp}
                     whileTap={ctaTapScale}
                     transition={springSoft}
@@ -204,7 +233,7 @@ export function HomeView() {
                         usePrimaryStyle
                           ? "btn-primary inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent-deep via-accent to-accent-hover px-7 py-4 text-center text-sm font-semibold text-white shadow-lg shadow-accent/25"
                           : secondaryCtaClass
-                      } w-full min-[480px]:w-auto`}
+                      } w-full`}
                     >
                       {heroCallToAction.label}
                     </Link>
@@ -213,40 +242,9 @@ export function HomeView() {
                   </motion.div>
                 ))}
               </motion.div>
-              <motion.p
-                variants={heroItem}
-                className="mt-5 max-w-xl text-sm leading-relaxed text-muted"
-              >
-                {isLoggedIn ? (
-                  <>
-                    You are signed in. Open your{" "}
-                    <Link href="/public/profile" className="font-medium text-teal hover:underline">
-                      profile
-                    </Link>{" "}
-                    to view your details, bookings, status, and consignment data.
-                  </>
-                ) : (
-                  <>
-                    Anyone can sign up here — no admin needed. After you{" "}
-                    <Link href="/public/register" className="font-medium text-teal hover:underline">
-                      register
-                    </Link>
-                    , use{" "}
-                    <Link href="/public/login" className="font-medium text-teal hover:underline">
-                      Log in
-                    </Link>{" "}
-                    anytime. Your{" "}
-                    <Link href="/public/profile" className="font-medium text-teal hover:underline">
-                      profile
-                    </Link>{" "}
-                    stores your details, bookings, status, and consignment data when
-                    you book while signed in.
-                  </>
-                )}
-              </motion.p>
               <motion.ul
                 variants={statList}
-                className="mt-12 flex flex-wrap gap-8 border-t border-border pt-10"
+                className="mt-10 flex flex-wrap gap-8 border-t border-border pt-8"
               >
                 {homeHeroStatData.map((s) => (
                   <motion.li key={s.value} variants={statItem}>
@@ -257,18 +255,53 @@ export function HomeView() {
                   </motion.li>
                 ))}
               </motion.ul>
+              <motion.form
+                variants={heroItem}
+                onSubmit={onQuickTrackSubmit}
+                className="mt-8 rounded-2xl border border-border-strong bg-surface-elevated/65 p-4 backdrop-blur-sm"
+                noValidate
+              >
+                <label
+                  htmlFor="quick-track-reference"
+                  className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-soft"
+                >
+                  Track consignment quickly
+                </label>
+                <div className="mt-3 flex flex-col gap-2.5 sm:flex-row">
+                  <input
+                    id="quick-track-reference"
+                    type="text"
+                    value={quickReference}
+                    onChange={(ev) => setQuickReference(ev.target.value)}
+                    placeholder="Enter booking ID or consignment number"
+                    className="w-full rounded-xl border border-border-strong bg-canvas/50 px-3 py-2.5 text-sm text-ink focus:border-teal/45 focus:outline-none focus:ring-2 focus:ring-teal/20"
+                    inputMode="text"
+                    maxLength={40}
+                    pattern="[A-Za-z0-9-]{6,40}"
+                  />
+                  <button
+                    type="submit"
+                    className="btn-primary inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-accent-deep via-accent to-accent-hover px-5 py-2.5 text-sm font-semibold text-white"
+                  >
+                    Track Now
+                  </button>
+                </div>
+                {quickTrackError ? (
+                  <p className="mt-2 text-xs text-rose-300">{quickTrackError}</p>
+                ) : null}
+              </motion.form>
             </motion.div>
             <HeroVisual />
           </div>
         </Container>
       </section>
 
-      <section className="py-20 sm:py-28">
+      <section className="page-section">
         <Container>
           <SectionHeading
             eyebrow="Why us"
             title="Doorstep collection, global handoffs"
-            description="We combine rapid pickup at your PIN (where we cover), full international orchestration, consignment numbers after acceptance, and QR-friendly receipts — plus the usual logistics tools you expect from the market."
+            description="Fast pickup where serviceable, clear status updates, and dependable handoff handling from booking to delivery."
           />
           <motion.ul
             className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
@@ -309,14 +342,14 @@ export function HomeView() {
         </Container>
       </section>
 
-      <section className="border-y border-border bg-surface/80 py-20 sm:py-28 backdrop-blur-md">
+      <section className="page-section border-y border-border bg-surface/80 backdrop-blur-md">
         <Container>
           <div className="flex flex-col justify-between gap-10 lg:flex-row lg:items-end">
             <SectionHeading
               className="max-w-xl"
               eyebrow="Process"
-              title="PIN → field team → consignment"
-              description="You book online with your postal code, we dispatch collection staff when the area is serviceable, then issue a consignment number and continue manual operations until the partner carrier takes over."
+              title="Book -> pickup -> shipment tracking"
+              description="Submit your details, get pickup confirmation, and follow progress with one reference number."
             />
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -330,7 +363,7 @@ export function HomeView() {
                 href="/public/howwork"
                 className="inline-flex items-center justify-center rounded-2xl border border-ghost-border bg-ghost-fill px-6 py-3.5 text-sm font-semibold text-ink transition hover:border-teal/35 hover:bg-pill-hover"
               >
-                See the full flow
+                See full flow
               </Link>
             </motion.div>
           </div>
@@ -377,7 +410,7 @@ export function HomeView() {
         </Container>
       </section>
 
-      <section className="py-20 sm:py-28">
+      <section className="page-section">
         <Container>
           <motion.div
             className="shimmer-border relative overflow-hidden rounded-[1.75rem] px-6 py-16 text-center sm:px-12 sm:py-20"
@@ -416,9 +449,8 @@ export function HomeView() {
                 viewport={{ once: true }}
                 transition={{ delay: 0.26, duration: 0.45, ease }}
               >
-                Ask which PINs qualify for instant collection, how international
-                lanes are priced, and how QR receipts will work on your rollout
-                — we confirm everything in writing before go-live.
+                Ask about serviceability, pickup options, and pricing. Our team
+                confirms your route and next steps quickly.
               </motion.p>
               <motion.div
                 className="mt-10"
@@ -433,7 +465,7 @@ export function HomeView() {
                   href="/public/contact"
                   className="btn-primary inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent-deep via-accent to-accent-hover px-10 py-4 text-sm font-semibold text-white shadow-xl shadow-accent/20"
                 >
-                  Contact dispatch
+                  Contact Dispatch
                 </Link>
               </motion.div>
             </div>

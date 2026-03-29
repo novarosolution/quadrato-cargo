@@ -1,7 +1,11 @@
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
 import { getDb } from "../../db/mongo.js";
-import { createBookingDoc, toPublicBooking } from "../../models/booking.model.js";
+import {
+  createBookingDoc,
+  toPublicBooking,
+  toPublicBookingSummary
+} from "../../models/booking.model.js";
 
 const BOOKINGS = "bookings";
 
@@ -76,7 +80,16 @@ const COURIER_OPEN_STATUSES = new Set([
   "out_for_pickup"
 ]);
 
-export async function listBookingsByUserId(userId, userEmail = "", limit = 100) {
+export async function listBookingsByUserId(
+  userId,
+  userEmail = "",
+  options = {}
+) {
+  const limit = Number.isFinite(Number(options?.limit))
+    ? Math.max(1, Math.min(100, Number(options.limit)))
+    : 100;
+  const useSummary = Boolean(options?.summary);
+  const shouldBackfill = Boolean(options?.backfill);
   const db = await getDb();
   if (!ObjectId.isValid(userId)) return [];
   const normalizedEmail = String(userEmail || "").trim().toLowerCase();
@@ -91,8 +104,8 @@ export async function listBookingsByUserId(userId, userEmail = "", limit = 100) 
     });
   }
 
-  // Backfill legacy guest bookings to user account when email matches.
-  if (normalizedEmail) {
+  // Optional backfill for legacy guest bookings by sender email.
+  if (shouldBackfill && normalizedEmail) {
     await db.collection(BOOKINGS).updateMany(
       {
         userId: null,
@@ -102,13 +115,26 @@ export async function listBookingsByUserId(userId, userEmail = "", limit = 100) 
     );
   }
 
-  const cursor = db
-    .collection(BOOKINGS)
-    .find(where)
+  const projection = useSummary
+    ? {
+        routeType: 1,
+        status: 1,
+        consignmentNumber: 1,
+        assignedAgency: 1,
+        pickupOtpVerifiedAt: 1,
+        courierId: 1,
+        userId: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        "payload.sender": 1,
+        "payload.recipient": 1
+      }
+    : undefined;
+  const cursor = db.collection(BOOKINGS).find(where, projection ? { projection } : {})
     .sort({ createdAt: -1 })
     .limit(limit);
   const rows = await cursor.toArray();
-  return rows.map(toPublicBooking);
+  return rows.map(useSummary ? toPublicBookingSummary : toPublicBooking);
 }
 
 export async function findBookingByUserAndId(userId, bookingId, userEmail = "") {

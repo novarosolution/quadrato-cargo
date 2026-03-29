@@ -146,10 +146,23 @@ export function DownloadBookingPdfButton({
     drawPair("Sender:", senderName, 14, y);
     drawPair("Recipient:", recipientName, 106, y);
     y += 10;
+    drawPair("Sender Addr:", senderAddress, 14, y);
+    drawPair("Recipient Addr:", recipientAddress, 106, y);
+    y += 10;
+    drawPair("Sender Phone:", senderPhone, 14, y);
+    drawPair("Recipient Phone:", recipientPhone, 106, y);
+    y += 10;
     drawPair("Amount:", amountLabel, 14, y);
     drawPair("Agency:", agencyLabel, 106, y);
     y += 14;
     drawPair("Booking ID:", bookingId, 14, y);
+    drawPair("Consignment:", consignmentNumber, 106, y);
+    y += 10;
+    drawPair("Weight:", weightLabel, 14, y);
+    drawPair("Dimensions:", dimensionsLabel, 106, y);
+    y += 10;
+    drawPair("Sender Email:", senderEmail, 14, y);
+    drawPair("Recipient Email:", recipientEmail, 106, y);
     y += 10;
     drawPair("Track URL:", trackUrl, 14, y);
 
@@ -182,33 +195,7 @@ export function DownloadBookingPdfButton({
         },
         body: JSON.stringify({
           template,
-          bookingId,
-          bookingDateLabel,
-          updatedAtLabel,
-          statusLabel,
-          reference,
-          routeTypeLabel,
-          consignmentNumber,
-          fromCity,
-          toCity,
-          senderName,
-          senderAddress,
-          senderPhone,
-          senderEmail,
-          recipientName,
-          recipientAddress,
-          recipientPhone,
-          recipientEmail,
-          amountLabel,
-          weightLabel,
-          dimensionsLabel,
-          contentsLabel,
-          instructionsLabel,
-          trackingNotesLabel,
-          agencyLabel,
-          courierNameLabel,
-          trackUrl,
-          settings,
+          bookingId
         }),
       });
 

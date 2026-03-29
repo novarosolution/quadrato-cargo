@@ -9,6 +9,21 @@ export type ProfileUser = {
   updatedAt?: string;
 };
 
+export type SavedAddress = {
+  name: string;
+  email: string;
+  phone: string;
+  street: string;
+  city: string;
+  postal: string;
+  country: string;
+};
+
+export type AddressBook = {
+  sender: SavedAddress | null;
+  recipient: SavedAddress | null;
+};
+
 export type ProfileBooking = {
   id: string;
   userId: string | null;
@@ -26,7 +41,7 @@ export type ProfileBooking = {
   recipientName?: string | null;
   recipientAddress?: string | null;
   pickupOtpVerifiedAt?: string | null;
-  payload: unknown;
+  payload?: unknown;
 };
 
 export async function updateProfileNameApi(
@@ -89,6 +104,62 @@ export async function updateProfilePasswordApi(args: {
   }
 }
 
+export async function getAddressBookApi(): Promise<
+  { ok: true; addressBook: AddressBook } | { ok: false; error: string }
+> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/users/me/address-book`, {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store"
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      addressBook?: AddressBook;
+      error?: string;
+      message?: string;
+    };
+    if (res.ok && data.ok) {
+      return {
+        ok: true,
+        addressBook: data.addressBook || { sender: null, recipient: null }
+      };
+    }
+    return { ok: false, error: data.error || data.message || "Unable to load address book." };
+  } catch {
+    return { ok: false, error: "Cannot connect to server." };
+  }
+}
+
+export async function updateAddressBookApi(args: {
+  sender?: SavedAddress | null;
+  recipient?: SavedAddress | null;
+}): Promise<{ ok: true; addressBook: AddressBook } | { ok: false; error: string }> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/users/me/address-book`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(args)
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      addressBook?: AddressBook;
+      error?: string;
+      message?: string;
+    };
+    if (res.ok && data.ok) {
+      return {
+        ok: true,
+        addressBook: data.addressBook || { sender: null, recipient: null }
+      };
+    }
+    return { ok: false, error: data.error || data.message || "Unable to update address book." };
+  } catch {
+    return { ok: false, error: "Cannot connect to server." };
+  }
+}
+
 async function serverFetch<T>(
   path: string,
   cookieHeader: string,
@@ -116,9 +187,20 @@ export async function fetchProfileUserServer(cookieHeader: string) {
   );
 }
 
-export async function fetchProfileBookingsServer(cookieHeader: string) {
+export async function fetchProfileBookingsServer(
+  cookieHeader: string,
+  options?: { limit?: number; summary?: boolean }
+) {
+  const query = new URLSearchParams();
+  if (typeof options?.limit === "number" && Number.isFinite(options.limit)) {
+    query.set("limit", String(options.limit));
+  }
+  if (options?.summary) {
+    query.set("summary", "1");
+  }
+  const path = query.size ? `/api/users/me/bookings?${query.toString()}` : "/api/users/me/bookings";
   return serverFetch<{ ok: boolean; bookings: ProfileBooking[] }>(
-    "/api/users/me/bookings",
+    path,
     cookieHeader,
   );
 }

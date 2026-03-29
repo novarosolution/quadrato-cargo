@@ -12,7 +12,7 @@ import { PageHero } from "@/components/Hero";
 import { TrackOrderForm } from "./trakindfom";
 
 export const metadata: Metadata = {
-  title: "Track order",
+  title: "Track Order",
   description:
     "Track your shipment status using booking ID or consignment number.",
 };
@@ -27,10 +27,10 @@ export default async function TrackOrderPage({
   const session = await auth();
   const cookieHeader = (await cookies()).toString();
   const userBookingsRes = session?.user?.id
-    ? await fetchProfileBookingsServer(cookieHeader)
+    ? await fetchProfileBookingsServer(cookieHeader, { limit: 5, summary: true })
     : { ok: false as const };
   const userBookings = userBookingsRes.ok
-    ? (userBookingsRes.data.bookings || []).slice(0, 5)
+    ? (userBookingsRes.data.bookings || [])
     : [];
 
   return (
@@ -38,12 +38,12 @@ export default async function TrackOrderPage({
       <PageHero
         eyebrow="Tracking"
         title="Track your order in real time"
-        description="Enter your booking ID or consignment number to see latest dispatch status. You can also open this page directly from the QR slip."
+        description="Enter your booking ID or consignment number to see the latest status."
       />
-      <section className="py-12 sm:py-16">
+      <section className="page-section-compact">
         <Container className="max-w-2xl">
           {userBookings.length > 0 ? (
-            <div className="mb-6 rounded-2xl border border-border bg-surface-elevated/70 p-5">
+            <div className="panel-card mb-5">
               <h2 className="font-display text-lg font-semibold text-ink">
                 Your recent orders
               </h2>
@@ -54,10 +54,7 @@ export default async function TrackOrderPage({
                 {userBookings.map((b) => {
                   const reference = b.consignmentNumber || b.id;
                   return (
-                    <li
-                      key={b.id}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border-strong bg-canvas/40 px-3 py-2 text-sm"
-                    >
+                    <li key={b.id} className="panel-card-soft flex flex-wrap items-center justify-between gap-2 text-sm">
                       <span className="text-muted-soft">
                         {BOOKING_STATUS_LABELS[normalizeBookingStatus(b.status)]}
                       </span>
@@ -73,7 +70,7 @@ export default async function TrackOrderPage({
               </ul>
             </div>
           ) : null}
-          <div className="rounded-2xl border border-border bg-surface-elevated/70 p-6 shadow-2xl shadow-black/40 backdrop-blur-md sm:p-8">
+          <div className="panel-card shadow-2xl shadow-black/35">
             <TrackOrderForm initialReference={initialReference} />
           </div>
         </Container>

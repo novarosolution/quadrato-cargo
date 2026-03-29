@@ -45,7 +45,7 @@ export type ContactFormResult =
       ok: false;
       message: string;
       fieldErrors: Partial<
-        Record<"name" | "email" | "message" | "service", string>
+        Record<"name" | "email" | "phone" | "message" | "service", string>
       >;
     };
 
@@ -140,11 +140,16 @@ export async function fetchPublicTracking(
       `${getApiBaseUrl()}/api/public/track/${encodeURIComponent(reference.trim())}`,
       { cache: "no-store" },
     );
-    const data = (await res.json().catch(() => ({}))) as PublicTrackingResponse;
+    const data = (await res.json().catch(() => ({}))) as
+      | PublicTrackingResponse
+      | { message?: string; error?: string };
     if (res.ok && data.ok) return data;
     return {
       ok: false,
-      message: "Tracking not found for this reference.",
+      message:
+        ("message" in data && data.message) ||
+        ("error" in data && data.error) ||
+        "Tracking not found for this reference.",
     };
   } catch {
     return {

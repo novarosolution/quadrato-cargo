@@ -8,7 +8,9 @@ import {
   listBookingsByUserId
 } from "../modules/bookings/booking-repo.js";
 import {
+  findUsersByIds,
   findUserById,
+  updateUserAddressBook,
   updateUserName,
   updateUserPasswordHash
 } from "../modules/users/user-repo.js";
@@ -21,6 +23,19 @@ const updatePasswordSchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(MIN_PASSWORD_LENGTH),
   confirmPassword: z.string().min(MIN_PASSWORD_LENGTH)
+});
+const addressSchema = z.object({
+  name: z.string().trim().min(1),
+  email: z.string().trim().email(),
+  phone: z.string().trim().regex(/^\d{7,15}$/),
+  street: z.string().trim().min(1),
+  city: z.string().trim().min(1),
+  postal: z.string().trim().min(1),
+  country: z.string().trim().min(1)
+});
+const updateAddressBookSchema = z.object({
+  sender: addressSchema.nullish(),
+  recipient: addressSchema.nullish()
 });
 
 export function getMyProfile(req, res) {
@@ -44,17 +59,63 @@ export async function updateMyProfile(req, res, next) {
   }
 }
 
+export async function getMyAddressBook(req, res, next) {
+  try {
+    const user = await findUserById(req.auth.user.id);
+    return sendOk(res, {
+      addressBook: user?.addressBook || { sender: null, recipient: null }
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function updateMyAddressBook(req, res, next) {
+  try {
+    const parsed = updateAddressBookSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return sendError(res, "Please enter valid address details.", 400);
+    }
+    const user = await updateUserAddressBook(req.auth.user.id, {
+      ...(parsed.data.sender !== undefined ? { sender: parsed.data.sender } : {}),
+      ...(parsed.data.recipient !== undefined ? { recipient: parsed.data.recipient } : {})
+    });
+    return sendOk(res, {
+      message: "Address book updated successfully.",
+      addressBook: user?.addressBook || { sender: null, recipient: null }
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function listMyBookings(req, res, next) {
   try {
-    const rows = await listBookingsByUserId(req.auth.user.id, req.auth.user.email);
-    const bookings = await Promise.all(
-      rows.map(async (row) => {
-        if (!row?.courierId) return row;
-        const courier = await findUserById(row.courierId);
-        const courierName = String(courier?.name || courier?.email || "").trim() || null;
-        return { ...row, courierName };
-      })
+    const limitRaw = Number.parseInt(String(req.query.limit ?? "100"), 10);
+    const summary = String(req.query.summary ?? "0").trim() === "1";
+    const rows = await listBookingsByUserId(req.auth.user.id, req.auth.user.email, {
+      limit: Number.isFinite(limitRaw) ? limitRaw : 100,
+      summary,
+      backfill: false
+    });
+    const courierIds = Array.from(
+      new Set(
+        rows
+          .map((row) => String(row?.courierId || "").trim())
+          .filter(Boolean)
+      )
     );
+    const couriers = await findUsersByIds(courierIds);
+    const courierMap = new Map(
+      couriers.map((courier) => [
+        String(courier._id),
+        String(courier?.name || courier?.email || "").trim() || null
+      ])
+    );
+    const bookings = rows.map((row) => ({
+      ...row,
+      courierName: row?.courierId ? courierMap.get(String(row.courierId)) || null : null
+    }));
     return sendOk(res, { bookings });
   } catch (error) {
     return next(error);

@@ -8,19 +8,160 @@ import { getDb } from "../db/mongo.js";
 import { normalizeSiteSettings } from "../models/site-settings.model.js";
 import {
   createBooking,
-  findBookingByReference
+  findBookingByReference,
+  findBookingByUserAndId
 } from "../modules/bookings/booking-repo.js";
 import { createContactSubmission } from "../modules/contacts/contact-repo.js";
 import { verifyAuthToken } from "../modules/auth/token.js";
 import { findUserById } from "../modules/users/user-repo.js";
 
 const contactSchema = z.object({
-  name: z.string().trim().min(1),
-  email: z.string().trim().email(),
-  phone: z.string().trim().optional(),
+  name: z.string().trim().min(2),
+  email: z
+    .string()
+    .trim()
+    .email()
+    .refine((value) => !isPhoneLikeEmail(value), {
+      message: "Email cannot be only numbers."
+    }),
+  phone: z
+    .string()
+    .trim()
+    .optional()
+    .refine((value) => !value || /^\d{7,15}$/.test(String(value)), {
+      message: "Phone must contain only numbers (7 to 15 digits)."
+    }),
   service: z.string().trim().min(1),
-  message: z.string().trim().min(1)
+  message: z.string().trim().min(10).max(1000)
 });
+
+function isPhoneLikeEmail(value) {
+  return /^[\d+\-\s]+$/.test(String(value || "").trim());
+}
+
+const phoneSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{7,15}$/, {
+    message: "Phone must contain only numbers (7 to 15 digits)."
+  });
+
+const safeEmailSchema = z
+  .string()
+  .trim()
+  .email()
+  .refine((value) => !isPhoneLikeEmail(value), {
+    message: "Email cannot be only numbers."
+  });
+
+const bookingPayloadSchema = z
+  .object({
+    sender: z.object({
+      name: z.string().trim().min(2),
+      email: safeEmailSchema,
+      phone: phoneSchema,
+      street: z.string().trim().min(1),
+      city: z.string().trim().min(1),
+      postal: z.string().trim().min(3),
+      country: z.string().trim().min(1)
+    }),
+    recipient: z.object({
+      name: z.string().trim().min(2),
+      email: safeEmailSchema,
+      phone: phoneSchema,
+      street: z.string().trim().min(1),
+      city: z.string().trim().min(1),
+      postal: z.string().trim().min(3),
+      country: z.string().trim().min(1)
+    }),
+    shipment: z.object({
+      contentsDescription: z.string().trim().min(5),
+      weightKg: z.number().positive().max(1000),
+      dimensionsCm: z
+        .object({
+          l: z.string().trim().regex(/^\d+(\.\d+)?$/),
+          w: z.string().trim().regex(/^\d+(\.\d+)?$/),
+          h: z.string().trim().regex(/^\d+(\.\d+)?$/)
+        })
+        .optional(),
+      declaredValue: z.string().trim().max(120).optional()
+    }),
+    collectionMode: z.enum(["instant", "scheduled"]),
+    pickupDate: z.string().trim().optional(),
+    pickupTimeSlot: z.string().trim().optional(),
+    pickupPreference: z.string().trim().min(1).max(240),
+    instructions: z.string().trim().max(1000).optional(),
+    agreedInternational: z.boolean().optional()
+  })
+  .superRefine((payload, ctx) => {
+    if (payload.collectionMode !== "scheduled") return;
+    if (!String(payload.pickupDate || "").trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["pickupDate"],
+        message: "Pickup date is required for scheduled pickup."
+      });
+    }
+    if (!String(payload.pickupTimeSlot || "").trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["pickupTimeSlot"],
+        message: "Pickup time slot is required for scheduled pickup."
+      });
+    }
+    if (!String(payload.pickupPreference || "").trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["pickupPreference"],
+        message: "Pickup note is required for scheduled pickup."
+      });
+    }
+  });
+
+const createBookingRequestSchema = z.object({
+  routeType: z.enum(["domestic", "international"]),
+  bookingPayload: bookingPayloadSchema
+});
+
+const trackingReferenceSchema = z
+  .string()
+  .trim()
+  .min(6)
+  .max(40)
+  .regex(/^[a-zA-Z0-9-]+$/);
+
+function buildBookingFieldErrors(issues = []) {
+  const out = {};
+  const mapping = {
+    routeType: "routeType",
+    "bookingPayload.collectionMode": "collectionMode",
+    "bookingPayload.pickupDate": "pickupDate",
+    "bookingPayload.pickupTimeSlot": "pickupTimeSlot",
+    "bookingPayload.pickupPreference": "pickupPreference",
+    "bookingPayload.sender.name": "senderName",
+    "bookingPayload.sender.email": "senderEmail",
+    "bookingPayload.sender.phone": "senderPhone",
+    "bookingPayload.sender.street": "senderStreet",
+    "bookingPayload.sender.city": "senderCity",
+    "bookingPayload.sender.postal": "senderPostal",
+    "bookingPayload.sender.country": "senderCountry",
+    "bookingPayload.recipient.name": "recipientName",
+    "bookingPayload.recipient.email": "recipientEmail",
+    "bookingPayload.recipient.phone": "recipientPhone",
+    "bookingPayload.recipient.street": "recipientStreet",
+    "bookingPayload.recipient.city": "recipientCity",
+    "bookingPayload.recipient.postal": "recipientPostal",
+    "bookingPayload.recipient.country": "recipientCountry",
+    "bookingPayload.shipment.contentsDescription": "contentsDescription",
+    "bookingPayload.shipment.weightKg": "weightKg",
+    "bookingPayload.agreedInternational": "agreed"
+  };
+  for (const issue of issues) {
+    const key = mapping[String(issue.path || []).join(".")] || "routeType";
+    if (!out[key]) out[key] = issue.message || "Invalid value.";
+  }
+  return out;
+}
 
 const pdfRequestSchema = z.object({
   template: z.enum(["invoice", "tracking"]).default("invoice"),
@@ -49,21 +190,23 @@ const pdfRequestSchema = z.object({
   trackingNotesLabel: z.string().trim().default(""),
   agencyLabel: z.string().trim().default(""),
   courierNameLabel: z.string().trim().default(""),
-  trackUrl: z.string().trim().min(1),
-  settings: z.object({
-    companyName: z.string().trim().default("Quadrato Cargo"),
-    companyAddress: z.string().trim().default(""),
-    logoText: z.string().trim().default("QC"),
-    primaryColor: z.string().trim().default("#0f766e"),
-    accentColor: z.string().trim().default("#16a34a"),
-    cardColor: z.string().trim().default("#f8fafc"),
-    headerSubtitle: z.string().trim().default("International courier service"),
-    supportEmail: z.string().trim().default("support@quadratocargo.com"),
-    supportPhone: z.string().trim().default("+1 (555) 010-0199"),
-    website: z.string().trim().default("https://quadratocargo.com"),
-    watermarkText: z.string().trim().default("Quadrato Cargo"),
-    footerNote: z.string().trim().default("Thank you for choosing Quadrato Cargo.")
-  })
+  trackUrl: z.string().trim().default(""),
+  settings: z
+    .object({
+      companyName: z.string().trim().default("Quadrato Cargo"),
+      companyAddress: z.string().trim().default(""),
+      logoText: z.string().trim().default("QC"),
+      primaryColor: z.string().trim().default("#0f766e"),
+      accentColor: z.string().trim().default("#16a34a"),
+      cardColor: z.string().trim().default("#f8fafc"),
+      headerSubtitle: z.string().trim().default("International courier service"),
+      supportEmail: z.string().trim().default("support@quadratocargo.com"),
+      supportPhone: z.string().trim().default("+1 (555) 010-0199"),
+      website: z.string().trim().default("https://quadratocargo.com"),
+      watermarkText: z.string().trim().default("Quadrato Cargo"),
+      footerNote: z.string().trim().default("Thank you for choosing Quadrato Cargo.")
+    })
+    .optional()
 });
 
 function esc(value) {
@@ -136,6 +279,155 @@ async function launchPdfBrowser() {
       throw error;
     }
   }
+}
+
+let sharedPdfBrowser = null;
+
+async function getPdfBrowser() {
+  if (sharedPdfBrowser && sharedPdfBrowser.isConnected()) return sharedPdfBrowser;
+  sharedPdfBrowser = await launchPdfBrowser();
+  sharedPdfBrowser.on("disconnected", () => {
+    sharedPdfBrowser = null;
+  });
+  return sharedPdfBrowser;
+}
+
+function bookingStatusLabel(status) {
+  const value = String(status || "").trim();
+  const labels = {
+    submitted: "Submitted",
+    confirmed: "Confirmed",
+    serviceability_check: "Serviceability check",
+    serviceable: "Serviceable area confirmed",
+    pickup_scheduled: "Pickup scheduled",
+    out_for_pickup: "Out for pickup",
+    picked_up: "Picked up",
+    agency_processing: "At agency processing",
+    in_transit: "In transit",
+    out_for_delivery: "Out for delivery",
+    delivery_attempted: "Delivery attempted",
+    on_hold: "On hold",
+    delivered: "Delivered",
+    cancelled: "Cancelled"
+  };
+  return labels[value] || "Submitted";
+}
+
+function safeDateLabel(raw) {
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return String(raw || "-");
+  return new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
+
+function payloadValue(payload, path, fallback = "-") {
+  let current = payload;
+  for (const key of path) {
+    if (!current || typeof current !== "object") return fallback;
+    current = current[key];
+  }
+  const out = String(current ?? "").trim();
+  return out || fallback;
+}
+
+async function buildPdfDataFromBooking(req, parsedData) {
+  const token = req.cookies?.[env.authCookieName];
+  if (!token) {
+    throw new Error("Unable to build booking PDF context.");
+  }
+  let authPayload;
+  try {
+    authPayload = verifyAuthToken(token);
+  } catch {
+    throw new Error("Unable to build booking PDF context.");
+  }
+  const userId = String(authPayload?.sub || "").trim();
+  const userEmail = String(authPayload?.email || "").trim();
+  if (!userId) throw new Error("Unable to build booking PDF context.");
+
+  const booking = await findBookingByUserAndId(userId, parsedData.bookingId, userEmail);
+  if (!booking) {
+    throw new Error("Unable to build booking PDF context.");
+  }
+  if (!booking.pickupOtpVerifiedAt) {
+    throw new Error("Pickup OTP verification pending.");
+  }
+
+  const db = await getDb();
+  const settingsRow = await db.collection("settings").findOne({ key: "site" });
+  const normalizedSettings = normalizeSiteSettings(settingsRow);
+  const payload = booking.payload || {};
+  const reference = String(booking.consignmentNumber || booking.id || parsedData.bookingId).trim();
+  const senderStreet = payloadValue(payload, ["sender", "street"], "");
+  const senderCity = payloadValue(payload, ["sender", "city"], "");
+  const senderPostal = payloadValue(payload, ["sender", "postal"], "");
+  const senderCountry = payloadValue(payload, ["sender", "country"], "");
+  const recipientStreet = payloadValue(payload, ["recipient", "street"], "");
+  const recipientCity = payloadValue(payload, ["recipient", "city"], "");
+  const recipientPostal = payloadValue(payload, ["recipient", "postal"], "");
+  const recipientCountry = payloadValue(payload, ["recipient", "country"], "");
+  const senderAddress = [senderStreet, senderCity, senderPostal, senderCountry]
+    .map((v) => String(v || "").trim())
+    .filter(Boolean)
+    .join(", ") || "-";
+  const recipientAddress = [recipientStreet, recipientCity, recipientPostal, recipientCountry]
+    .map((v) => String(v || "").trim())
+    .filter(Boolean)
+    .join(", ") || "-";
+  const weightValue = payloadValue(payload, ["shipment", "weightKg"], "-");
+  const dimL = payloadValue(payload, ["shipment", "dimensionsCm", "l"], "?");
+  const dimW = payloadValue(payload, ["shipment", "dimensionsCm", "w"], "?");
+  const dimH = payloadValue(payload, ["shipment", "dimensionsCm", "h"], "?");
+  const dimensions = dimL === "?" && dimW === "?" && dimH === "?" ? "-" : `${dimL} x ${dimW} x ${dimH} cm`;
+  const courierName = booking.courierId
+    ? String((await findUserById(booking.courierId))?.name || "").trim() || "-"
+    : "-";
+  const website = String(normalizedSettings.pdfWebsite || "https://quadratocargo.com").trim();
+  const trackUrl =
+    parsedData.trackUrl ||
+    `${website.replace(/\/$/, "")}/public/tsking?reference=${encodeURIComponent(reference)}`;
+
+  return {
+    ...parsedData,
+    bookingDateLabel: safeDateLabel(booking.createdAt),
+    updatedAtLabel: safeDateLabel(booking.updatedAt || booking.createdAt),
+    statusLabel: bookingStatusLabel(booking.status),
+    reference,
+    routeTypeLabel: String(booking.routeType || "-"),
+    consignmentNumber: String(booking.consignmentNumber || "-"),
+    fromCity: senderCity || "-",
+    toCity: recipientCity || "-",
+    senderName: payloadValue(payload, ["sender", "name"], "-"),
+    senderAddress,
+    senderPhone: payloadValue(payload, ["sender", "phone"], "-"),
+    senderEmail: payloadValue(payload, ["sender", "email"], "-"),
+    recipientName: payloadValue(payload, ["recipient", "name"], "-"),
+    recipientAddress,
+    recipientPhone: payloadValue(payload, ["recipient", "phone"], "-"),
+    recipientEmail: payloadValue(payload, ["recipient", "email"], "-"),
+    amountLabel: payloadValue(payload, ["shipment", "declaredValue"], "-"),
+    weightLabel: String(weightValue === "-" ? "-" : `${weightValue} kg`),
+    dimensionsLabel: dimensions,
+    contentsLabel: payloadValue(payload, ["shipment", "contentsDescription"], "-"),
+    instructionsLabel: payloadValue(payload, ["instructions"], "-"),
+    trackingNotesLabel: String(booking.customerTrackingNote || "-"),
+    agencyLabel: String(booking.assignedAgency || "-"),
+    courierNameLabel: courierName,
+    trackUrl,
+    settings: {
+      companyName: String(normalizedSettings.pdfCompanyName || "Quadrato Cargo"),
+      companyAddress: String(normalizedSettings.pdfCompanyAddress || ""),
+      logoText: String(normalizedSettings.pdfLogoText || "QC"),
+      primaryColor: String(normalizedSettings.pdfPrimaryColor || "#0f766e"),
+      accentColor: String(normalizedSettings.pdfAccentColor || "#16a34a"),
+      cardColor: String(normalizedSettings.pdfCardColor || "#f8fafc"),
+      headerSubtitle: String(normalizedSettings.pdfHeaderSubtitle || "International courier service"),
+      supportEmail: String(normalizedSettings.pdfSupportEmail || "support@quadratocargo.com"),
+      supportPhone: String(normalizedSettings.pdfSupportPhone || "+1 (555) 010-0199"),
+      website,
+      watermarkText: String(normalizedSettings.pdfWatermarkText || "Quadrato Cargo"),
+      footerNote: String(normalizedSettings.pdfFooterNote || "Thank you for choosing Quadrato Cargo.")
+    }
+  };
 }
 
 function buildPdfHtml(input, barcodeDataUrl) {
@@ -741,6 +1033,7 @@ export async function createContact(req, res, next) {
         fieldErrors: {
           name: f.name?.[0],
           email: f.email?.[0],
+          phone: f.phone?.[0],
           service: f.service?.[0],
           message: f.message?.[0]
         }
@@ -756,13 +1049,14 @@ export async function createContact(req, res, next) {
 
 export async function createPublicBooking(req, res, next) {
   try {
-    const routeType = String(req.body?.routeType ?? "").trim();
-    const bookingPayload = req.body?.bookingPayload;
-    if (!bookingPayload || typeof bookingPayload !== "object") {
+    const parsed = createBookingRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
       return sendError(res, "Invalid booking request.", 400, {
-        fieldErrors: { routeType: "Please fill the booking form correctly." }
+        fieldErrors: buildBookingFieldErrors(parsed.error.issues)
       });
     }
+    const routeType = parsed.data.routeType;
+    const bookingPayload = parsed.data.bookingPayload;
     let userId = null;
     const token = req.cookies?.[env.authCookieName];
     if (token) {
@@ -791,7 +1085,15 @@ export async function createPublicBooking(req, res, next) {
 
 export async function trackBooking(req, res, next) {
   try {
-    const row = await findBookingByReference(req.params.reference ?? "");
+    const parsedReference = trackingReferenceSchema.safeParse(req.params.reference ?? "");
+    if (!parsedReference.success) {
+      return sendError(
+        res,
+        "Enter a valid booking ID or consignment number.",
+        400
+      );
+    }
+    const row = await findBookingByReference(parsedReference.data);
     if (!row) {
       return sendNotFound(res, "Tracking not found.");
     }
@@ -833,53 +1135,59 @@ export async function getSiteSettings(_req, res, next) {
 }
 
 export async function generateBookingPdf(req, res, next) {
-  let browser;
+  let page;
   try {
     const parsed = pdfRequestSchema.safeParse(req.body);
     if (!parsed.success) {
       return sendError(res, "Invalid PDF data payload.", 400);
     }
 
-    const isTrackingTemplate = parsed.data.template === "tracking";
-    const qrDataUrl = isTrackingTemplate
-      ? await QRCode.toDataURL(String(parsed.data.trackUrl || "").trim() || "https://quadratocargo.com", {
-          margin: 1,
-          width: 220,
-          color: {
-            dark: normalizeHex(parsed.data.settings.primaryColor, "#0f766e"),
-            light: "#ffffff"
-          }
-        })
-      : "";
-    const barcodePng = await bwipjs.toBuffer({
-      bcid: "code128",
-      text: String(parsed.data.reference || parsed.data.bookingId || "QC-INVOICE"),
-      scale: 3,
-      height: 16,
-      includetext: false,
-      backgroundcolor: "FFFFFF"
-    });
+    const input = await buildPdfDataFromBooking(req, parsed.data);
+
+    const isTrackingTemplate = input.template === "tracking";
+    const [qrDataUrl, barcodePng] = await Promise.all([
+      isTrackingTemplate
+        ? QRCode.toDataURL(String(input.trackUrl || "").trim() || "https://quadratocargo.com", {
+            margin: 1,
+            width: 220,
+            color: {
+              dark: normalizeHex(input.settings.primaryColor, "#0f766e"),
+              light: "#ffffff"
+            }
+          })
+        : Promise.resolve(""),
+      bwipjs.toBuffer({
+        bcid: "code128",
+        text: String(input.reference || input.bookingId || "QC-INVOICE"),
+        scale: 3,
+        height: 16,
+        includetext: false,
+        backgroundcolor: "FFFFFF"
+      })
+    ]);
     const barcodeDataUrl = `data:image/png;base64,${barcodePng.toString("base64")}`;
     const html = isTrackingTemplate
-      ? buildTrackingPdfHtml(parsed.data, qrDataUrl, barcodeDataUrl)
-      : buildPdfHtml(parsed.data, barcodeDataUrl);
+      ? buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl)
+      : buildPdfHtml(input, barcodeDataUrl);
 
-    browser = await launchPdfBrowser();
-    const page = await browser.newPage();
+    const browser = await getPdfBrowser();
+    page = await browser.newPage();
     await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 2 });
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    await page.setContent(html, { waitUntil: "domcontentloaded" });
     const pdfBuffer = await page.pdf({
       format: "A4",
       printBackground: true,
       margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" }
     });
 
-    const filenameSafeRef = parsed.data.reference.replace(/[^a-zA-Z0-9-_]/g, "-");
+    const filenameSafeRef = String(input.reference || input.bookingId)
+      .replace(/[^a-zA-Z0-9-_]/g, "-")
+      .trim();
     const pdfBinary = Buffer.from(pdfBuffer);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="courier-details-${filenameSafeRef || parsed.data.bookingId}.pdf"`
+      `attachment; filename="courier-details-${filenameSafeRef || input.bookingId}.pdf"`
     );
     return res.status(200).send(pdfBinary);
   } catch (error) {
@@ -898,10 +1206,20 @@ export async function generateBookingPdf(req, res, next) {
         500
       );
     }
+    if (error instanceof Error && error.message.includes("Unable to build booking PDF context")) {
+      return sendError(res, "Unable to load booking data for PDF.", 400);
+    }
+    if (error instanceof Error && error.message.includes("Pickup OTP verification pending")) {
+      return sendError(
+        res,
+        "Invoice/PDF is available after courier pickup OTP verification.",
+        403
+      );
+    }
     return next(error);
   } finally {
-    if (browser) {
-      await browser.close().catch(() => {});
+    if (page) {
+      await page.close().catch(() => {});
     }
   }
 }

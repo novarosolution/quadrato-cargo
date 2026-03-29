@@ -15,6 +15,19 @@ export async function findUserById(userId) {
   return db.collection(USERS).findOne({ _id: new ObjectId(userId) });
 }
 
+export async function findUsersByIds(userIds = []) {
+  const db = await getDb();
+  const objectIds = Array.from(
+    new Set(
+      userIds
+        .map((id) => String(id || "").trim())
+        .filter((id) => ObjectId.isValid(id))
+    )
+  ).map((id) => new ObjectId(id));
+  if (objectIds.length === 0) return [];
+  return db.collection(USERS).find({ _id: { $in: objectIds } }).toArray();
+}
+
 export async function createUser({ email, name, passwordHash, role = "customer" }) {
   const db = await getDb();
   const payload = createUserDoc({ email, name, passwordHash, role });
@@ -67,6 +80,24 @@ export async function updateUserDutyStatus(userId, isOnDuty) {
       }
     }
   );
+  return db.collection(USERS).findOne({ _id });
+}
+
+export async function updateUserAddressBook(userId, addressBookPatch) {
+  const db = await getDb();
+  if (!ObjectId.isValid(userId)) return null;
+  const _id = new ObjectId(userId);
+  const patch = {
+    ...(addressBookPatch?.sender !== undefined
+      ? { "addressBook.sender": addressBookPatch.sender || null }
+      : {}),
+    ...(addressBookPatch?.recipient !== undefined
+      ? { "addressBook.recipient": addressBookPatch.recipient || null }
+      : {}),
+    updatedAt: new Date()
+  };
+  if (Object.keys(patch).length === 1) return db.collection(USERS).findOne({ _id });
+  await db.collection(USERS).updateOne({ _id }, { $set: patch });
   return db.collection(USERS).findOne({ _id });
 }
 

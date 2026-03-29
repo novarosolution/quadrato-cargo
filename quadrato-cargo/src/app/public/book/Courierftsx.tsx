@@ -1,9 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { postBookCourierApi } from "@/lib/api/public-client";
 import { authFieldClass, authInputClass } from "@/components/auth/authStyles";
+import {
+  getAddressBookApi,
+  type SavedAddress,
+  updateAddressBookApi,
+} from "@/lib/api/profile-client";
 import {
   type BookCourierStep,
   bookCourierRowFromFormData,
@@ -24,6 +29,202 @@ const initial: BookCourierState = {
   fieldErrors: {},
 };
 
+const COUNTRY_OPTIONS = [
+  "Afghanistan",
+  "Albania",
+  "Algeria",
+  "Andorra",
+  "Angola",
+  "Antigua and Barbuda",
+  "Argentina",
+  "Armenia",
+  "Australia",
+  "Austria",
+  "Azerbaijan",
+  "Bahamas",
+  "Bahrain",
+  "Bangladesh",
+  "Barbados",
+  "Belarus",
+  "Belgium",
+  "Belize",
+  "Benin",
+  "Bhutan",
+  "Bolivia",
+  "Bosnia and Herzegovina",
+  "Botswana",
+  "Brazil",
+  "Brunei",
+  "Bulgaria",
+  "Burkina Faso",
+  "Burundi",
+  "Cambodia",
+  "Cameroon",
+  "Canada",
+  "Cape Verde",
+  "Central African Republic",
+  "Chad",
+  "Chile",
+  "China",
+  "Colombia",
+  "Comoros",
+  "Congo",
+  "Costa Rica",
+  "Croatia",
+  "Cuba",
+  "Cyprus",
+  "Czech Republic",
+  "Denmark",
+  "Djibouti",
+  "Dominica",
+  "Dominican Republic",
+  "Ecuador",
+  "Egypt",
+  "El Salvador",
+  "Equatorial Guinea",
+  "Eritrea",
+  "Estonia",
+  "Eswatini",
+  "Ethiopia",
+  "Fiji",
+  "Finland",
+  "France",
+  "Gabon",
+  "Gambia",
+  "Georgia",
+  "Germany",
+  "Ghana",
+  "Greece",
+  "Grenada",
+  "Guatemala",
+  "Guinea",
+  "Guinea-Bissau",
+  "Guyana",
+  "Haiti",
+  "Honduras",
+  "Hungary",
+  "Iceland",
+  "India",
+  "Indonesia",
+  "Iran",
+  "Iraq",
+  "Ireland",
+  "Israel",
+  "Italy",
+  "Jamaica",
+  "Japan",
+  "Jordan",
+  "Kazakhstan",
+  "Kenya",
+  "Kiribati",
+  "Kuwait",
+  "Kyrgyzstan",
+  "Laos",
+  "Latvia",
+  "Lebanon",
+  "Lesotho",
+  "Liberia",
+  "Libya",
+  "Liechtenstein",
+  "Lithuania",
+  "Luxembourg",
+  "Madagascar",
+  "Malawi",
+  "Malaysia",
+  "Maldives",
+  "Mali",
+  "Malta",
+  "Marshall Islands",
+  "Mauritania",
+  "Mauritius",
+  "Mexico",
+  "Micronesia",
+  "Moldova",
+  "Monaco",
+  "Mongolia",
+  "Montenegro",
+  "Morocco",
+  "Mozambique",
+  "Myanmar",
+  "Namibia",
+  "Nauru",
+  "Nepal",
+  "Netherlands",
+  "New Zealand",
+  "Nicaragua",
+  "Niger",
+  "Nigeria",
+  "North Korea",
+  "North Macedonia",
+  "Norway",
+  "Oman",
+  "Pakistan",
+  "Palau",
+  "Panama",
+  "Papua New Guinea",
+  "Paraguay",
+  "Peru",
+  "Philippines",
+  "Poland",
+  "Portugal",
+  "Qatar",
+  "Romania",
+  "Russia",
+  "Rwanda",
+  "Saint Kitts and Nevis",
+  "Saint Lucia",
+  "Saint Vincent and the Grenadines",
+  "Samoa",
+  "San Marino",
+  "Sao Tome and Principe",
+  "Saudi Arabia",
+  "Senegal",
+  "Serbia",
+  "Seychelles",
+  "Sierra Leone",
+  "Singapore",
+  "Slovakia",
+  "Slovenia",
+  "Solomon Islands",
+  "Somalia",
+  "South Africa",
+  "South Korea",
+  "South Sudan",
+  "Spain",
+  "Sri Lanka",
+  "Sudan",
+  "Suriname",
+  "Sweden",
+  "Switzerland",
+  "Syria",
+  "Taiwan",
+  "Tajikistan",
+  "Tanzania",
+  "Thailand",
+  "Timor-Leste",
+  "Togo",
+  "Tonga",
+  "Trinidad and Tobago",
+  "Tunisia",
+  "Turkey",
+  "Turkmenistan",
+  "Tuvalu",
+  "Uganda",
+  "Ukraine",
+  "United Arab Emirates",
+  "United Kingdom",
+  "United States",
+  "Uruguay",
+  "Uzbekistan",
+  "Vanuatu",
+  "Vatican City",
+  "Venezuela",
+  "Vietnam",
+  "Yemen",
+  "Zambia",
+  "Zimbabwe"
+];
+
 function Err({ id, msg }: { id: string; msg?: string }) {
   if (!msg) return null;
   return (
@@ -37,10 +238,84 @@ export function BookCourierForm() {
   const [pending, setPending] = useState(false);
   const [state, setState] = useState<BookCourierState>(initial);
   const [step, setStep] = useState<BookCourierStep>(1);
+  const [addressBook, setAddressBook] = useState<{
+    sender: SavedAddress | null;
+    recipient: SavedAddress | null;
+  }>({ sender: null, recipient: null });
+  const [addressHint, setAddressHint] = useState<string>("");
   const formRef = useRef<HTMLFormElement | null>(null);
   const e = state.fieldErrors;
+  const stepMeta: Record<BookCourierStep, { title: string; note: string }> = {
+    1: { title: "Route and pickup mode", note: "Choose shipment type and collection preference." },
+    2: { title: "Sender details", note: "Add pickup person and address details." },
+    3: { title: "Recipient details", note: "Add delivery contact and destination address." },
+    4: { title: "Parcel details", note: "Add package details and submit your booking." },
+  };
 
   const canShow = (target: BookCourierStep) => step === target;
+
+  useEffect(() => {
+    let active = true;
+    getAddressBookApi().then((res) => {
+      if (!active || !res.ok) return;
+      setAddressBook(res.addressBook);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const setFormValue = (name: string, value: string) => {
+    if (!formRef.current) return;
+    const el = formRef.current.elements.namedItem(name) as
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | HTMLSelectElement
+      | null;
+    if (!el) return;
+    el.value = value;
+  };
+
+  const applySavedAddress = (kind: "sender" | "recipient") => {
+    const saved = addressBook[kind];
+    if (!saved) return;
+    const p = kind;
+    setFormValue(`${p}Name`, saved.name);
+    setFormValue(`${p}Email`, saved.email);
+    setFormValue(`${p}Phone`, saved.phone);
+    setFormValue(`${p}Street`, saved.street);
+    setFormValue(`${p}City`, saved.city);
+    setFormValue(`${p}Postal`, saved.postal);
+    setFormValue(`${p}Country`, saved.country);
+    setAddressHint(`Saved ${kind} address applied.`);
+  };
+
+  const saveCurrentAddress = async (kind: "sender" | "recipient") => {
+    if (!formRef.current) return;
+    const row = bookCourierRowFromFormData(new FormData(formRef.current));
+    const draft: SavedAddress = {
+      name: kind === "sender" ? row.senderName : row.recipientName,
+      email: kind === "sender" ? row.senderEmail : row.recipientEmail,
+      phone: kind === "sender" ? row.senderPhone : row.recipientPhone,
+      street: kind === "sender" ? row.senderStreet : row.recipientStreet,
+      city: kind === "sender" ? row.senderCity : row.recipientCity,
+      postal: kind === "sender" ? row.senderPostal : row.recipientPostal,
+      country: kind === "sender" ? row.senderCountry : row.recipientCountry,
+    };
+    if (!draft.name || !draft.email || !draft.phone || !draft.street || !draft.city || !draft.postal || !draft.country) {
+      setAddressHint(`Please fill ${kind} fields before saving.`);
+      return;
+    }
+    const res = await updateAddressBookApi(
+      kind === "sender" ? { sender: draft } : { recipient: draft }
+    );
+    if (!res.ok) {
+      setAddressHint(res.error);
+      return;
+    }
+    setAddressBook(res.addressBook);
+    setAddressHint(`${kind === "sender" ? "Sender" : "Recipient"} address saved.`);
+  };
 
   const onNextStep = (target: BookCourierStep) => {
     if (!formRef.current) return;
@@ -105,17 +380,24 @@ export function BookCourierForm() {
   }
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} className="space-y-8" noValidate>
-      <div className="rounded-2xl border border-border bg-canvas/20 p-4 sm:p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-soft">
-          Booking step {step} of 4
-        </p>
+    <form ref={formRef} onSubmit={onSubmit} className="rounded-3xl border border-border bg-canvas/10 p-4 shadow-sm backdrop-blur-md sm:p-6" noValidate>
+      <div className="rounded-2xl border border-teal/25 bg-linear-to-r from-teal/10 via-canvas/30 to-canvas/20 p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-soft">
+            Booking steps
+          </p>
+          <p className="rounded-full border border-teal/30 bg-teal/10 px-2.5 py-1 text-xs font-semibold text-teal">
+            Step {step} of 4
+          </p>
+        </div>
+        <h3 className="mt-2 font-display text-lg font-semibold text-ink">{stepMeta[step].title}</h3>
+        <p className="mt-1 text-sm text-muted">{stepMeta[step].note}</p>
         <div className="mt-3 grid grid-cols-4 gap-2">
           {[1, 2, 3, 4].map((s) => (
             <div
               key={s}
-              className={`h-2 rounded-full ${
-                step >= s ? "bg-teal" : "bg-border"
+              className={`h-2 rounded-full transition ${
+                step >= s ? "bg-teal" : "bg-border/70"
               }`}
             />
           ))}
@@ -123,7 +405,7 @@ export function BookCourierForm() {
       </div>
 
       <fieldset
-        className={`space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6 ${
+        className={`space-y-4 rounded-2xl border border-border bg-surface-elevated/70 p-5 shadow-sm backdrop-blur-md sm:p-6 ${
           canShow(1) ? "" : "hidden"
         }`}
       >
@@ -159,7 +441,7 @@ export function BookCourierForm() {
       </fieldset>
 
       <fieldset
-        className={`space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6 ${
+        className={`space-y-4 rounded-2xl border border-border bg-surface-elevated/70 p-5 shadow-sm backdrop-blur-md sm:p-6 ${
           canShow(1) ? "" : "hidden"
         }`}
       >
@@ -168,7 +450,7 @@ export function BookCourierForm() {
         </legend>
         <p className="text-sm text-muted">
           Choose instant or scheduled pickup. Scheduled mode requires date and
-          time slot.
+          time slot (24/7 available).
         </p>
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-strong bg-ghost-fill px-4 py-3 has-checked:border-teal/40 has-checked:bg-teal/5">
@@ -223,10 +505,11 @@ export function BookCourierForm() {
               defaultValue=""
             >
               <option value="">Select a slot</option>
-              <option value="09:00-12:00">09:00-12:00</option>
-              <option value="12:00-15:00">12:00-15:00</option>
-              <option value="15:00-18:00">15:00-18:00</option>
-              <option value="18:00-21:00">18:00-21:00</option>
+              <option value="Any time (24/7)">Any time (24/7)</option>
+              <option value="00:00-06:00">00:00-06:00</option>
+              <option value="06:00-12:00">06:00-12:00</option>
+              <option value="12:00-18:00">12:00-18:00</option>
+              <option value="18:00-24:00">18:00-24:00</option>
             </select>
             <Err id="pickupTimeSlot-err" msg={e.pickupTimeSlot} />
           </div>
@@ -235,13 +518,30 @@ export function BookCourierForm() {
       </fieldset>
 
       <fieldset
-        className={`space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6 ${
+        className={`space-y-4 rounded-2xl border border-border bg-surface-elevated/70 p-5 shadow-sm backdrop-blur-md sm:p-6 ${
           canShow(2) ? "" : "hidden"
         }`}
       >
         <legend className="font-display text-lg font-semibold text-ink px-1">
           Step 2: Sender &amp; pickup
         </legend>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => applySavedAddress("sender")}
+            className="rounded-lg border border-border-strong bg-canvas/40 px-3 py-1.5 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+            disabled={!addressBook.sender}
+          >
+            Use saved sender
+          </button>
+          <button
+            type="button"
+            onClick={() => void saveCurrentAddress("sender")}
+            className="rounded-lg border border-border-strong bg-canvas/40 px-3 py-1.5 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+          >
+            Save sender address
+          </button>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label htmlFor="senderName" className="text-sm font-medium text-ink">
@@ -266,6 +566,7 @@ export function BookCourierForm() {
               name="senderEmail"
               type="email"
               autoComplete="email"
+              inputMode="email"
               className={authFieldClass}
               aria-invalid={Boolean(e.senderEmail)}
               aria-describedby={e.senderEmail ? "senderEmail-err" : undefined}
@@ -281,6 +582,14 @@ export function BookCourierForm() {
               name="senderPhone"
               type="tel"
               autoComplete="tel"
+              inputMode="tel"
+              pattern="[0-9]{7,15}"
+              minLength={7}
+              maxLength={15}
+              onInput={(event) => {
+                const input = event.currentTarget;
+                input.value = input.value.replace(/\D/g, "").slice(0, 15);
+              }}
               className={authFieldClass}
               aria-invalid={Boolean(e.senderPhone)}
               aria-describedby={e.senderPhone ? "senderPhone-err" : undefined}
@@ -333,28 +642,54 @@ export function BookCourierForm() {
             <label htmlFor="senderCountry" className="text-sm font-medium text-ink">
               Country (pickup) <span className="text-teal">*</span>
             </label>
-            <input
+            <select
               id="senderCountry"
               name="senderCountry"
               autoComplete="country-name"
-              placeholder="e.g. United States"
               className={authFieldClass}
               aria-invalid={Boolean(e.senderCountry)}
               aria-describedby={e.senderCountry ? "senderCountry-err" : undefined}
-            />
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Select pickup country
+              </option>
+              {COUNTRY_OPTIONS.map((country) => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
             <Err id="senderCountry-err" msg={e.senderCountry} />
           </div>
         </div>
       </fieldset>
 
       <fieldset
-        className={`space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6 ${
+        className={`space-y-4 rounded-2xl border border-border bg-surface-elevated/70 p-5 shadow-sm backdrop-blur-md sm:p-6 ${
           canShow(3) ? "" : "hidden"
         }`}
       >
         <legend className="font-display text-lg font-semibold text-ink px-1">
           Step 3: Recipient &amp; delivery
         </legend>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => applySavedAddress("recipient")}
+            className="rounded-lg border border-border-strong bg-canvas/40 px-3 py-1.5 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+            disabled={!addressBook.recipient}
+          >
+            Use saved recipient
+          </button>
+          <button
+            type="button"
+            onClick={() => void saveCurrentAddress("recipient")}
+            className="rounded-lg border border-border-strong bg-canvas/40 px-3 py-1.5 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+          >
+            Save recipient address
+          </button>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label htmlFor="recipientName" className="text-sm font-medium text-ink">
@@ -379,6 +714,7 @@ export function BookCourierForm() {
               name="recipientEmail"
               type="email"
               autoComplete="email"
+              inputMode="email"
               className={authFieldClass}
               aria-invalid={Boolean(e.recipientEmail)}
               aria-describedby={
@@ -396,6 +732,14 @@ export function BookCourierForm() {
               name="recipientPhone"
               type="tel"
               autoComplete="tel"
+              inputMode="tel"
+              pattern="[0-9]{7,15}"
+              minLength={7}
+              maxLength={15}
+              onInput={(event) => {
+                const input = event.currentTarget;
+                input.value = input.value.replace(/\D/g, "").slice(0, 15);
+              }}
               className={authFieldClass}
               aria-invalid={Boolean(e.recipientPhone)}
               aria-describedby={
@@ -463,24 +807,33 @@ export function BookCourierForm() {
             >
               Country (delivery) <span className="text-teal">*</span>
             </label>
-            <input
+            <select
               id="recipientCountry"
               name="recipientCountry"
               autoComplete="shipping country"
-              placeholder="e.g. Germany"
               className={authFieldClass}
               aria-invalid={Boolean(e.recipientCountry)}
               aria-describedby={
                 e.recipientCountry ? "recipientCountry-err" : undefined
               }
-            />
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Select delivery country
+              </option>
+              {COUNTRY_OPTIONS.map((country) => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
             <Err id="recipientCountry-err" msg={e.recipientCountry} />
           </div>
         </div>
       </fieldset>
 
       <fieldset
-        className={`space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6 ${
+        className={`space-y-4 rounded-2xl border border-border bg-surface-elevated/70 p-5 shadow-sm backdrop-blur-md sm:p-6 ${
           canShow(4) ? "" : "hidden"
         }`}
       >
@@ -560,7 +913,7 @@ export function BookCourierForm() {
       </fieldset>
 
       <fieldset
-        className={`space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6 ${
+        className={`space-y-4 rounded-2xl border border-border bg-surface-elevated/70 p-5 shadow-sm backdrop-blur-md sm:p-6 ${
           canShow(4) ? "" : "hidden"
         }`}
       >
@@ -630,7 +983,7 @@ export function BookCourierForm() {
         <Err id="agreed-err" msg={e.agreed} />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="mt-8 grid gap-3 sm:grid-cols-2">
         {step > 1 ? (
           <button
             type="button"
@@ -638,7 +991,7 @@ export function BookCourierForm() {
               setState((prev) => ({ ...prev, message: "", fieldErrors: {} }));
               setStep((prev) => (prev - 1) as BookCourierStep);
             }}
-            className="rounded-2xl border border-border-strong bg-canvas/40 px-4 py-3 text-sm font-semibold text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+            className="rounded-2xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm font-semibold text-ink transition hover:border-teal/35 hover:bg-pill-hover"
           >
             Back
           </button>
@@ -649,9 +1002,9 @@ export function BookCourierForm() {
           <button
             type="button"
             onClick={() => onNextStep((step + 1) as BookCourierStep)}
-            className="btn-primary w-full rounded-2xl bg-linear-to-r from-accent-deep via-accent to-accent-hover py-3 text-sm font-semibold text-white shadow-lg shadow-accent/25"
+            className="btn-primary w-full rounded-2xl bg-linear-to-r from-accent-deep via-accent to-accent-hover py-3 text-sm font-semibold text-white shadow-lg shadow-accent/25 transition hover:brightness-105"
           >
-            Next
+            Continue
           </button>
         ) : (
           <motion.button
@@ -659,7 +1012,7 @@ export function BookCourierForm() {
             disabled={pending}
             whileHover={{ scale: pending ? 1 : 1.01 }}
             whileTap={{ scale: pending ? 1 : 0.99 }}
-            className="btn-primary w-full rounded-2xl bg-linear-to-r from-accent-deep via-accent to-accent-hover py-3 text-sm font-semibold text-white shadow-lg shadow-accent/25 disabled:opacity-60"
+            className="btn-primary w-full rounded-2xl bg-linear-to-r from-accent-deep via-accent to-accent-hover py-3 text-sm font-semibold text-white shadow-lg shadow-accent/25 transition hover:brightness-105 disabled:opacity-60"
           >
             {pending ? "Submitting booking..." : "Submit booking"}
           </motion.button>
@@ -680,6 +1033,11 @@ export function BookCourierForm() {
             </span>
           ) : null}
         </motion.p>
+      ) : null}
+      {addressHint ? (
+        <p className="rounded-xl border border-border bg-canvas/20 px-3 py-2 text-xs text-muted">
+          {addressHint}
+        </p>
       ) : null}
       {!state.ok && state.message ? (
         <p className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-4 text-sm text-rose-300" role="alert">

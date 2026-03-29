@@ -144,6 +144,8 @@ body {
   background-color: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  line-height: 1.55;
+  text-rendering: optimizeLegibility;
 }
 
 h1,
@@ -152,6 +154,32 @@ h3,
 .font-display {
   font-family: var(--font-display);
   letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+/* Shared rhythm helpers for consistent spacing across public pages */
+.page-section {
+  padding-block: clamp(3rem, 5.5vw, 6rem);
+}
+
+.page-section-compact {
+  padding-block: clamp(2.25rem, 4.4vw, 4.5rem);
+}
+
+.panel-card {
+  border-radius: 1rem;
+  border: 1px solid var(--color-border);
+  background: color-mix(in oklab, var(--color-surface-elevated) 72%, transparent);
+  padding: clamp(1rem, 1.2vw + 0.75rem, 1.5rem);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.panel-card-soft {
+  border-radius: 0.9rem;
+  border: 1px solid var(--color-border-strong);
+  background: color-mix(in oklab, var(--color-canvas) 68%, transparent);
+  padding: 0.75rem 0.9rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

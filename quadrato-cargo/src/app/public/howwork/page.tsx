@@ -6,39 +6,34 @@ import { PageHero } from "@/components/Hero";
 export const metadata: Metadata = {
   title: "How it works",
   description:
-    "How Quadrato Cargo books international courier at your doorstep — PIN-based instant or scheduled pickup, backend dispatch, consignment numbers, and QR receipts.",
+    "How Quadrato Cargo works: booking, pickup, shipment updates, and delivery confirmation.",
 };
 
 const steps = [
   {
-    title: "You book with your PIN or postal code",
-    body: "Online, pick instant collection or a scheduled date and time. Enter pickup and delivery details; for international shipments include accurate contents and addresses for customs.",
-    detail:
-      "If the pickup location is serviceable, our backend assigns logistics staff — otherwise we coordinate alternatives with you.",
+    title: "Book your shipment",
+    body: "Enter sender, recipient, and parcel details. Choose instant or scheduled pickup.",
+    detail: "We confirm serviceability before dispatch.",
   },
   {
-    title: "Field team collects the parcel",
-    body: "Logistics staff travel to your PIN or address. For instant requests we target about 10 minutes where operations allow; scheduled jobs follow the window you chose.",
-    detail:
-      "Weather, access, and volume can add time — we communicate slippage when we see it.",
+    title: "Pickup is assigned",
+    body: "Our team assigns staff and shares the pickup progress.",
+    detail: "Scheduled pickup follows your selected date and time window.",
   },
   {
-    title: "Acceptance & consignment number",
-    body: "When our team accepts the courier in the field, you receive a consignment number. Partner carrier identity is not shown to the customer in the initial stage.",
-    detail:
-      "Tracking records are maintained manually at first; later phases can connect to carrier APIs if you choose.",
+    title: "Consignment number is generated",
+    body: "After pickup acceptance, you receive a tracking reference for status updates.",
+    detail: "You can track from the website using booking ID or consignment number.",
   },
   {
-    title: "Backend handles until partner handoff",
-    body: "Operations manage paperwork, export, customs, and handoff to the associated courier company for the next leg — especially for out-of-country lanes.",
-    detail:
-      "Other parts of the platform follow traditional logistics management comparable to other market sites.",
+    title: "Shipment processing and movement",
+    body: "Operations manage sorting, transit, and handoff to the required network.",
+    detail: "International lanes include compliance and customs checkpoints.",
   },
   {
-    title: "QR delivery receipt",
-    body: "On delivery, customers can receive a QR-oriented slip (similar in spirit to Gujarat Gas / Adani Gas style bills) so scanning pulls the latest status without logging into a portal.",
-    detail:
-      "Exact QR payload and branding are configured when you connect production printing or customer apps.",
+    title: "Delivery update",
+    body: "Delivery status is updated for customer visibility and support follow-up.",
+    detail: "Tracking remains available anytime from the tracking page.",
   },
 ];
 
@@ -47,11 +42,11 @@ export default function HowItWorksPage() {
     <div>
       <PageHero
         eyebrow="Workflow"
-        title="Doorstep booking → field acceptance → consignment"
-        description="Customers book courier for international and domestic lanes from their location. We dispatch collection staff to the PIN, issue consignment numbers after acceptance, operate manually until carrier handoff, and support QR-based receipts."
+        title="Doorstep booking to delivery updates"
+        description="A clear flow from booking details to pickup, shipment movement, and final status updates."
       />
 
-      <section className="py-16 sm:py-24">
+      <section className="page-section">
         <Container>
           <ol className="space-y-10">
             {steps.map((step, i) => (
@@ -79,10 +74,9 @@ export default function HowItWorksPage() {
             ))}
           </ol>
 
-          <div className="mt-16 flex flex-col gap-6 rounded-[1.5rem] border border-border bg-gradient-to-br from-surface-elevated to-surface px-6 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-10">
+          <div className="mt-14 flex flex-col gap-5 rounded-[1.5rem] border border-border bg-gradient-to-br from-surface-elevated to-surface px-6 py-9 sm:flex-row sm:items-center sm:justify-between sm:px-10">
             <p className="max-w-md text-sm leading-relaxed text-muted">
-              See how we zone instant pickup vs scheduled coverage — then brief
-              us with your PINs for a written quote.
+              Need route guidance and pricing? Share your shipment lane and we will help you choose the right option.
             </p>
             <Link
               href="/public/price"

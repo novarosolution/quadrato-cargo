@@ -40,7 +40,7 @@ export default async function ProfilePage() {
   const cookieHeader = (await cookies()).toString();
   const [userRes, bookingsRes] = await Promise.all([
     fetchProfileUserServer(cookieHeader),
-    fetchProfileBookingsServer(cookieHeader),
+    fetchProfileBookingsServer(cookieHeader, { summary: true }),
   ]);
 
   const user: ProfileUserView | null =

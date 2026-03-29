@@ -4,6 +4,7 @@ export function toPublicUser(doc) {
     id: String(doc._id),
     email: doc.email ?? "",
     name: doc.name ?? null,
+    addressBook: doc.addressBook ?? { sender: null, recipient: null },
     role: doc.role ?? "customer",
     isActive: doc.isActive !== false,
     isOnDuty: doc.isOnDuty !== false,
@@ -17,6 +18,10 @@ export function createUserDoc({ email, name, passwordHash, role = "customer" }) 
   return {
     email: String(email ?? "").trim().toLowerCase(),
     name: String(name ?? "").trim() || null,
+    addressBook: {
+      sender: null,
+      recipient: null
+    },
     passwordHash,
     role,
     isActive: true,

@@ -6,24 +6,24 @@ import { PageHero } from "@/components/Hero";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "PIN-based instant pickup zones (~10 min target), scheduled collection, international lanes, and traditional logistics bands — indicative only.",
+    "Pickup and shipment pricing by coverage zone, service mode, and shipment size.",
 };
 
 const zones = [
   {
-    name: "Instant pickup — serviceable PINs",
-    range: "Postal codes where backend can dispatch field staff fast",
-    note: "Where we target ~10 minutes from assignment to your door; highest priority for same-hour collection requests.",
+    name: "Instant pickup - serviceable areas",
+    range: "Postal codes where fast dispatch is available",
+    note: "Best for urgent collection requests.",
   },
   {
-    name: "Scheduled & metro extended",
+    name: "Scheduled and extended coverage",
     range: "Booked windows and wider city coverage",
-    note: "Pickup at your chosen slot or longer travel times — priced on distance, time, and vehicle class, not the 10-minute instant target.",
+    note: "Pricing depends on distance, time window, and vehicle class.",
   },
   {
-    name: "International & cargo",
-    range: "Out of country and heavy cartons",
-    note: "Export, customs, and partner handoff workflows plus pallets or vans; aligned with traditional logistics pricing models.",
+    name: "International and cargo",
+    range: "Cross-border and heavy shipments",
+    note: "Includes handling complexity such as compliance and movement stages.",
   },
 ];
 
@@ -38,25 +38,21 @@ export default function PricingPage() {
     <div>
       <PageHero
         eyebrow="Rates"
-        title="Serviceable PINs vs scheduled vs international"
+        title="Pricing by service type"
         description={
           <>
-            The <strong className="font-semibold text-teal">~10-minute</strong>{" "}
-            target applies only where your PIN qualifies for instant collection
-            and our backend can assign logistics staff immediately. Scheduled
-            pickups, wider geography, and international legs use separate
-            bands — all indicative until confirmed in writing.
+            Final rates depend on pickup area, service mode, parcel profile,
+            and shipment lane. Share your route for a written quote.
           </>
         }
       />
 
-      <section className="py-16 sm:py-24">
+      <section className="page-section">
         <Container>
           <h2 className="font-display text-xl font-semibold text-ink">Coverage zones</h2>
           <p className="mt-2 max-w-2xl text-sm text-muted">
-            Map which PINs get instant dispatch vs scheduled-only when you go
-            live — this layout separates rapid doorstep collection from
-            traditional lane pricing.
+            Compare where instant dispatch is available and where scheduled
+            service is used.
           </p>
           <ul className="mt-8 grid gap-5 md:grid-cols-3">
             {zones.map((z) => (
@@ -75,8 +71,7 @@ export default function PricingPage() {
             Weight &amp; size bands
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-muted">
-            We price on service time, vehicle class, and risk — not just kilos.
-            These bands help you brief us faster.
+            Shipment size and handling profile help us share the right options quickly.
           </p>
           <ul className="mt-8 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface-elevated/60 backdrop-blur-sm">
             {bands.map((b) => (
@@ -95,9 +90,8 @@ export default function PricingPage() {
               Get a written quote
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">
-              Send lanes, typical weekly volume, and any SLA (e.g. must arrive
-              before 11:00). We reply with options — economy, standard, and rush
-              where available.
+              Share your route, shipment type, and preferred timeline. We will
+              return clear options for your use case.
             </p>
             <Link
               href="/public/contact"

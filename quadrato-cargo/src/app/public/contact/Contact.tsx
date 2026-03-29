@@ -22,7 +22,7 @@ export function ContactForm() {
     ok: boolean;
     message: string;
     fieldErrors: Partial<
-      Record<"name" | "email" | "message" | "service", string>
+      Record<"name" | "email" | "phone" | "message" | "service", string>
     >;
   }>({ ok: false, message: "", fieldErrors: {} });
 
@@ -108,8 +108,23 @@ export function ContactForm() {
           name="phone"
           type="tel"
           autoComplete="tel"
+          inputMode="tel"
+          maxLength={15}
+          minLength={7}
+          pattern="[0-9]{7,15}"
+          onInput={(event) => {
+            const input = event.currentTarget;
+            input.value = input.value.replace(/\D/g, "").slice(0, 15);
+          }}
           className={fieldClass}
+          aria-invalid={Boolean(state.fieldErrors.phone)}
+          aria-describedby={state.fieldErrors.phone ? "phone-error" : undefined}
         />
+        {state.fieldErrors.phone ? (
+          <p id="phone-error" className="mt-1 text-sm text-rose-400" role="alert">
+            {state.fieldErrors.phone}
+          </p>
+        ) : null}
       </div>
 
       <div>
@@ -149,6 +164,8 @@ export function ContactForm() {
           name="message"
           rows={5}
           required
+          minLength={10}
+          maxLength={1000}
           className={fieldClass}
           aria-invalid={Boolean(state.fieldErrors.message)}
           aria-describedby={

@@ -117,17 +117,15 @@ function AccountMenu({
         type="button"
         aria-expanded={open}
         aria-haspopup="menu"
+        aria-label="Open account menu"
         onClick={() => setOpen((v) => !v)}
-        className="flex max-w-full items-center gap-1.5 rounded-2xl border border-border bg-pill/90 py-1 pl-1.5 pr-2 backdrop-blur-sm transition hover:bg-pill-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
+        className="flex items-center gap-1 rounded-2xl border border-border bg-pill/90 p-1 backdrop-blur-sm transition hover:bg-pill-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
       >
         <span
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-dim text-sm font-bold text-teal"
           aria-hidden
         >
           {userInitial(displayName, email)}
-        </span>
-        <span className="hidden max-w-[6.5rem] truncate text-left text-xs font-semibold text-ink min-[900px]:inline lg:max-w-[9rem] lg:text-sm xl:max-w-[12rem]">
-          {primaryLabel}
         </span>
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-muted transition ${open ? "rotate-180" : ""}`}
@@ -227,6 +225,17 @@ export function Header() {
     };
   }, [pathname]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(min-width: 1024px)");
+    const sync = () => {
+      if (media.matches) setOpen(false);
+    };
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-canvas/75 backdrop-blur-2xl backdrop-saturate-150">
       <div className="mx-auto grid h-[4.25rem] max-w-7xl grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
@@ -252,7 +261,7 @@ export function Header() {
             />
           </motion.span>
           <motion.span
-            className="min-w-0 truncate font-display text-sm font-semibold tracking-tight text-ink sm:text-base lg:text-lg"
+            className="min-w-0 truncate font-display text-sm font-semibold tracking-tight text-ink sm:text-base lg:text-[1.05rem]"
             initial={reduce ? false : { opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
@@ -262,7 +271,7 @@ export function Header() {
         </Link>
 
         <motion.nav
-          className="glass-panel hidden min-h-0 min-w-0 justify-center justify-self-stretch overflow-x-auto overflow-y-hidden rounded-full border border-border px-1 py-1 [scrollbar-width:none] md:flex md:py-1.5 [&::-webkit-scrollbar]:hidden"
+          className="glass-panel hidden min-h-0 min-w-0 justify-center justify-self-stretch overflow-x-auto overflow-y-hidden rounded-full border border-border px-1 py-1 [scrollbar-width:none] lg:flex lg:py-1.5 [&::-webkit-scrollbar]:hidden"
           aria-label="Main"
           initial={reduce ? false : { opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -281,7 +290,7 @@ export function Header() {
         </motion.nav>
 
         <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-1.5 lg:gap-2">
-          <div className="hidden items-center gap-1 sm:gap-1.5 md:flex lg:gap-2">
+          <div className="hidden items-center gap-1 sm:gap-1.5 lg:flex lg:gap-2">
             <ThemeToggle />
             {isAccountLoading ? (
               <span className="w-8 px-1 text-center text-xs text-muted-soft" aria-hidden>
@@ -313,17 +322,17 @@ export function Header() {
             )}
             <Link
               href="/public/contact"
-              aria-label="Get a quote"
+              aria-label="Get a Quote"
               className="btn-primary inline-flex shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-accent-deep via-accent to-accent-hover px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-accent/20 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5"
             >
-              <span className="hidden lg:inline">Get a quote</span>
+              <span className="hidden lg:inline">Get a Quote</span>
               <span className="lg:hidden" aria-hidden>
                 Quote
               </span>
             </Link>
           </div>
 
-          <div className="flex items-center gap-1.5 md:hidden">
+          <div className="flex items-center gap-1.5 lg:hidden">
             <ThemeToggle className="h-9 w-9 rounded-xl" />
             <button
               type="button"
@@ -352,10 +361,10 @@ export function Header() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden border-t border-border md:hidden"
+            className="overflow-hidden border-t border-border lg:hidden"
           >
             <nav
-              className="flex max-h-[min(70vh,calc(100dvh-5rem))] flex-col gap-1 overflow-y-auto bg-surface-elevated/98 px-4 py-5 backdrop-blur-xl"
+              className="flex max-h-[min(80dvh,calc(100dvh-4.25rem))] flex-col gap-1 overflow-y-auto bg-surface-elevated/98 px-4 py-5 backdrop-blur-xl"
               aria-label="Mobile main"
             >
               {mainNav.map((primaryNavEntry, index) => (
@@ -444,7 +453,7 @@ export function Header() {
                 className="btn-primary mt-1 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent-deep to-accent px-4 py-3.5 text-sm font-semibold text-white"
                 onClick={closeMobileMenu}
               >
-                Get a quote
+                Get a Quote
               </Link>
             </nav>
           </motion.div>

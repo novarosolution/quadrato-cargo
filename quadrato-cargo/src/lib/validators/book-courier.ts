@@ -31,8 +31,16 @@ export type BookCourierRow = {
   agreed: boolean;
 };
 
+function normalizePhone(raw: string) {
+  return String(raw || "").trim();
+}
+
+function isPhoneLikeEmail(value: string) {
+  return /^[\d+\-\s]+$/.test(String(value || "").trim());
+}
+
 export const BOOKING_STEP_FIELDS = {
-  1: ["routeType", "collectionMode", "pickupDate", "pickupTimeSlot", "pickupPreference"],
+  1: ["routeType", "collectionMode", "pickupDate", "pickupTimeSlot"],
   2: [
     "senderName",
     "senderEmail",
@@ -51,7 +59,17 @@ export const BOOKING_STEP_FIELDS = {
     "recipientPostal",
     "recipientCountry"
   ],
-  4: ["contentsDescription", "weightKg", "agreed", "instructions", "declaredValue", "lengthCm", "widthCm", "heightCm"]
+  4: [
+    "contentsDescription",
+    "weightKg",
+    "agreed",
+    "instructions",
+    "declaredValue",
+    "lengthCm",
+    "widthCm",
+    "heightCm",
+    "pickupPreference"
+  ]
 } as const;
 
 export type BookCourierStep = keyof typeof BOOKING_STEP_FIELDS;
@@ -87,25 +105,41 @@ export function validateBookCourier(row: BookCourierRow): {
   }
 
   if (!row.senderName) fieldErrors.senderName = "Enter sender full name.";
+  else if (row.senderName.length < 2) fieldErrors.senderName = "Sender name is too short.";
   if (!row.senderEmail) fieldErrors.senderEmail = "Enter sender email.";
+  else if (isPhoneLikeEmail(row.senderEmail))
+    fieldErrors.senderEmail = "Email cannot be only numbers.";
   else if (!isValidEmail(row.senderEmail))
     fieldErrors.senderEmail = "Enter a valid email.";
+  const senderPhoneDigits = normalizePhone(row.senderPhone);
   if (!row.senderPhone) fieldErrors.senderPhone = "Enter sender phone.";
+  else if (!/^\d{7,15}$/.test(senderPhoneDigits))
+    fieldErrors.senderPhone = "Phone must contain only numbers (7 to 15 digits).";
   if (!row.senderStreet) fieldErrors.senderStreet = "Enter pickup street address.";
   if (!row.senderCity) fieldErrors.senderCity = "Enter pickup city.";
   if (!row.senderPostal) fieldErrors.senderPostal = "Enter pickup postal / ZIP code.";
+  else if (row.senderPostal.length < 3)
+    fieldErrors.senderPostal = "Pickup postal / ZIP is too short.";
   if (!row.senderCountry) fieldErrors.senderCountry = "Enter pickup country.";
 
   if (!row.recipientName) fieldErrors.recipientName = "Enter recipient full name.";
+  else if (row.recipientName.length < 2) fieldErrors.recipientName = "Recipient name is too short.";
   if (!row.recipientEmail) fieldErrors.recipientEmail = "Enter recipient email.";
+  else if (isPhoneLikeEmail(row.recipientEmail))
+    fieldErrors.recipientEmail = "Email cannot be only numbers.";
   else if (!isValidEmail(row.recipientEmail))
     fieldErrors.recipientEmail = "Enter a valid email.";
+  const recipientPhoneDigits = normalizePhone(row.recipientPhone);
   if (!row.recipientPhone) fieldErrors.recipientPhone = "Enter recipient phone.";
+  else if (!/^\d{7,15}$/.test(recipientPhoneDigits))
+    fieldErrors.recipientPhone = "Phone must contain only numbers (7 to 15 digits).";
   if (!row.recipientStreet)
     fieldErrors.recipientStreet = "Enter delivery street address.";
   if (!row.recipientCity) fieldErrors.recipientCity = "Enter delivery city.";
   if (!row.recipientPostal)
     fieldErrors.recipientPostal = "Enter delivery postal / ZIP code.";
+  else if (row.recipientPostal.length < 3)
+    fieldErrors.recipientPostal = "Delivery postal / ZIP is too short.";
   if (!row.recipientCountry)
     fieldErrors.recipientCountry = "Enter delivery country.";
 
@@ -116,6 +150,25 @@ export function validateBookCourier(row: BookCourierRow): {
   const w = parseFloat(row.weightKg.replace(",", "."));
   if (!row.weightKg || Number.isNaN(w) || w <= 0)
     fieldErrors.weightKg = "Enter total weight in kg (number greater than 0).";
+  else if (w > 1000)
+    fieldErrors.weightKg = "Weight is too high. Please contact support for heavy cargo.";
+
+  const lengthRaw = row.lengthCm.trim();
+  const widthRaw = row.widthCm.trim();
+  const heightRaw = row.heightCm.trim();
+  const hasAnyDimension = Boolean(lengthRaw || widthRaw || heightRaw);
+  if (hasAnyDimension) {
+    if (!lengthRaw || !widthRaw || !heightRaw) {
+      fieldErrors.lengthCm = "Enter all dimensions (L, W, H) or leave all blank.";
+    } else {
+      const l = Number.parseFloat(lengthRaw.replace(",", "."));
+      const wd = Number.parseFloat(widthRaw.replace(",", "."));
+      const h = Number.parseFloat(heightRaw.replace(",", "."));
+      if (!Number.isFinite(l) || l <= 0) fieldErrors.lengthCm = "Length must be a valid number.";
+      if (!Number.isFinite(wd) || wd <= 0) fieldErrors.widthCm = "Width must be a valid number.";
+      if (!Number.isFinite(h) || h <= 0) fieldErrors.heightCm = "Height must be a valid number.";
+    }
+  }
 
   const pickupTrim = row.pickupPreference.trim();
   if (row.collectionMode === "scheduled" && !pickupTrim) {
@@ -178,6 +231,8 @@ export function validateBookCourier(row: BookCourierRow): {
       declaredValue: row.declaredValue || undefined,
     },
     collectionMode,
+    pickupDate: row.pickupDate || undefined,
+    pickupTimeSlot: row.pickupTimeSlot || undefined,
     pickupPreference,
     instructions: row.instructions || undefined,
     agreedInternational: routeType === "international",

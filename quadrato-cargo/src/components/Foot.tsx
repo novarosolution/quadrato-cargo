@@ -100,10 +100,8 @@ export function Footer() {
               </motion.p>
             </div>
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted">
-              International courier at your doorstep: book with your PIN, choose
-              instant pickup (~10 minute target where we cover) or a scheduled
-              window, then our team handles collection through partner handoff —
-              consignment numbers and QR-ready receipts.
+              International courier service with simple booking and clear
+              tracking updates.
             </p>
             <motion.div
               className="mt-8 inline-block"

@@ -31,6 +31,8 @@ export type CourierPayload = {
   };
   /** Instant (~10 min target at PIN where serviceable) or scheduled window. */
   collectionMode: "instant" | "scheduled";
+  pickupDate?: string;
+  pickupTimeSlot?: string;
   pickupPreference: string;
   instructions?: string;
   agreedInternational?: boolean;

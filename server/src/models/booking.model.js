@@ -64,6 +64,30 @@ export function toPublicBooking(row) {
   };
 }
 
+export function toPublicBookingSummary(row) {
+  if (!row) return null;
+  const sender = row.payload?.sender ?? {};
+  const recipient = row.payload?.recipient ?? {};
+  return {
+    id: String(row._id),
+    userId: row.userId ? String(row.userId) : null,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt ?? row.createdAt,
+    routeType: row.routeType ?? "domestic",
+    status: row.status ?? "submitted",
+    consignmentNumber: row.consignmentNumber ?? null,
+    trackingNotes: null,
+    customerTrackingNote: buildCustomerTrackingNote(row.status, row),
+    assignedAgency: row.assignedAgency ?? null,
+    senderName: cleanText(sender.name),
+    senderAddress: buildAddressLine(sender),
+    recipientName: cleanText(recipient.name),
+    recipientAddress: buildAddressLine(recipient),
+    pickupOtpVerifiedAt: row.pickupOtpVerifiedAt ?? null,
+    courierId: row.courierId ? String(row.courierId) : null
+  };
+}
+
 export function createBookingDoc({ routeType, payload, userId }) {
   const now = new Date();
   const safeRoute =

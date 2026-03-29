@@ -97,6 +97,17 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
       setState({ kind: "error", message: "Enter booking ID or consignment number." });
       return;
     }
+    if (ref.length < 6) {
+      setState({ kind: "error", message: "Reference looks too short. Please check and try again." });
+      return;
+    }
+    if (!/^[a-zA-Z0-9-]+$/.test(ref)) {
+      setState({
+        kind: "error",
+        message: "Use only letters, numbers, and hyphens in the reference."
+      });
+      return;
+    }
     setState({ kind: "loading" });
     const res = await fetchPublicTracking(ref);
     if (!res.ok) {
@@ -107,7 +118,7 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <form onSubmit={onSubmit} className="space-y-3">
         <label htmlFor="track-reference" className="text-sm font-medium text-ink">
           Booking ID or consignment number
@@ -117,9 +128,13 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
             id="track-reference"
             name="reference"
             type="text"
-            placeholder="e.g. 67f... or QC-123456"
+            placeholder="e.g. QC12345678 or booking ID"
             value={reference}
             onChange={(e) => setReference(e.target.value)}
+            inputMode="text"
+            autoCapitalize="characters"
+            maxLength={40}
+            pattern="[A-Za-z0-9-]{6,40}"
             className="w-full rounded-xl border border-border-strong bg-canvas/50 px-3 py-2.5 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
           />
           <button
@@ -140,11 +155,11 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
 
       {state.kind === "success" ? (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-border bg-surface-elevated/70 p-5">
+          <div className="panel-card">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-wide text-muted-soft">
-                  Parcel tracking no.
+                  Parcel tracking number
                 </p>
                 <p className="font-mono text-base font-semibold text-ink">
                   {state.data.consignmentNumber || state.data.id}
@@ -165,7 +180,7 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
               Reference:{" "}
               <span className="font-mono text-muted">{state.data.id}</span>
             </p>
-            <div className="mt-4 grid gap-2 text-xs text-muted sm:grid-cols-2">
+            <div className="mt-4 grid gap-2.5 text-xs text-muted sm:grid-cols-2">
               <p>
                 <span className="font-semibold text-ink">Pickup courier:</span>{" "}
                 {state.data.courierName || "Pending assignment"}
@@ -185,7 +200,7 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
             </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface-elevated/70 p-4 sm:p-5">
+          <div className="panel-card">
             <ol className="relative ml-2 border-l border-border-strong pl-4">
               {(normalizeBookingStatus(state.data.status) === "cancelled"
                 ? CANCELLED_FLOW
