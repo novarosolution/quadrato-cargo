@@ -102,7 +102,7 @@ export function validateBookCourier(row: BookCourierRow): {
 
   if (!row.collectionMode || !["instant", "scheduled"].includes(row.collectionMode)) {
     fieldErrors.collectionMode =
-      "Choose instant collection or a scheduled pickup (with your PIN / postal code).";
+      "Choose instant collection or a scheduled pickup (with your Postal Code / ZIP).";
   }
 
   if (
@@ -184,7 +184,7 @@ export function validateBookCourier(row: BookCourierRow): {
   const pickupTrim = row.pickupPreference.trim();
   if (row.collectionMode === "scheduled" && !pickupTrim) {
     fieldErrors.pickupPreference =
-      "Enter the date and time window for scheduled pickup at your PIN / address.";
+      "Enter the date and time window for scheduled pickup at your Postal Code / ZIP / address.";
   }
   if (row.collectionMode === "scheduled" && !row.pickupDate.trim()) {
     fieldErrors.pickupDate = "Select pickup date for scheduled collection.";
@@ -223,7 +223,7 @@ export function validateBookCourier(row: BookCourierRow): {
   const pickupPreference =
     collectionMode === "instant"
       ? pickupTrim ||
-        `Instant collection requested at pickup PIN ${row.senderPostal} (target ~10 minutes where area is serviceable).`
+        `Instant collection requested at pickup Postal Code / ZIP ${row.senderPostal} (target ~10 minutes where area is serviceable).`
       : pickupTrim || scheduledWindow;
 
   const bookingPayload: CourierPayload = {

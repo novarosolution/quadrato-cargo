@@ -70,7 +70,7 @@ export function AdminBookingControls({
   );
 
   function templateText(key: string): string {
-    const pinPart = pickupPin ? ` (PIN ${pickupPin})` : "";
+    const pinPart = pickupPin ? ` (Postal Code / ZIP ${pickupPin})` : "";
     switch (key) {
       case "serviceability":
         return `Serviceability check completed${pinPart}. Pickup support is available for this location.`;
@@ -163,7 +163,7 @@ export function AdminBookingControls({
           htmlFor="admin-consignment"
           className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
         >
-          Consignment number (visible to customer)
+          Tracking ID (visible to customer)
         </label>
         <input
           id="admin-consignment"
@@ -260,7 +260,7 @@ export function AdminBookingControls({
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex rounded-xl bg-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+        className="inline-flex rounded-xl border border-teal/70 bg-teal px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-teal/90 disabled:opacity-50"
       >
         {pending ? "Saving…" : "Save booking controls"}
       </button>

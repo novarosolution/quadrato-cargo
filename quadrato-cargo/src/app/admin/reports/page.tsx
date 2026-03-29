@@ -50,9 +50,10 @@ export default async function AdminReportsPage({ searchParams }: Props) {
             <Link
               key={m}
               href={`/admin/reports?months=${m}`}
+              prefetch={false}
               className={`rounded-lg px-3 py-1.5 ${
                 m === months
-                  ? "bg-teal text-white"
+                  ? "bg-teal text-slate-950"
                   : "border border-border-strong text-ink hover:bg-pill-hover"
               }`}
             >

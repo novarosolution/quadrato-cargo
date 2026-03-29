@@ -15,6 +15,7 @@ import {
   findUserById
 } from "../modules/users/user-repo.js";
 import { MIN_PASSWORD_LENGTH } from "../shared/constants.js";
+import { passwordComplexitySchema } from "../shared/password-rules.js";
 
 function hasMinEmailLocalPart(value, minLength = 5) {
   const email = String(value ?? "").trim();
@@ -39,14 +40,7 @@ const registerSchema = z.object({
     .refine((value) => hasMinEmailLocalPart(value, 5), {
       message: "Email must have at least 5 characters before @."
     }),
-  password: z
-    .string()
-    .min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`)
-    .max(72, "Password is too long.")
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).+$/,
-      "Password must include upper, lower, number, and special character."
-    ),
+  password: passwordComplexitySchema,
   confirmPassword: z.string().min(MIN_PASSWORD_LENGTH).max(72)
 });
 

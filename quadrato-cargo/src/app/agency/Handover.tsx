@@ -92,7 +92,7 @@ export function AgencyHandoverForm() {
           htmlFor="agency-reference"
           className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
         >
-          Reference (consignment no. or booking id)
+          Reference (Tracking ID or booking ID)
         </label>
         <input
           id="agency-reference"

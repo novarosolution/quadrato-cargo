@@ -157,7 +157,7 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
     e.preventDefault();
     const ref = reference.trim();
     if (!ref) {
-      setState({ kind: "error", message: "Enter booking ID or consignment number." });
+      setState({ kind: "error", message: "Enter booking ID or Tracking ID." });
       return;
     }
     if (ref.length < 6) {
@@ -184,7 +184,7 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
     <div className="space-y-5">
       <form onSubmit={onSubmit} className="space-y-3">
         <label htmlFor="track-reference" className="text-sm font-medium text-ink">
-          Booking ID or consignment number
+          Booking ID or Tracking ID
         </label>
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
@@ -198,11 +198,11 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
             autoCapitalize="characters"
             maxLength={40}
             pattern="[A-Za-z0-9-]{6,40}"
-            className="w-full rounded-xl border border-border-strong bg-canvas/50 px-3 py-2.5 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className="h-12 w-full rounded-2xl border border-border-strong bg-canvas/50 px-4 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
           />
           <button
             type="submit"
-            className="btn-primary rounded-xl bg-linear-to-r from-accent-deep via-accent to-accent-hover px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            className="btn-primary h-12 rounded-2xl border border-teal/70 bg-teal px-6 text-sm font-semibold text-slate-950 disabled:opacity-60"
             disabled={state.kind === "loading"}
           >
             {state.kind === "loading" ? "Checking..." : "Track"}
@@ -222,7 +222,7 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-wide text-muted-soft">
-                  Parcel tracking number
+                  Tracking ID
                 </p>
                 <p className="font-mono text-base font-semibold text-ink">
                   {state.data.consignmentNumber || state.data.id}

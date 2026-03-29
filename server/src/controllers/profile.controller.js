@@ -1,6 +1,11 @@
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
+import {
+  sendError,
+  sendNotFound,
+  sendOk,
+  sendValidationError
+} from "../components/api-response.js";
 import { toPublicUser } from "../models/user.model.js";
 import {
   findBookingByUserAndId,
@@ -15,14 +20,16 @@ import {
   updateUserPasswordHash
 } from "../modules/users/user-repo.js";
 import { MIN_PASSWORD_LENGTH } from "../shared/constants.js";
+import { passwordComplexitySchema } from "../shared/password-rules.js";
+import { objectIdStringSchema } from "../shared/zod-helpers.js";
 
 const updateProfileSchema = z.object({
-  name: z.string().trim().max(120).optional()
+  name: z.string().trim().min(8).max(120).optional()
 });
 const updatePasswordSchema = z.object({
   currentPassword: z.string().min(1),
-  newPassword: z.string().min(MIN_PASSWORD_LENGTH),
-  confirmPassword: z.string().min(MIN_PASSWORD_LENGTH)
+  newPassword: passwordComplexitySchema,
+  confirmPassword: z.string().min(MIN_PASSWORD_LENGTH).max(72)
 });
 const addressSchema = z.object({
   name: z.string().trim().min(1),
@@ -46,10 +53,20 @@ export async function updateMyProfile(req, res, next) {
   try {
     const parsed = updateProfileSchema.safeParse(req.body);
     if (!parsed.success) {
-      return sendError(res, "Please enter a valid name.");
+      const msg =
+        parsed.error.flatten().fieldErrors.name?.[0] ?? "Please enter a valid name.";
+      return sendError(res, msg);
     }
 
-    const user = await updateUserName(req.auth.user.id, parsed.data.name ?? "");
+    if (parsed.data.name === undefined) {
+      const user = await findUserById(req.auth.user.id);
+      return sendOk(res, {
+        message: "No changes applied.",
+        user: user ? toPublicUser(user) : req.auth.user
+      });
+    }
+
+    const user = await updateUserName(req.auth.user.id, parsed.data.name);
     return sendOk(res, {
       message: "Profile updated successfully.",
       user: user ? toPublicUser(user) : req.auth.user
@@ -124,9 +141,13 @@ export async function listMyBookings(req, res, next) {
 
 export async function getMyBookingById(req, res, next) {
   try {
+    const idParsed = objectIdStringSchema.safeParse(req.params.id);
+    if (!idParsed.success) {
+      return sendError(res, idParsed.error.issues[0]?.message ?? "Invalid booking id.");
+    }
     const row = await findBookingByUserAndId(
       req.auth.user.id,
-      req.params.id,
+      idParsed.data,
       req.auth.user.email
     );
     if (!row) {
@@ -145,9 +166,13 @@ export async function getMyBookingById(req, res, next) {
 
 export async function getMyBookingPickupOtp(req, res, next) {
   try {
+    const idParsed = objectIdStringSchema.safeParse(req.params.id);
+    if (!idParsed.success) {
+      return sendError(res, idParsed.error.issues[0]?.message ?? "Invalid booking id.");
+    }
     const otp = await getPickupOtpForUserBooking(
       req.auth.user.id,
-      req.params.id,
+      idParsed.data,
       req.auth.user.email
     );
     if (!otp) {
@@ -163,10 +188,12 @@ export async function updateMyPassword(req, res, next) {
   try {
     const parsed = updatePasswordSchema.safeParse(req.body);
     if (!parsed.success) {
-      return sendError(
-        res,
-        `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`
-      );
+      const f = parsed.error.flatten().fieldErrors;
+      return sendValidationError(res, {
+        currentPassword: f.currentPassword?.[0],
+        newPassword: f.newPassword?.[0],
+        confirmPassword: f.confirmPassword?.[0]
+      });
     }
 
     const { currentPassword, newPassword, confirmPassword } = parsed.data;

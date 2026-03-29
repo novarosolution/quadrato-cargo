@@ -141,7 +141,7 @@ export function LoginForm({
         disabled={pending}
         whileHover={{ scale: pending ? 1 : 1.02 }}
         whileTap={{ scale: pending ? 1 : 0.98 }}
-        className="btn-primary w-full rounded-2xl bg-gradient-to-r from-accent-deep via-accent to-accent-hover py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/25 disabled:opacity-60"
+        className="btn-primary w-full rounded-2xl border border-teal/70 bg-teal py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25 disabled:opacity-60"
       >
         {pending ? "Signing in…" : "Log in"}
       </motion.button>

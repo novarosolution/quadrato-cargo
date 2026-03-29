@@ -93,7 +93,7 @@ export default async function ProfilePage() {
             Signed in as{" "}
             <span className="font-medium text-ink">{user.email}</span>. This is
             your customer hub: edit your name, see every booking you made while
-            logged in, and read live status, consignment numbers, and tracking
+            logged in, and read live status, Tracking IDs, and tracking
             notes from dispatch — all in one place.
           </p>
         </Container>
@@ -141,21 +141,21 @@ export default async function ProfilePage() {
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <Link
                 href="/public/book"
-                className="inline-flex items-center gap-2 rounded-xl border border-border bg-canvas/40 px-4 py-3 text-sm font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+                className="btn-secondary inline-flex items-center gap-2 px-4 py-3 text-sm font-medium"
               >
                 <Truck className="h-4 w-4 text-teal" strokeWidth={2} />
                 New booking
               </Link>
               <Link
                 href="/public/tsking"
-                className="inline-flex items-center gap-2 rounded-xl border border-border bg-canvas/40 px-4 py-3 text-sm font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+                className="btn-secondary inline-flex items-center gap-2 px-4 py-3 text-sm font-medium"
               >
                 <Search className="h-4 w-4 text-teal" strokeWidth={2} />
                 Track by reference
               </Link>
               <Link
                 href="/public/contact"
-                className="inline-flex items-center gap-2 rounded-xl border border-border bg-canvas/40 px-4 py-3 text-sm font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+                className="btn-secondary inline-flex items-center gap-2 px-4 py-3 text-sm font-medium"
               >
                 <MessageCircle className="h-4 w-4 text-teal" strokeWidth={2} />
                 Contact dispatch
@@ -163,7 +163,7 @@ export default async function ProfilePage() {
               {latestBooking ? (
                 <Link
                   href={`/public/profile/booksdetels/${latestBooking.id}`}
-                  className="rounded-xl border border-border bg-canvas/40 px-4 py-3 text-sm font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+                  className="btn-secondary px-4 py-3 text-sm font-medium"
                 >
                   Open latest booking
                 </Link>
@@ -195,12 +195,12 @@ export default async function ProfilePage() {
                 </h2>
                 <p className="mt-1 text-sm text-muted">
                   Bookings you make while signed in appear here with live status
-                  and consignment details from dispatch.
+                  and Tracking ID details from dispatch.
                 </p>
               </div>
               <Link
                 href="/public/book"
-                className="btn-primary inline-flex shrink-0 items-center justify-center rounded-full bg-linear-to-r from-accent-deep via-accent to-accent-hover px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent/20"
+                className="btn-primary inline-flex shrink-0 items-center justify-center rounded-full border border-teal/70 bg-teal px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/20"
               >
                 New booking
               </Link>
@@ -235,7 +235,7 @@ export default async function ProfilePage() {
                         <p className="mt-1 text-xs text-muted-soft">
                           {dateFmt.format(b.createdAt)}
                           {b.consignmentNumber
-                            ? ` · Consignment ${b.consignmentNumber}`
+                            ? ` · Tracking ID ${b.consignmentNumber}`
                             : ""}
                         </p>
                         {b.customerTrackingNote ? (

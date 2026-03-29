@@ -185,7 +185,7 @@ export type SiteSettings = {
 export async function fetchSiteSettings(): Promise<SiteSettings> {
   try {
     const res = await fetch(`${getApiBaseUrl()}/api/public/site-settings`, {
-      cache: "no-store",
+      next: { revalidate: 30 },
     });
     if (!res.ok) {
       return {

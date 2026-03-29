@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { z } from "zod";
 import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
 import { getDb } from "../db/mongo.js";
 import {
@@ -8,6 +9,7 @@ import {
   verifyPickupOtpByCourier
 } from "../modules/bookings/booking-repo.js";
 import { updateUserDutyStatus } from "../modules/users/user-repo.js";
+import { objectIdStringSchema } from "../shared/zod-helpers.js";
 
 const COURIER_OPEN_STATUSES = [
   "submitted",
@@ -17,6 +19,16 @@ const COURIER_OPEN_STATUSES = [
   "pickup_scheduled",
   "out_for_pickup"
 ];
+
+const courierDutySchema = z.object({
+  isOnDuty: z.boolean({
+    invalid_type_error: "isOnDuty must be true or false (JSON boolean)."
+  })
+});
+
+const courierPickupOtpSchema = z.object({
+  otpCode: z.string().trim().regex(/^\d{6}$/, "Pickup OTP must be exactly 6 digits.")
+});
 
 export function requireCourier(req, res, next) {
   const role = String(req.auth?.user?.role ?? "");
@@ -37,7 +49,11 @@ export async function listMyCourierBookings(req, res, next) {
 
 export async function getMyCourierBookingById(req, res, next) {
   try {
-    const row = await findBookingByCourierAndId(req.auth.user.id, req.params.id);
+    const idParsed = objectIdStringSchema.safeParse(req.params.id);
+    if (!idParsed.success) {
+      return sendError(res, idParsed.error.issues[0]?.message ?? "Invalid booking id.");
+    }
+    const row = await findBookingByCourierAndId(req.auth.user.id, idParsed.data);
     if (!row) {
       return sendNotFound(res, "Booking not found.");
     }
@@ -77,7 +93,12 @@ export async function getCourierStatus(req, res, next) {
 
 export async function updateCourierStatus(req, res, next) {
   try {
-    const isOnDuty = req.body?.isOnDuty === true;
+    const parsed = courierDutySchema.safeParse(req.body);
+    if (!parsed.success) {
+      const msg = parsed.error.issues[0]?.message ?? "Invalid duty status.";
+      return sendError(res, msg);
+    }
+    const { isOnDuty } = parsed.data;
     const updated = await updateUserDutyStatus(req.auth.user.id, isOnDuty);
     if (!updated) {
       return sendNotFound(res, "Courier account not found.");
@@ -97,11 +118,20 @@ export async function updateCourierStatus(req, res, next) {
 
 export async function verifyMyPickupOtp(req, res, next) {
   try {
-    const otpCode = String(req.body?.otpCode ?? "").trim();
-    if (!otpCode) {
-      return sendError(res, "Pickup OTP is required.");
+    const idParsed = objectIdStringSchema.safeParse(req.params.id);
+    if (!idParsed.success) {
+      return sendError(res, idParsed.error.issues[0]?.message ?? "Invalid booking id.");
     }
-    const result = await verifyPickupOtpByCourier(req.auth.user.id, req.params.id, otpCode);
+    const parsed = courierPickupOtpSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const msg = parsed.error.issues[0]?.message ?? "Invalid pickup OTP.";
+      return sendError(res, msg);
+    }
+    const result = await verifyPickupOtpByCourier(
+      req.auth.user.id,
+      idParsed.data,
+      parsed.data.otpCode
+    );
     if (!result.ok) {
       if (result.reason === "not_found") {
         return sendNotFound(res, "Booking not found.");
@@ -109,7 +139,7 @@ export async function verifyMyPickupOtp(req, res, next) {
       if (result.reason === "handover_done") {
         return sendError(
           res,
-          "Courier updates are locked. Booking is already handed over to agency.",
+          "Courier updates are locked. Booking is already handed over to agency."
         );
       }
       if (result.reason === "expired") {
@@ -132,7 +162,11 @@ export async function verifyMyPickupOtp(req, res, next) {
 
 export async function startMyCourierJob(req, res, next) {
   try {
-    const result = await startCourierJob(req.auth.user.id, req.params.id);
+    const idParsed = objectIdStringSchema.safeParse(req.params.id);
+    if (!idParsed.success) {
+      return sendError(res, idParsed.error.issues[0]?.message ?? "Invalid booking id.");
+    }
+    const result = await startCourierJob(req.auth.user.id, idParsed.data);
     if (!result.ok) {
       if (result.reason === "not_found") {
         return sendNotFound(res, "Booking not found.");

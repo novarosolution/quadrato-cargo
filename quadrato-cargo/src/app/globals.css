@@ -13,9 +13,11 @@
   --ink: #f1f5f9;
   --muted: #94a3b8;
   --muted-soft: #64748b;
+  /* Secondary highlight color (orange) */
   --accent: #f97316;
   --accent-hover: #fb923c;
   --accent-deep: #ea580c;
+  /* Primary action color (teal) */
   --teal: #2dd4bf;
   --teal-dim: rgba(45, 212, 191, 0.12);
   --ring: #2dd4bf;
@@ -200,7 +202,6 @@ h3,
   background:
     radial-gradient(ellipse 100% 80% at 50% -30%, rgba(45, 212, 191, 0.08), transparent 55%),
     radial-gradient(ellipse 50% 40% at 90% 10%, rgba(249, 115, 22, 0.07), transparent),
-    radial-gradient(ellipse 45% 35% at 5% 80%, rgba(56, 189, 248, 0.05), transparent),
     linear-gradient(180deg, var(--color-canvas) 0%, var(--color-canvas-mid) 50%, var(--color-canvas) 100%);
 }
 
@@ -208,7 +209,6 @@ html[data-theme="light"] .body-gradient {
   background:
     radial-gradient(ellipse 100% 80% at 50% -25%, rgba(45, 212, 191, 0.12), transparent 50%),
     radial-gradient(ellipse 55% 45% at 95% 5%, rgba(249, 115, 22, 0.08), transparent),
-    radial-gradient(ellipse 50% 40% at 0% 85%, rgba(56, 189, 248, 0.06), transparent),
     linear-gradient(180deg, var(--color-canvas) 0%, var(--color-canvas-mid) 45%, var(--color-canvas) 100%);
 }
 
@@ -232,6 +232,14 @@ html[data-theme="light"] .body-gradient {
   opacity: var(--noise-opacity);
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Reduce visual overhead on smaller devices for smoother interactions */
+@media (max-width: 768px) {
+  .body-grid,
+  .body-noise {
+    display: none;
+  }
 }
 
 html[data-theme="light"] .body-noise {
@@ -356,23 +364,48 @@ html[data-theme="light"] .card-interactive:hover {
 
 .btn-primary:hover {
   box-shadow:
-    0 10px 40px -6px var(--accent-warm-glow),
-    0 0 0 1px rgba(251, 146, 60, 0.2);
+    0 10px 40px -6px var(--accent-glow),
+    0 0 0 1px rgba(45, 212, 191, 0.28);
 }
 
 .btn-primary:active {
   transform: scale(0.98);
 }
 
+/* Secondary CTA style for non-primary actions */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.9rem;
+  border: 1px solid var(--color-ghost-border);
+  background: var(--color-ghost-fill);
+  color: var(--color-ink);
+  transition:
+    border-color 0.25s var(--ease-out-expo),
+    background-color 0.25s var(--ease-out-expo),
+    transform 0.25s var(--ease-out-expo);
+}
+
+.btn-secondary:hover {
+  border-color: color-mix(in oklab, var(--color-teal) 42%, var(--color-ghost-border));
+  background: var(--color-pill-hover);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+}
+
 .text-gradient {
-  background: linear-gradient(120deg, #fff 0%, #e2e8f0 40%, #2dd4bf 85%, #f97316 100%);
+  background: linear-gradient(120deg, #2dd4bf 0%, #f97316 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 html[data-theme="light"] .text-gradient {
-  background: linear-gradient(120deg, #0f172a 0%, #334155 35%, #0d9488 70%, #ea580c 100%);
+  background: linear-gradient(120deg, #0d9488 0%, #ea580c 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -386,11 +419,10 @@ html[data-theme="light"] .text-gradient {
     linear-gradient(
       120deg,
       rgba(45, 212, 191, 0.45),
-      rgba(249, 115, 22, 0.35),
-      rgba(45, 212, 191, 0.45)
+      rgba(249, 115, 22, 0.35)
     )
     border-box;
-  box-shadow: 0 0 80px -30px rgba(45, 212, 191, 0.15);
+  box-shadow: 0 0 48px -30px rgba(45, 212, 191, 0.12);
 }
 
 html[data-theme="light"] .shimmer-border {
@@ -409,7 +441,7 @@ html[data-theme="light"] .shimmer-border {
   bottom: 0.3rem;
   height: 2px;
   border-radius: 2px;
-  background: linear-gradient(90deg, var(--color-teal), var(--color-accent));
+  background: var(--color-teal);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.3s var(--ease-out-expo);
@@ -444,7 +476,6 @@ html[data-theme="light"] .glass-panel {
     background:
       radial-gradient(ellipse 100% 80% at 50% -25%, rgba(45, 212, 191, 0.12), transparent 50%),
       radial-gradient(ellipse 55% 45% at 95% 5%, rgba(249, 115, 22, 0.08), transparent),
-      radial-gradient(ellipse 50% 40% at 0% 85%, rgba(56, 189, 248, 0.06), transparent),
       linear-gradient(180deg, var(--color-canvas) 0%, var(--color-canvas-mid) 45%, var(--color-canvas) 100%);
   }
 
@@ -477,7 +508,7 @@ html[data-theme="light"] .glass-panel {
   }
 
   html:not([data-theme]) .text-gradient {
-    background: linear-gradient(120deg, #0f172a 0%, #334155 35%, #0d9488 70%, #ea580c 100%);
+    background: linear-gradient(120deg, #0d9488 0%, #ea580c 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

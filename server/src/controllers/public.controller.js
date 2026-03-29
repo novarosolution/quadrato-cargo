@@ -89,6 +89,7 @@ const bookingPayloadSchema = z
     collectionMode: z.enum(["instant", "scheduled"]),
     pickupDate: z.string().trim().optional(),
     pickupTimeSlot: z.string().trim().optional(),
+    pickupTimeSlotCustom: z.string().trim().max(64).optional(),
     pickupPreference: z.string().trim().min(1).max(240),
     instructions: z.string().trim().max(1000).optional(),
     agreedInternational: z.boolean().optional()
@@ -115,12 +116,22 @@ const bookingPayloadSchema = z
         });
       }
     }
-    if (!String(payload.pickupTimeSlot || "").trim()) {
+    const slotRaw = String(payload.pickupTimeSlot || "").trim();
+    if (!slotRaw) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["pickupTimeSlot"],
         message: "Pickup time slot is required for scheduled pickup."
       });
+    } else if (slotRaw.toLowerCase() === "custom") {
+      const custom = String(payload.pickupTimeSlotCustom || "").trim();
+      if (custom.length < 3 || custom.length > 64) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["pickupTimeSlotCustom"],
+          message: "Custom pickup time must be 3 to 64 characters."
+        });
+      }
     }
     if (!String(payload.pickupPreference || "").trim()) {
       ctx.addIssue({
@@ -131,10 +142,31 @@ const bookingPayloadSchema = z
     }
   });
 
-const createBookingRequestSchema = z.object({
-  routeType: z.enum(["domestic", "international"]),
-  bookingPayload: bookingPayloadSchema
-});
+const createBookingRequestSchema = z
+  .object({
+    routeType: z.enum(["domestic", "international"]),
+    bookingPayload: bookingPayloadSchema
+  })
+  .superRefine((data, ctx) => {
+    if (data.routeType !== "international") return;
+    if (data.bookingPayload.agreedInternational !== true) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["bookingPayload", "agreedInternational"],
+        message: "Confirm the details are accurate for export and customs processing."
+      });
+    }
+    const s = String(data.bookingPayload.sender.country || "").trim().toLowerCase();
+    const r = String(data.bookingPayload.recipient.country || "").trim().toLowerCase();
+    if (s && r && s === r) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["bookingPayload", "recipient", "country"],
+        message:
+          "International booking: delivery country should be outside the pickup country."
+      });
+    }
+  });
 
 const trackingReferenceSchema = z
   .string()
@@ -159,6 +191,7 @@ function buildBookingFieldErrors(issues = []) {
     "bookingPayload.collectionMode": "collectionMode",
     "bookingPayload.pickupDate": "pickupDate",
     "bookingPayload.pickupTimeSlot": "pickupTimeSlot",
+    "bookingPayload.pickupTimeSlotCustom": "pickupTimeSlotCustom",
     "bookingPayload.pickupPreference": "pickupPreference",
     "bookingPayload.sender.name": "senderName",
     "bookingPayload.sender.email": "senderEmail",
@@ -1079,7 +1112,16 @@ export async function createPublicBooking(req, res, next) {
       });
     }
     const routeType = parsed.data.routeType;
-    const bookingPayload = parsed.data.bookingPayload;
+    let bookingPayload = { ...parsed.data.bookingPayload };
+    const slotRaw = String(bookingPayload.pickupTimeSlot || "").trim();
+    if (slotRaw.toLowerCase() === "custom") {
+      const custom = String(bookingPayload.pickupTimeSlotCustom || "").trim();
+      bookingPayload = {
+        ...bookingPayload,
+        pickupTimeSlot: custom || bookingPayload.pickupTimeSlot
+      };
+    }
+    delete bookingPayload.pickupTimeSlotCustom;
     let userId = null;
     const token = req.cookies?.[env.authCookieName];
     if (token) {

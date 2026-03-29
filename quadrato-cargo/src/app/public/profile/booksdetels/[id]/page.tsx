@@ -121,7 +121,7 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
             {row.consignmentNumber ? (
               <div className="mt-6">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-soft">
-                  Consignment number
+                  Tracking ID
                 </h3>
                 <p className="mt-1 font-mono text-lg font-medium text-ink">
                   {row.consignmentNumber}
@@ -158,7 +158,7 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
             ) : (
               <p className="mt-6 text-sm text-muted">
                 No public tracking notes yet. When dispatch adds updates or a
-                consignment number, they will show here.
+                Tracking ID, they will show here.
               </p>
             )}
           </div>
@@ -424,7 +424,7 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
 
           <Link
             href="/public/book"
-            className="btn-primary inline-flex w-full items-center justify-center rounded-2xl bg-linear-to-r from-accent-deep via-accent to-accent-hover px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/25 sm:w-auto"
+            className="btn-primary inline-flex w-full items-center justify-center rounded-2xl border border-teal/70 bg-teal px-6 py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25 sm:w-auto"
           >
             Book another courier
           </Link>

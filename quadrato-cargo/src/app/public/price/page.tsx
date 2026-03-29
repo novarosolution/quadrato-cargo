@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Container } from "@/components/Wrap";
 import { PageHero } from "@/components/Hero";
+import { QuoteRequestButton } from "./QuoteRequestButton";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -93,12 +93,7 @@ export default function PricingPage() {
               Share your route, shipment type, and preferred timeline. We will
               return clear options for your use case.
             </p>
-            <Link
-              href="/public/contact"
-              className="btn-primary mt-6 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent-deep via-accent to-accent-hover px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/20"
-            >
-              Request a quote
-            </Link>
+            <QuoteRequestButton />
           </div>
         </Container>
       </section>

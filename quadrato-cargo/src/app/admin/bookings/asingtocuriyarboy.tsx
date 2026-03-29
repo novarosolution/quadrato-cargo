@@ -80,7 +80,7 @@ export function AdminBookingCourierAssign({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-xl bg-teal px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+          className="rounded-xl border border-teal/70 bg-teal px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-teal/90 disabled:opacity-50"
         >
           {pending ? "Saving…" : "Save assignment"}
         </button>

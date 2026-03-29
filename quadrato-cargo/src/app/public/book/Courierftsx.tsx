@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { postBookCourierApi } from "@/lib/api/public-client";
 import { authFieldClass, authInputClass } from "@/components/auth/authStyles";
 import {
@@ -235,6 +236,7 @@ function Err({ id, msg }: { id: string; msg?: string }) {
 }
 
 export function BookCourierForm() {
+  const searchParams = useSearchParams();
   const [pending, setPending] = useState(false);
   const [state, setState] = useState<BookCourierState>(initial);
   const [step, setStep] = useState<BookCourierStep>(1);
@@ -283,6 +285,12 @@ export function BookCourierForm() {
     if (!el) return;
     el.value = value;
   };
+
+  useEffect(() => {
+    const postal = String(searchParams.get("postal") ?? "").trim();
+    if (!postal) return;
+    setFormValue("senderPostal", postal.slice(0, 32));
+  }, [searchParams]);
 
   const applySavedAddress = (kind: "sender" | "recipient") => {
     const saved = addressBook[kind];
@@ -390,7 +398,7 @@ export function BookCourierForm() {
 
   return (
     <form ref={formRef} onSubmit={onSubmit} className="rounded-3xl border border-border bg-canvas/10 p-4 shadow-sm backdrop-blur-md sm:p-6" noValidate>
-      <div className="rounded-2xl border border-teal/25 bg-linear-to-r from-teal/10 via-canvas/30 to-canvas/20 p-4 sm:p-5">
+      <div className="rounded-2xl border border-teal/25 bg-linear-to-r from-teal/10 to-canvas/20 p-4 sm:p-5">
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-soft">
             Booking steps
@@ -455,7 +463,7 @@ export function BookCourierForm() {
         }`}
       >
         <legend className="font-display text-lg font-semibold text-ink px-1">
-          Collection at your PIN / address
+          Collection at your Postal Code / ZIP / address
         </legend>
         <p className="text-sm text-muted">
           Choose instant or scheduled pickup. Scheduled mode requires date and
@@ -471,7 +479,7 @@ export function BookCourierForm() {
               className="h-4 w-4 border-border-strong text-teal focus:ring-teal/40"
             />
             <span className="text-sm font-medium text-ink">
-              Instant collection (PIN / postal code)
+              Instant collection (Postal Code / ZIP)
             </span>
           </label>
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-strong bg-ghost-fill px-4 py-3 has-checked:border-teal/40 has-checked:bg-teal/5">
@@ -482,7 +490,7 @@ export function BookCourierForm() {
               className="h-4 w-4 border-border-strong text-teal focus:ring-teal/40"
             />
             <span className="text-sm font-medium text-ink">
-              Schedule date &amp; time (PIN / postal code)
+              Schedule date &amp; time (Postal Code / ZIP)
             </span>
           </label>
         </div>
@@ -672,7 +680,7 @@ export function BookCourierForm() {
           </div>
           <div>
             <label htmlFor="senderPostal" className="text-sm font-medium text-ink">
-              PIN / postal / ZIP <span className="text-teal">*</span>
+              Postal Code / ZIP <span className="text-teal">*</span>
             </label>
             <input
               id="senderPostal"
@@ -977,7 +985,7 @@ export function BookCourierForm() {
             Pickup window or notes
             <span className="block text-xs font-normal text-muted">
               Required if you chose scheduled pickup; optional for instant
-              (ASAP at your PIN).
+              (ASAP at your Postal Code / ZIP).
             </span>
           </label>
           <input
@@ -1048,7 +1056,7 @@ export function BookCourierForm() {
           <button
             type="button"
             onClick={() => onNextStep((step + 1) as BookCourierStep)}
-            className="btn-primary w-full rounded-2xl bg-linear-to-r from-accent-deep via-accent to-accent-hover py-3 text-sm font-semibold text-white shadow-lg shadow-accent/25 transition hover:brightness-105"
+            className="btn-primary w-full rounded-2xl border border-teal/70 bg-teal py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25 transition hover:bg-teal/90"
           >
             Continue
           </button>
@@ -1058,7 +1066,7 @@ export function BookCourierForm() {
             disabled={pending}
             whileHover={{ scale: pending ? 1 : 1.01 }}
             whileTap={{ scale: pending ? 1 : 0.99 }}
-            className="btn-primary w-full rounded-2xl bg-linear-to-r from-accent-deep via-accent to-accent-hover py-3 text-sm font-semibold text-white shadow-lg shadow-accent/25 transition hover:brightness-105 disabled:opacity-60"
+            className="btn-primary w-full rounded-2xl border border-teal/70 bg-teal py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25 transition hover:bg-teal/90 disabled:opacity-60"
           >
             {pending ? "Submitting booking..." : "Submit booking"}
           </motion.button>

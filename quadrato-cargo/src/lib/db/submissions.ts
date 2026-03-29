@@ -29,7 +29,7 @@ export type CourierPayload = {
     dimensionsCm?: { l: string; w: string; h: string };
     declaredValue?: string;
   };
-  /** Instant (~10 min target at PIN where serviceable) or scheduled window. */
+  /** Instant (~10 min target at Postal Code / ZIP where serviceable) or scheduled window. */
   collectionMode: "instant" | "scheduled";
   pickupDate?: string;
   pickupTimeSlot?: string;

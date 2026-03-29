@@ -54,7 +54,7 @@ export default function ServicesPage() {
                 key={s.name}
                 className="card-interactive rounded-2xl border border-border bg-surface-elevated/70 p-8 backdrop-blur-sm"
               >
-                <div className="mb-5 h-1 w-14 rounded-full bg-gradient-to-r from-teal to-accent" />
+                <div className="mb-5 h-1 w-14 rounded-full bg-teal" />
                 <h2 className="font-display text-xl font-semibold text-ink">{s.name}</h2>
                 <p className="mt-3 text-sm leading-relaxed text-muted">{s.body}</p>
               </li>
@@ -69,7 +69,7 @@ export default function ServicesPage() {
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href="/public/book"
-                className="btn-primary inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent-deep via-accent to-accent-hover px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-accent/20"
+                className="btn-primary inline-flex items-center justify-center rounded-2xl border border-teal/70 bg-teal px-8 py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/20"
               >
                 Book courier
               </Link>

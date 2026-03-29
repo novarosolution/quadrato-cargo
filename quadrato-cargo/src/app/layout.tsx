@@ -32,11 +32,21 @@ export const metadata: Metadata = {
     siteName,
     title: siteName,
     description: siteDescription,
+    images: [{ url: "/quadrato-logo-full.png" }],
   },
   twitter: {
     card: "summary_large_image",
     title: siteName,
     description: siteDescription,
+    images: ["/quadrato-logo-full.png"],
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon" },
+      { url: "/quadrato-logo-icon.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/quadrato-logo-icon.png", sizes: "512x512", type: "image/png" }],
+    shortcut: ["/favicon.ico"],
   },
 };
 

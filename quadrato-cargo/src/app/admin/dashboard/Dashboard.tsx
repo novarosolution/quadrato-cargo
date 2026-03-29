@@ -68,6 +68,7 @@ function StatCard({
   return (
     <Link
       href={href}
+      prefetch={false}
       className="group relative overflow-hidden rounded-2xl border border-border-strong bg-surface-elevated/60 p-6 transition hover:border-teal/35 hover:shadow-[0_0_0_1px_rgba(45,212,191,0.12)]"
     >
       <div className="flex items-start justify-between gap-3">
@@ -153,6 +154,7 @@ export function AdminDashboardView(data: DashboardSnapshot) {
         <div className="flex flex-wrap gap-2">
           <Link
             href="/admin/settings"
+            prefetch={false}
             className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/50 px-4 py-2.5 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
           >
             <ClipboardList className="h-4 w-4 text-teal" strokeWidth={2} />
@@ -294,7 +296,7 @@ export function AdminDashboardView(data: DashboardSnapshot) {
         <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
           <div className="flex items-center justify-between gap-4">
             <h2 className="font-display text-lg font-semibold">Recent contacts</h2>
-            <Link href="/admin/contacts" className="text-sm text-teal hover:underline">
+            <Link href="/admin/contacts" prefetch={false} className="text-sm text-teal hover:underline">
               View all
             </Link>
           </div>
@@ -306,6 +308,7 @@ export function AdminDashboardView(data: DashboardSnapshot) {
                 <li key={contact.id}>
                   <Link
                     href={`/admin/contacts/${contact.id}`}
+                    prefetch={false}
                     className="block rounded-lg border border-border bg-canvas/30 px-3 py-2 text-sm transition hover:border-ghost-border"
                   >
                     <span className="font-medium text-ink">{contact.name}</span>
@@ -323,7 +326,7 @@ export function AdminDashboardView(data: DashboardSnapshot) {
         <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
           <div className="flex items-center justify-between gap-4">
             <h2 className="font-display text-lg font-semibold">Recent bookings</h2>
-            <Link href="/admin/bookings" className="text-sm text-teal hover:underline">
+            <Link href="/admin/bookings" prefetch={false} className="text-sm text-teal hover:underline">
               View all
             </Link>
           </div>
@@ -337,6 +340,7 @@ export function AdminDashboardView(data: DashboardSnapshot) {
                   <li key={booking.id}>
                     <Link
                       href={`/admin/bookings/${booking.id}`}
+                      prefetch={false}
                       className="block rounded-lg border border-border bg-canvas/30 px-3 py-2 text-sm transition hover:border-ghost-border"
                     >
                       <span className="font-medium capitalize text-ink">
@@ -359,7 +363,7 @@ export function AdminDashboardView(data: DashboardSnapshot) {
         <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
           <div className="flex items-center justify-between gap-4">
             <h2 className="font-display text-lg font-semibold">Recent users</h2>
-            <Link href="/admin/users" className="text-sm text-teal hover:underline">
+            <Link href="/admin/users" prefetch={false} className="text-sm text-teal hover:underline">
               View all
             </Link>
           </div>
@@ -371,6 +375,7 @@ export function AdminDashboardView(data: DashboardSnapshot) {
                 <li key={user.id}>
                   <Link
                     href={`/admin/users/${user.id}`}
+                    prefetch={false}
                     className="block rounded-lg border border-border bg-canvas/30 px-3 py-2 text-sm transition hover:border-ghost-border"
                   >
                     <span className="font-medium text-ink">

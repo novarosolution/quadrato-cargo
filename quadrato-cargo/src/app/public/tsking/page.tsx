@@ -14,7 +14,7 @@ import { TrackOrderForm } from "./trakindfom";
 export const metadata: Metadata = {
   title: "Track Order",
   description:
-    "Track your shipment status using booking ID or consignment number.",
+    "Track your shipment status using booking ID or Tracking ID.",
 };
 
 export default async function TrackOrderPage({
@@ -40,7 +40,7 @@ export default async function TrackOrderPage({
       <PageHero
         eyebrow="Tracking"
         title="Track your order in real time"
-        description="Enter your booking ID or consignment number to see the latest status."
+        description="Enter your booking ID or Tracking ID to see the latest status."
       />
       <section className="page-section-compact">
         <Container className="max-w-2xl">
@@ -72,7 +72,7 @@ export default async function TrackOrderPage({
               </ul>
             </div>
           ) : null}
-          <div className="panel-card shadow-2xl shadow-black/35">
+          <div className="panel-card">
             <TrackOrderForm initialReference={initialReference} />
           </div>
         </Container>

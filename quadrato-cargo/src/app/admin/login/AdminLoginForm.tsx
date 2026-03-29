@@ -86,7 +86,7 @@ export function AdminLoginForm() {
         disabled={pending}
         whileHover={{ scale: pending ? 1 : 1.01 }}
         whileTap={{ scale: pending ? 1 : 0.99 }}
-        className="w-full rounded-xl bg-gradient-to-r from-teal to-teal/80 py-3 text-sm font-semibold text-slate-950 transition hover:opacity-95 disabled:opacity-60"
+        className="w-full rounded-xl border border-teal/70 bg-teal py-3 text-sm font-semibold text-slate-950 transition hover:bg-teal/90 disabled:opacity-60"
       >
         {pending ? "Signing in…" : "Sign in to admin"}
       </motion.button>

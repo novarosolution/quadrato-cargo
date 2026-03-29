@@ -1,8 +1,8 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
-import { LogoMark } from "@/components/Logo";
 import { useEffect, useState } from "react";
 import { fetchHealth } from "@/lib/api/public-client";
 import { useMotionPreferences } from "@/lib/motion-preferences";
@@ -62,7 +62,7 @@ export function Footer() {
   return (
     <footer className="relative mt-auto border-t border-border bg-surface/90 backdrop-blur-xl">
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal/30 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-teal/30"
         aria-hidden
       />
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
@@ -75,29 +75,22 @@ export function Footer() {
             viewport={{ once: true, margin: "-40px" }}
           >
             <div className="flex items-center gap-3">
-              <motion.span
-                className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-teal via-teal to-accent text-white shadow-md shadow-teal/25 ring-1 ring-white/15"
+              <motion.div
+                className="relative h-16 w-[320px] max-w-full overflow-hidden bg-transparent"
                 initial={reduce ? false : { scale: 0.9, opacity: 0 }}
                 whileInView={{ scale: 1, opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ type: "spring", stiffness: 360, damping: 24 }}
-                whileHover={canHoverMotion ? { scale: 1.08, rotate: -4 } : undefined}
+                whileHover={canHoverMotion ? { scale: 1.02 } : undefined}
               >
-                <span
-                  className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-50"
-                  aria-hidden
+                <Image
+                  src="/quadrato-logo-full.png"
+                  alt="Quadrato Cargo full logo"
+                  fill
+                  sizes="320px"
+                  className="object-cover object-left rounded-none"
                 />
-                <LogoMark className="relative z-[1] h-5 w-5 drop-shadow-sm" />
-              </motion.span>
-              <motion.p
-                className="font-display text-xl font-semibold tracking-tight text-ink"
-                initial={reduce ? false : { opacity: 0, x: -6 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              >
-                Quadrato Cargo
-              </motion.p>
+              </motion.div>
             </div>
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted">
               International courier service with simple booking and clear
@@ -111,7 +104,8 @@ export function Footer() {
             >
               <Link
                 href="/public/contact"
-                className="btn-primary inline-flex rounded-full border border-ghost-border bg-ghost-fill px-5 py-2.5 text-sm font-semibold text-ink transition hover:border-teal/30 hover:bg-pill-hover"
+                prefetch={false}
+                className="btn-secondary inline-flex rounded-full px-5 py-2.5 text-sm font-semibold"
               >
                 Start a conversation
               </Link>
@@ -141,6 +135,7 @@ export function Footer() {
                   >
                     <Link
                       href={item.href}
+                      prefetch={false}
                       className="text-sm font-medium text-muted transition hover:text-teal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
                     >
                       {item.label}
@@ -160,7 +155,7 @@ export function Footer() {
                       whileHover={canHoverMotion ? { x: 4 } : undefined}
                       transition={{ type: "spring", stiffness: 400, damping: 28 }}
                     >
-                      <Link href="/public/profile" className={footerLinkClass}>
+                      <Link href="/public/profile" prefetch={false} className={footerLinkClass}>
                         Profile
                       </Link>
                     </motion.li>
@@ -184,7 +179,7 @@ export function Footer() {
                       whileHover={canHoverMotion ? { x: 4 } : undefined}
                       transition={{ type: "spring", stiffness: 400, damping: 28 }}
                     >
-                      <Link href={item.href} className={footerLinkClass}>
+                      <Link href={item.href} prefetch={false} className={footerLinkClass}>
                         {item.label}
                       </Link>
                     </motion.li>

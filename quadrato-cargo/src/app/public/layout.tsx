@@ -1,5 +1,7 @@
 import { AppSessionProvider } from "@/components/auth/SessionWrap";
 import { Footer } from "@/components/Foot";
+import { PublicBottomNav } from "@/components/PublicBottomNav";
+import { PublicSpeedButtons } from "@/components/PublicSpeedButtons";
 import { Header } from "@/components/TopBar";
 import Link from "next/link";
 import { fetchSiteSettings } from "@/lib/api/public-client";
@@ -30,7 +32,9 @@ export default async function SiteLayout({
           </div>
         ) : null}
         <Header />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 pb-20 lg:pb-0">{children}</main>
+        <PublicSpeedButtons />
+        <PublicBottomNav />
         <Footer />
       </div>
     </AppSessionProvider>

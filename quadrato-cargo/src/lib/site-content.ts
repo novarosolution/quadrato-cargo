@@ -2,8 +2,8 @@ import { Clock, Globe2, ShieldCheck, Truck, type LucideIcon } from "lucide-react
 
 export const homeHeroCardData = [
   {
-    label: "Book with PIN",
-    status: "Instant or scheduled pickup at your postal code",
+    label: "Book with Postal Code / ZIP",
+    status: "Instant or scheduled pickup in your area",
     time: "Online",
     tone: "teal" as const
   },
@@ -15,7 +15,7 @@ export const homeHeroCardData = [
   },
   {
     label: "Accepted",
-    status: "Consignment number · QR slip on delivery receipt",
+    status: "Tracking ID · QR slip on delivery receipt",
     time: "Manual track",
     tone: "muted" as const
   }
@@ -27,8 +27,8 @@ export const homeValueStoryData: Array<{
   Icon: LucideIcon;
 }> = [
   {
-    title: "~10 minutes to your PIN",
-    body: "For instant collection, we target reaching your pickup PIN or address in about 10 minutes where the area is serviceable — traffic, access, and backend dispatch capacity affect every job.",
+    title: "~10 minutes to your Postal Code / ZIP",
+    body: "For instant collection, we target reaching your pickup postal code / ZIP area in about 10 minutes where service is available — traffic, access, and dispatch capacity can affect timing.",
     Icon: Clock
   },
   {
@@ -37,8 +37,8 @@ export const homeValueStoryData: Array<{
     Icon: Globe2
   },
   {
-    title: "Consignment & QR receipt",
-    body: "After our field team accepts your parcel you get a consignment number. Tracking is updated manually at first; your delivery receipt is built for a QR-oriented slip so status can be pulled by scan (like many utility bills).",
+    title: "Tracking ID & QR receipt",
+    body: "After our field team accepts your parcel you get a Tracking ID. Tracking is updated manually at first; your delivery receipt supports QR-based status lookup.",
     Icon: ShieldCheck
   },
   {
@@ -51,30 +51,30 @@ export const homeValueStoryData: Array<{
 export const homeProcessStepData = [
   {
     step: "1",
-    title: "Book with PIN or postal code",
+    title: "Book with Postal Code / ZIP",
     body: "Choose instant collection or schedule a date and time. Enter pickup and delivery addresses — international bookings include full sender, recipient, and parcel details."
   },
   {
     step: "2",
     title: "Backend assigns logistics staff",
-    body: "If your location is deliverable for pickup, our team dispatches field staff to collect at your PIN. We then handle the shipment manually until it is handed to the partner courier company."
+    body: "If your location is deliverable for pickup, our team dispatches field staff to collect at your postal code / ZIP area. We then handle the shipment manually until handoff to the partner courier company."
   },
   {
     step: "3",
-    title: "Consignment number & onward",
-    body: "Once the parcel is accepted in the field, you receive a consignment number. Tracking records are maintained manually at the start; your receipt supports QR-based status lookup."
+    title: "Tracking ID & onward",
+    body: "Once the parcel is accepted in the field, you receive a Tracking ID. Tracking records are maintained manually at the start; your receipt supports QR-based status lookup."
   }
 ];
 
 export const homeHeroStatData = [
-  { value: "~10 min", label: "Pickup target (serviceable PINs)" },
-  { value: "PIN + schedule", label: "Instant or booked window" },
+  { value: "~10 min", label: "Pickup target (serviceable postal code / ZIP areas)" },
+  { value: "Postal + schedule", label: "Instant or booked window" },
   { value: "QR receipt", label: "Scan-friendly slip" }
 ];
 
 export const homeHeroCallToActionData = [
   { href: "/public/register", label: "Create free account", kind: "primary" as const },
-  { href: "/public/book", label: "Book courier", kind: "secondary" as const },
+  { href: "/public/book", label: "Book Now", kind: "secondary" as const },
   { href: "/public/contact", label: "Get a quote", kind: "secondary" as const },
   { href: "/public/service", label: "Services", kind: "secondary" as const }
 ];

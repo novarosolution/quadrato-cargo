@@ -51,7 +51,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
-      <Link href="/admin/bookings" className="text-sm text-teal hover:underline">
+      <Link href="/admin/bookings" prefetch={false} className="text-sm text-teal hover:underline">
         ← All bookings
       </Link>
 
@@ -74,6 +74,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
               Account:{" "}
               <Link
                 href={`/admin/users/${row.user.id}`}
+                prefetch={false}
                 className="font-medium text-teal hover:underline"
               >
                 {row.user.name ?? row.user.email}
@@ -90,6 +91,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
               Courier:{" "}
               <Link
                 href={`/admin/users/${row.courier.id}`}
+                prefetch={false}
                 className="font-medium text-teal hover:underline"
               >
                 {row.courier.name ?? row.courier.email}
@@ -123,7 +125,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
               Dispatch controls
             </h2>
             <p className="mt-1 text-xs text-muted-soft">
-              Customer sees status, consignment number, and tracking notes on
+              Customer sees status, Tracking ID, and tracking notes on
               their profile. Internal notes stay in admin only.
             </p>
             <div className="mt-6">
@@ -171,7 +173,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
               </div>
               <div className="rounded-xl border border-border bg-canvas/30 p-3">
                 <dt className="text-xs uppercase tracking-wide text-muted-soft">
-                  Pickup PIN
+                  Pickup Postal Code / ZIP
                 </dt>
                 <dd className="mt-1 font-medium text-ink">
                   {pickupPin || "Not set"}

@@ -100,7 +100,7 @@ export function AdminBookingCustomerLink({
         <button
           type="submit"
           disabled={linkPending}
-          className="inline-flex rounded-xl bg-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+          className="inline-flex rounded-xl border border-teal/70 bg-teal px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-teal/90 disabled:opacity-50"
         >
           {linkPending ? "Linking…" : "Link to account"}
         </button>

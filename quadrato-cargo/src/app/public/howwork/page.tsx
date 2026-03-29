@@ -21,9 +21,9 @@ const steps = [
     detail: "Scheduled pickup follows your selected date and time window.",
   },
   {
-    title: "Consignment number is generated",
+    title: "Tracking ID is generated",
     body: "After pickup acceptance, you receive a tracking reference for status updates.",
-    detail: "You can track from the website using booking ID or consignment number.",
+    detail: "You can track from the website using booking ID or Tracking ID.",
   },
   {
     title: "Shipment processing and movement",
@@ -80,7 +80,7 @@ export default function HowItWorksPage() {
             </p>
             <Link
               href="/public/price"
-              className="btn-primary inline-flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-r from-accent-deep to-accent px-6 py-3 text-sm font-semibold text-white shadow-md shadow-accent/25"
+              className="btn-primary inline-flex shrink-0 items-center justify-center rounded-2xl border border-teal/70 bg-teal px-6 py-3 text-sm font-semibold text-slate-950 shadow-md shadow-teal/25"
             >
               View pricing
             </Link>

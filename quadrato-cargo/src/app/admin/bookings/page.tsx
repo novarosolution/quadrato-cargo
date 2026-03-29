@@ -80,7 +80,7 @@ export default async function AdminBookingsPage({ searchParams }: Props) {
 
       <AdminListFilters
         basePath="/admin/bookings"
-        placeholder="ID, consignment, route, customer email…"
+        placeholder="ID, Tracking ID, route, customer email…"
         defaultQuery={q}
       >
         <div className="min-w-[160px]">
@@ -190,6 +190,7 @@ export default async function AdminBookingsPage({ searchParams }: Props) {
                       {r.user ? (
                         <Link
                           href={`/admin/users/${r.user.id}`}
+                          prefetch={false}
                           className="block truncate text-teal hover:underline"
                           title={r.user.email}
                         >
@@ -203,6 +204,7 @@ export default async function AdminBookingsPage({ searchParams }: Props) {
                       {r.courier ? (
                         <Link
                           href={`/admin/users/${r.courier.id}`}
+                          prefetch={false}
                           className="block truncate text-teal hover:underline"
                           title={r.courier.email}
                         >
@@ -224,6 +226,7 @@ export default async function AdminBookingsPage({ searchParams }: Props) {
                       <div className="flex flex-wrap items-center gap-2">
                         <Link
                           href={`/admin/bookings/${r.id}`}
+                          prefetch={false}
                           className="text-teal hover:underline"
                         >
                           Open / edit

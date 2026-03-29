@@ -2,10 +2,10 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Menu, X } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LogoMark } from "@/components/Logo";
 import { authNav, mainNav } from "@/lib/nav";
 import { ThemeToggle } from "@/components/ThemeBtn";
 import { postLogoutApi, type ApiUser } from "@/lib/api/auth-client";
@@ -67,6 +67,7 @@ function HeaderNavLink({
   return (
     <Link
       href={href}
+      prefetch={false}
       data-active={active ? "true" : "false"}
       onClick={onNavigate}
       className="nav-link shrink-0 rounded-full px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal data-[active=true]:bg-pill data-[active=true]:text-ink lg:px-3.5 lg:py-2 lg:text-sm"
@@ -155,6 +156,7 @@ function AccountMenu({
               <Link
                 role="menuitem"
                 href="/public/profile"
+                prefetch={false}
                 onClick={() => setOpen(false)}
                 className={
                   pathname === "/public/profile"
@@ -244,30 +246,23 @@ export function Header() {
           className="group flex min-w-0 max-w-full items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal sm:gap-2.5"
         >
           <motion.span
-            className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-teal via-teal to-accent text-white shadow-lg shadow-teal/30 ring-1 ring-white/15 sm:h-10 sm:w-10"
+            className="relative flex h-10 w-10 shrink-0 overflow-hidden bg-transparent lg:h-11 lg:w-11"
             initial={reduce ? false : { scale: 0.88, opacity: 0, rotate: -10 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 380, damping: 22, delay: 0.02 }}
-            whileHover={reduce ? undefined : { scale: 1.06, rotate: -2 }}
+            whileHover={reduce ? undefined : { scale: 1.04 }}
             whileTap={{ scale: 0.94 }}
           >
-            <span
-              className="absolute inset-0 bg-gradient-to-tr from-white/25 to-transparent opacity-40 transition-opacity duration-300 group-hover:opacity-100"
-              aria-hidden
-            />
-            <LogoMark
-              className="relative z-[1] h-[1.125rem] w-[1.125rem] drop-shadow-sm sm:h-5 sm:w-5"
-              ambientPulse
+            <Image
+              src="/quadrato-logo-icon.png"
+              alt="Quadrato Cargo"
+              fill
+              sizes="(max-width: 1023px) 40px, 44px"
+              className="object-cover rounded-none"
+              priority
             />
           </motion.span>
-          <motion.span
-            className="min-w-0 truncate font-display text-sm font-semibold tracking-tight text-ink sm:text-base lg:text-[1.05rem]"
-            initial={reduce ? false : { opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          >
-            Quadrato Cargo
-          </motion.span>
+          <span className="sr-only">Quadrato Cargo</span>
         </Link>
 
         <motion.nav
@@ -310,9 +305,10 @@ export function Header() {
                 <Link
                   key={authNavEntry.href}
                   href={authNavEntry.href}
+                  prefetch={false}
                   className={
                     authNavEntry.href === "/public/register"
-                      ? "btn-primary shrink-0 rounded-full bg-gradient-to-r from-accent-deep via-accent to-accent-hover px-2.5 py-2 text-xs font-semibold text-white shadow-lg shadow-accent/20 transition hover:opacity-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal lg:px-3.5 lg:text-sm"
+                      ? "btn-primary shrink-0 rounded-full bg-teal px-2.5 py-2 text-xs font-semibold text-slate-950 shadow-lg shadow-teal/25 transition hover:bg-teal/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal lg:px-3.5 lg:text-sm"
                       : guestNavLinkClass
                   }
                 >
@@ -322,8 +318,9 @@ export function Header() {
             )}
             <Link
               href="/public/contact"
+              prefetch={false}
               aria-label="Get a Quote"
-              className="btn-primary inline-flex shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-accent-deep via-accent to-accent-hover px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-accent/20 sm:px-4 sm:py-2.5 sm:text-sm lg:px-5"
+              className="btn-primary inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-teal px-4 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25 transition hover:-translate-y-0.5 hover:bg-teal/90 lg:px-5"
             >
               <span className="hidden lg:inline">Get a Quote</span>
               <span className="lg:hidden" aria-hidden>
@@ -413,6 +410,7 @@ export function Header() {
                     </div>
                     <Link
                       href="/public/profile"
+                      prefetch={false}
                       onClick={closeMobileMenu}
                       className="block rounded-full py-2.5 text-sm font-medium text-teal hover:bg-pill-hover"
                     >
@@ -439,6 +437,7 @@ export function Header() {
                     >
                       <Link
                         href={authNavEntry.href}
+                        prefetch={false}
                         onClick={closeMobileMenu}
                         className="block rounded-full px-3.5 py-2.5 text-sm font-medium text-ink hover:bg-pill-hover"
                       >
@@ -450,7 +449,8 @@ export function Header() {
               </div>
               <Link
                 href="/public/contact"
-                className="btn-primary mt-1 inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent-deep to-accent px-4 py-3.5 text-sm font-semibold text-white"
+                prefetch={false}
+                className="btn-primary mt-1 inline-flex h-12 items-center justify-center rounded-2xl bg-teal px-4 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5 hover:bg-teal/90"
                 onClick={closeMobileMenu}
               >
                 Get a Quote

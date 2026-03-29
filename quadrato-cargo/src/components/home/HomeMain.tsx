@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { PackageCheck, Search } from "lucide-react";
+import { Boxes, Globe2, Truck } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Container } from "@/components/Wrap";
@@ -12,7 +12,6 @@ import { getApiBaseUrl } from "@/lib/api/base-url";
 import {
   homeHeroCallToActionData,
   homeHeroStatData,
-  homeProcessStepData,
   homeValueStoryData
 } from "@/lib/site-content";
 import { HeroVisual } from "./HeroCards";
@@ -70,8 +69,8 @@ export function HomeView() {
   const reduce = useReducedMotion();
   const { allowHoverMotion } = useMotionPreferences();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [quickReference, setQuickReference] = useState("");
-  const [quickTrackError, setQuickTrackError] = useState("");
+  const [trackingReference, setTrackingReference] = useState("");
+  const [trackingError, setTrackingError] = useState("");
   // Keep one source of truth for motion gating so every section degrades consistently.
   const hoverMotion = allowHoverMotion && !reduce;
   const ctaHoverUp = hoverMotion ? { y: -3 } : undefined;
@@ -125,44 +124,23 @@ export function HomeView() {
     };
   }, []);
 
-  function onQuickTrackSubmit(ev: FormEvent<HTMLFormElement>) {
+  function onGetStartedSubmit(ev: FormEvent<HTMLFormElement>) {
     ev.preventDefault();
-    const value = quickReference.trim();
+    const value = trackingReference.trim();
     if (!value) {
-      setQuickTrackError("Enter your booking ID or consignment number.");
+      setTrackingError("Enter your Booking ID or Tracking ID.");
       return;
     }
     if (!/^[a-zA-Z0-9-]{6,40}$/.test(value)) {
-      setQuickTrackError("Use 6-40 letters, numbers, or hyphens.");
+      setTrackingError("Use 6-40 letters, numbers, or hyphens.");
       return;
     }
-    setQuickTrackError("");
+    setTrackingError("");
     window.location.assign(`/public/tsking?reference=${encodeURIComponent(value)}`);
   }
 
   return (
     <>
-      <nav
-        aria-label="Quick actions"
-        className="fixed bottom-5 right-4 z-40 flex flex-col gap-3"
-      >
-        <Link
-          href="/public/book"
-          title="Book Courier"
-          className="group inline-flex h-14 w-14 items-center justify-center rounded-full border border-border-strong bg-surface-elevated/80 text-ink shadow-2xl shadow-black/35 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-teal/45 hover:text-teal"
-        >
-          <PackageCheck className="h-6 w-6" strokeWidth={1.9} aria-hidden />
-          <span className="sr-only">Book Courier</span>
-        </Link>
-        <Link
-          href="/public/tsking"
-          title="Track Courier"
-          className="group inline-flex h-14 w-14 items-center justify-center rounded-full border border-border-strong bg-surface-elevated/80 text-ink shadow-2xl shadow-black/35 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-accent/45 hover:text-accent-hover"
-        >
-          <Search className="h-6 w-6" strokeWidth={1.9} aria-hidden />
-          <span className="sr-only">Track Courier</span>
-        </Link>
-      </nav>
       <section className="relative overflow-hidden border-b border-border page-section">
         <div
           className="pointer-events-none absolute -right-32 top-0 h-[500px] w-[500px] rounded-full bg-accent/10 blur-[90px]"
@@ -173,6 +151,53 @@ export function HomeView() {
           aria-hidden
         />
         <Container wide className="relative">
+          <motion.form
+            initial="hidden"
+            animate="visible"
+            variants={heroContainer}
+            onSubmit={onGetStartedSubmit}
+            className="mx-auto mb-10 w-full max-w-5xl rounded-[1.75rem] border border-border-strong bg-surface-elevated/90 p-5 shadow-xl shadow-black/15 backdrop-blur-md dark:shadow-black/35 sm:p-6"
+            noValidate
+          >
+            <motion.label
+              variants={heroItem}
+              htmlFor="hero-postal-code"
+              className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-soft sm:text-sm"
+            >
+              Start tracking now
+            </motion.label>
+            <motion.p
+              variants={heroItem}
+              className="mt-1 text-xs text-muted sm:text-sm"
+            >
+              Enter your Booking ID or Tracking ID
+            </motion.p>
+            <motion.div
+              variants={heroItem}
+              className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center"
+            >
+              <input
+                id="hero-postal-code"
+                type="text"
+                value={trackingReference}
+                onChange={(ev) => setTrackingReference(ev.target.value)}
+                placeholder="Enter Booking ID / Tracking ID"
+                className="h-16 w-full rounded-2xl border border-border-strong bg-canvas/80 px-5 text-base text-ink placeholder:text-muted-soft focus:border-teal/45 focus:outline-none focus:ring-2 focus:ring-teal/20 sm:text-lg"
+                inputMode="text"
+                maxLength={40}
+                pattern="[A-Za-z0-9-]{6,40}"
+              />
+              <button
+                type="submit"
+                className="btn-primary inline-flex h-16 items-center justify-center rounded-2xl border border-teal/70 bg-teal px-8 text-lg font-semibold text-slate-950 shadow-lg shadow-teal/25 transition hover:-translate-y-0.5 hover:bg-teal/90 sm:min-w-[190px]"
+              >
+                Track Now
+              </button>
+            </motion.div>
+            {trackingError ? (
+              <p className="mt-3 text-sm text-rose-300">{trackingError}</p>
+            ) : null}
+          </motion.form>
           <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-16">
             <motion.div
               initial="hidden"
@@ -193,19 +218,15 @@ export function HomeView() {
                 variants={heroItem}
                 className="mt-6 text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.5rem] lg:leading-[1.05]"
               >
-                <span className="text-ink">At your</span>{" "}
-                <span className="text-gradient">doorstep</span>
                 <span className="text-ink">
-                  {" "}
-                  — international courier with quick pickup.
+                  International Courier from Your Door in 10 Minutes.
                 </span>
               </motion.h1>
               <motion.p
                 variants={heroItem}
-                className="mt-6 max-w-xl text-lg leading-relaxed text-muted"
+                className="mt-4 max-w-xl text-base leading-relaxed text-muted"
               >
-                Book with your PIN or postal code, choose instant or scheduled
-                pickup, and track your shipment with clear status updates.
+                Fast booking, quick pickup, and global tracking in one clean flow.
               </motion.p>
               <motion.div
                 variants={heroItem}
@@ -229,9 +250,10 @@ export function HomeView() {
                       return (
                     <Link
                       href={heroCallToAction.href}
+                      prefetch={false}
                       className={`${
                         usePrimaryStyle
-                          ? "btn-primary inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent-deep via-accent to-accent-hover px-7 py-4 text-center text-sm font-semibold text-white shadow-lg shadow-accent/25"
+                          ? "btn-primary inline-flex items-center justify-center rounded-2xl border border-teal/70 bg-teal px-7 py-4 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25"
                           : secondaryCtaClass
                       } w-full`}
                     >
@@ -255,41 +277,6 @@ export function HomeView() {
                   </motion.li>
                 ))}
               </motion.ul>
-              <motion.form
-                variants={heroItem}
-                onSubmit={onQuickTrackSubmit}
-                className="mt-8 rounded-2xl border border-border-strong bg-surface-elevated/65 p-4 backdrop-blur-sm"
-                noValidate
-              >
-                <label
-                  htmlFor="quick-track-reference"
-                  className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-soft"
-                >
-                  Track consignment quickly
-                </label>
-                <div className="mt-3 flex flex-col gap-2.5 sm:flex-row">
-                  <input
-                    id="quick-track-reference"
-                    type="text"
-                    value={quickReference}
-                    onChange={(ev) => setQuickReference(ev.target.value)}
-                    placeholder="Enter booking ID or consignment number"
-                    className="w-full rounded-xl border border-border-strong bg-canvas/50 px-3 py-2.5 text-sm text-ink focus:border-teal/45 focus:outline-none focus:ring-2 focus:ring-teal/20"
-                    inputMode="text"
-                    maxLength={40}
-                    pattern="[A-Za-z0-9-]{6,40}"
-                  />
-                  <button
-                    type="submit"
-                    className="btn-primary inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-accent-deep via-accent to-accent-hover px-5 py-2.5 text-sm font-semibold text-white"
-                  >
-                    Track Now
-                  </button>
-                </div>
-                {quickTrackError ? (
-                  <p className="mt-2 text-xs text-rose-300">{quickTrackError}</p>
-                ) : null}
-              </motion.form>
             </motion.div>
             <HeroVisual />
           </div>
@@ -348,8 +335,8 @@ export function HomeView() {
             <SectionHeading
               className="max-w-xl"
               eyebrow="Process"
-              title="Book -> pickup -> shipment tracking"
-              description="Submit your details, get pickup confirmation, and follow progress with one reference number."
+              title="How it works"
+              description="Three simple steps from booking to global delivery updates."
             />
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -361,6 +348,7 @@ export function HomeView() {
             >
               <Link
                 href="/public/howwork"
+                prefetch={false}
                 className="inline-flex items-center justify-center rounded-2xl border border-ghost-border bg-ghost-fill px-6 py-3.5 text-sm font-semibold text-ink transition hover:border-teal/35 hover:bg-pill-hover"
               >
                 See full flow
@@ -368,45 +356,36 @@ export function HomeView() {
             </motion.div>
           </div>
 
-          <div className="relative mt-16">
-            <motion.div
-              className="pointer-events-none absolute left-[6%] right-[6%] top-[2.25rem] hidden h-px bg-gradient-to-r from-transparent via-teal/40 to-transparent md:block"
-              initial={{ scaleX: 0 }}
-              whileInView={{ scaleX: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 1.1, ease, delay: 0.15 }}
-              style={{ transformOrigin: "left center" }}
-              aria-hidden
-            />
-            <motion.ol
-              className="relative grid gap-8 md:grid-cols-3 md:gap-6"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-50px" }}
-              variants={{ visible: { transition: { staggerChildren: 0.12 } } }}
-            >
-              {homeProcessStepData.map((s) => (
-                <motion.li
-                  key={s.step}
-                  variants={cardReveal}
-                  whileHover={processCardHover}
-                  className="relative rounded-2xl border border-border bg-surface-elevated/60 p-6 transition-shadow duration-300 hover:shadow-lg hover:shadow-teal/5 md:pt-8"
+          <motion.ul
+            className="mt-14 grid gap-5 md:grid-cols-3"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-40px" }}
+            variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+          >
+            {[
+              { title: "Book", body: "Enter shipment details and confirm pickup in seconds.", Icon: Boxes },
+              { title: "Fast Pickup", body: "A courier is dispatched quickly where your area is serviceable.", Icon: Truck },
+              { title: "Global Tracking", body: "Follow your Tracking ID with clear status updates end to end.", Icon: Globe2 },
+            ].map((s) => (
+              <motion.li
+                key={s.title}
+                variants={cardReveal}
+                whileHover={processCardHover}
+                className="rounded-2xl border border-border bg-surface-elevated/70 p-6 backdrop-blur-sm"
+              >
+                <motion.div
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-teal to-teal/70 text-slate-950 shadow-lg shadow-teal/20"
+                  whileHover={processStepHover}
+                  transition={springSoft}
                 >
-                  <motion.span
-                    className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal to-teal/70 text-sm font-bold text-slate-950 shadow-lg shadow-teal/20"
-                    whileHover={processStepHover}
-                    transition={springSoft}
-                  >
-                    {s.step}
-                  </motion.span>
-                  <h3 className="mt-5 font-display text-lg font-semibold text-ink">
-                    {s.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">{s.body}</p>
-                </motion.li>
-              ))}
-            </motion.ol>
-          </div>
+                  <s.Icon className="h-6 w-6" aria-hidden />
+                </motion.div>
+                <h3 className="mt-5 font-display text-lg font-semibold text-ink">{s.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{s.body}</p>
+              </motion.li>
+            ))}
+          </motion.ul>
         </Container>
       </section>
 
@@ -420,7 +399,7 @@ export function HomeView() {
             transition={{ duration: 0.6, ease }}
           >
             <div
-              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-accent/5 via-transparent to-teal/5"
+              className="pointer-events-none absolute inset-0 bg-linear-to-t from-accent/5 via-transparent to-teal/5"
               aria-hidden
             />
             <div className="relative">
@@ -463,7 +442,8 @@ export function HomeView() {
               >
                 <Link
                   href="/public/contact"
-                  className="btn-primary inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-accent-deep via-accent to-accent-hover px-10 py-4 text-sm font-semibold text-white shadow-xl shadow-accent/20"
+                  prefetch={false}
+                  className="btn-primary inline-flex items-center justify-center rounded-2xl border border-teal/70 bg-teal px-10 py-4 text-sm font-semibold text-slate-950 shadow-xl shadow-teal/20"
                 >
                   Contact Dispatch
                 </Link>

@@ -78,7 +78,7 @@ export function ProfileEditForm({ initialName }: { initialName: string | null })
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex rounded-full bg-linear-to-r from-teal to-accent px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-teal/20 transition hover:opacity-95 disabled:opacity-50"
+          className="inline-flex rounded-full border border-teal/70 bg-teal px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-md shadow-teal/20 transition hover:bg-teal/90 disabled:opacity-50"
         >
           {pending ? "Saving..." : "Save profile"}
         </button>

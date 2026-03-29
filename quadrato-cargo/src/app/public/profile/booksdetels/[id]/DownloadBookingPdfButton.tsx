@@ -156,7 +156,7 @@ export function DownloadBookingPdfButton({
     drawPair("Agency:", agencyLabel, 106, y);
     y += 14;
     drawPair("Booking ID:", bookingId, 14, y);
-    drawPair("Consignment:", consignmentNumber, 106, y);
+    drawPair("Tracking ID:", consignmentNumber, 106, y);
     y += 10;
     drawPair("Weight:", weightLabel, 14, y);
     drawPair("Dimensions:", dimensionsLabel, 106, y);

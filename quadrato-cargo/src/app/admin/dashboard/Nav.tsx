@@ -19,9 +19,10 @@ export function AdminNav({ nav }: { nav: NavItem[] }) {
           <Link
             key={navItem.href}
             href={navItem.href}
+            prefetch={false}
             className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
               isActiveLink
-                ? "bg-teal text-white shadow-sm"
+                ? "bg-teal text-slate-950 shadow-sm"
                 : "text-muted hover:bg-pill-hover hover:text-ink"
             }`}
           >
