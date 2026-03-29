@@ -238,11 +238,19 @@ export function BookCourierForm() {
   const [pending, setPending] = useState(false);
   const [state, setState] = useState<BookCourierState>(initial);
   const [step, setStep] = useState<BookCourierStep>(1);
+  const [pickupTimeSlotValue, setPickupTimeSlotValue] = useState("");
   const [addressBook, setAddressBook] = useState<{
     sender: SavedAddress | null;
     recipient: SavedAddress | null;
   }>({ sender: null, recipient: null });
   const [addressHint, setAddressHint] = useState<string>("");
+  const todayDate = (() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  })();
   const formRef = useRef<HTMLFormElement | null>(null);
   const e = state.fieldErrors;
   const stepMeta: Record<BookCourierStep, { title: string; note: string }> = {
@@ -369,6 +377,7 @@ export function BookCourierForm() {
         bookingReference: result.bookingReference,
       });
       form.reset();
+      setPickupTimeSlotValue("");
       setStep(1);
     } else {
       setState({
@@ -486,6 +495,7 @@ export function BookCourierForm() {
               id="pickupDate"
               name="pickupDate"
               type="date"
+              min={todayDate}
               className={authFieldClass}
               aria-invalid={Boolean(e.pickupDate)}
               aria-describedby={e.pickupDate ? "pickupDate-err" : undefined}
@@ -502,7 +512,8 @@ export function BookCourierForm() {
               className={authFieldClass}
               aria-invalid={Boolean(e.pickupTimeSlot)}
               aria-describedby={e.pickupTimeSlot ? "pickupTimeSlot-err" : undefined}
-              defaultValue=""
+              value={pickupTimeSlotValue}
+              onChange={(event) => setPickupTimeSlotValue(event.target.value)}
             >
               <option value="">Select a slot</option>
               <option value="Any time (24/7)">Any time (24/7)</option>
@@ -510,8 +521,43 @@ export function BookCourierForm() {
               <option value="06:00-12:00">06:00-12:00</option>
               <option value="12:00-18:00">12:00-18:00</option>
               <option value="18:00-24:00">18:00-24:00</option>
+              <option value="00:00-02:00">00:00-02:00</option>
+              <option value="02:00-04:00">02:00-04:00</option>
+              <option value="04:00-06:00">04:00-06:00</option>
+              <option value="06:00-08:00">06:00-08:00</option>
+              <option value="08:00-10:00">08:00-10:00</option>
+              <option value="10:00-12:00">10:00-12:00</option>
+              <option value="12:00-14:00">12:00-14:00</option>
+              <option value="14:00-16:00">14:00-16:00</option>
+              <option value="16:00-18:00">16:00-18:00</option>
+              <option value="18:00-20:00">18:00-20:00</option>
+              <option value="20:00-22:00">20:00-22:00</option>
+              <option value="22:00-24:00">22:00-24:00</option>
+              <option value="custom">Custom time</option>
             </select>
             <Err id="pickupTimeSlot-err" msg={e.pickupTimeSlot} />
+            {pickupTimeSlotValue === "custom" ? (
+              <>
+                <label
+                  htmlFor="pickupTimeSlotCustom"
+                  className="mt-3 block text-sm font-medium text-ink"
+                >
+                  Custom pickup time
+                </label>
+                <input
+                  id="pickupTimeSlotCustom"
+                  name="pickupTimeSlotCustom"
+                  type="text"
+                  placeholder="e.g. 11:30 PM to 12:30 AM"
+                  className={`${authFieldClass} mt-2`}
+                  aria-invalid={Boolean(e.pickupTimeSlotCustom)}
+                  aria-describedby={
+                    e.pickupTimeSlotCustom ? "pickupTimeSlotCustom-err" : undefined
+                  }
+                />
+                <Err id="pickupTimeSlotCustom-err" msg={e.pickupTimeSlotCustom} />
+              </>
+            ) : null}
           </div>
         </div>
         <Err id="collectionMode-err" msg={e.collectionMode} />

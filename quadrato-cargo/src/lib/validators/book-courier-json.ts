@@ -11,6 +11,7 @@ export function bookCourierRowFromJson(body: unknown): BookCourierRow | null {
     collectionMode: str("collectionMode") || "scheduled",
     pickupDate: str("pickupDate"),
     pickupTimeSlot: str("pickupTimeSlot"),
+    pickupTimeSlotCustom: str("pickupTimeSlotCustom"),
     senderName: str("senderName"),
     senderEmail: str("senderEmail"),
     senderPhone: str("senderPhone"),

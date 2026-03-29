@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { BadgeCheck, CircleDot, MapPin, PackageSearch } from "lucide-react";
 import {
   BOOKING_STATUS_LABELS,
   type BookingStatusId,
@@ -70,6 +71,19 @@ function prettyDate(raw: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(d);
+}
+
+function stepLocationLabel(
+  stepId: BookingStatusId,
+  data: Extract<State, { kind: "success" }>["data"]
+) {
+  if (stepId === "delivered" || stepId === "out_for_delivery") {
+    return data.recipientAddress || "Delivery address";
+  }
+  if (stepId === "out_for_pickup" || stepId === "picked_up") {
+    return data.senderAddress || "Pickup address";
+  }
+  return data.agencyName || "Quadrato Cargo Hub";
 }
 
 export function TrackOrderForm({ initialReference = "" }: { initialReference?: string }) {
@@ -201,63 +215,68 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
           </div>
 
           <div className="panel-card">
-            <ol className="relative ml-2 border-l border-border-strong pl-4">
-              {(normalizeBookingStatus(state.data.status) === "cancelled"
-                ? CANCELLED_FLOW
-                : TRACKING_FLOW
-              ).map((step, idx, flow) => {
-                const normalized = normalizeBookingStatus(state.data.status);
-                const currentIdx = statusIndex(normalized, flow);
-                const done = idx < currentIdx;
-                const current = idx === currentIdx;
-                const visible = idx <= currentIdx + 2;
-                if (!visible) return null;
+            <div className="mb-4 flex items-center gap-2">
+              <PackageSearch className="h-4 w-4 text-accent" aria-hidden />
+              <h3 className="text-sm font-semibold text-ink">Shipment timeline</h3>
+            </div>
+            {(() => {
+              const normalized = normalizeBookingStatus(state.data.status);
+              const flow = normalized === "cancelled" ? CANCELLED_FLOW : TRACKING_FLOW;
+              const currentIdx = statusIndex(normalized, flow);
+              const visible = flow.slice(0, currentIdx + 1).reverse();
 
-                return (
-                  <li key={step.id} className="relative mb-5 last:mb-0">
-                    <span
-                      className={`absolute -left-[1.19rem] top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold ${
-                        current
-                          ? "border-teal bg-teal text-white"
-                          : done
-                            ? "border-teal/30 bg-teal/15 text-teal"
-                            : "border-border-strong bg-canvas text-muted-soft"
-                      }`}
-                    >
-                      {done || current ? "✓" : "•"}
-                    </span>
-                    <div
-                      className={`rounded-xl border px-3 py-2 ${
-                        current
-                          ? "border-teal/35 bg-teal/10"
-                          : done
-                            ? "border-border-strong bg-canvas/40"
-                            : "border-border bg-canvas/20"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold text-ink">
-                        {BOOKING_STATUS_LABELS[step.id]}
-                      </p>
-                      <p className="mt-1 text-xs text-muted">{step.hint}</p>
-                      {current && (state.data.customerTrackingNote || state.data.trackingNotes) ? (
-                        <p className="mt-2 whitespace-pre-wrap text-xs text-ink">
-                          {state.data.customerTrackingNote || state.data.trackingNotes}
-                        </p>
-                      ) : null}
-                      <p className="mt-2 text-[11px] text-muted-soft">
-                        {idx === 0
-                          ? prettyDate(state.data.createdAt)
-                          : current
-                            ? "Current status"
-                            : done
-                              ? "Completed"
-                              : "Pending"}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
+              return (
+                <ol className="relative space-y-3 pl-6">
+                  <div className="pointer-events-none absolute bottom-2 left-2.5 top-2 w-px bg-border-strong" aria-hidden />
+                  {visible.map((step, idx) => {
+                    const isCurrent = idx === 0;
+                    const noteText = isCurrent
+                      ? state.data.customerTrackingNote || state.data.trackingNotes || step.hint
+                      : step.hint;
+                    return (
+                      <li key={step.id} className="relative">
+                        <span
+                          className={`absolute -left-[1.35rem] top-3 inline-flex h-4 w-4 items-center justify-center rounded-full border ${
+                            isCurrent
+                              ? "border-accent bg-accent/15 text-accent"
+                              : "border-teal/35 bg-teal/10 text-teal"
+                          }`}
+                        >
+                          {isCurrent ? (
+                            <CircleDot className="h-3 w-3" strokeWidth={2.2} />
+                          ) : (
+                            <BadgeCheck className="h-3 w-3" strokeWidth={2.4} />
+                          )}
+                        </span>
+                        <div
+                          className={`rounded-xl border px-3 py-3 ${
+                            isCurrent
+                              ? "border-accent/40 bg-accent/8"
+                              : "border-border-strong bg-canvas/30"
+                          }`}
+                        >
+                          <p className="text-sm font-semibold text-ink">
+                            {BOOKING_STATUS_LABELS[step.id]}
+                          </p>
+                          <p className="mt-1 whitespace-pre-wrap text-xs text-muted">{noteText}</p>
+                          <p className="mt-2 inline-flex max-w-full items-center gap-1 rounded-md border border-border-strong bg-canvas/50 px-2 py-1 text-[11px] text-muted-soft">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{stepLocationLabel(step.id, state.data)}</span>
+                          </p>
+                          <p className="mt-2 text-[11px] text-muted-soft">
+                            {step.id === "submitted"
+                              ? `Created: ${prettyDate(state.data.createdAt)}`
+                              : isCurrent
+                                ? "Latest update"
+                                : "Completed status"}
+                          </p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              );
+            })()}
           </div>
         </div>
       ) : null}

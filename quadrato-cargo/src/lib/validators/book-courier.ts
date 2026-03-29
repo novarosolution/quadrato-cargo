@@ -6,6 +6,7 @@ export type BookCourierRow = {
   collectionMode: string;
   pickupDate: string;
   pickupTimeSlot: string;
+  pickupTimeSlotCustom: string;
   senderName: string;
   senderEmail: string;
   senderPhone: string;
@@ -39,8 +40,18 @@ function isPhoneLikeEmail(value: string) {
   return /^[\d+\-\s]+$/.test(String(value || "").trim());
 }
 
+function isStrictFutureDate(dateValue: string) {
+  const raw = String(dateValue || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return false;
+  const parsed = new Date(`${raw}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return false;
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return parsed.getTime() >= todayStart.getTime();
+}
+
 export const BOOKING_STEP_FIELDS = {
-  1: ["routeType", "collectionMode", "pickupDate", "pickupTimeSlot"],
+  1: ["routeType", "collectionMode", "pickupDate", "pickupTimeSlot", "pickupTimeSlotCustom"],
   2: [
     "senderName",
     "senderEmail",
@@ -177,9 +188,22 @@ export function validateBookCourier(row: BookCourierRow): {
   }
   if (row.collectionMode === "scheduled" && !row.pickupDate.trim()) {
     fieldErrors.pickupDate = "Select pickup date for scheduled collection.";
+  } else if (row.collectionMode === "scheduled" && !isStrictFutureDate(row.pickupDate)) {
+    fieldErrors.pickupDate = "Scheduled pickup date cannot be in the past.";
   }
-  if (row.collectionMode === "scheduled" && !row.pickupTimeSlot.trim()) {
+  const pickupTimeSlot = row.pickupTimeSlot.trim();
+  const pickupTimeSlotCustom = row.pickupTimeSlotCustom.trim();
+  const effectivePickupTimeSlot =
+    pickupTimeSlot === "custom" ? pickupTimeSlotCustom : pickupTimeSlot;
+  if (row.collectionMode === "scheduled" && !pickupTimeSlot) {
     fieldErrors.pickupTimeSlot = "Select pickup time slot for scheduled collection.";
+  }
+  if (row.collectionMode === "scheduled" && pickupTimeSlot === "custom") {
+    if (!pickupTimeSlotCustom) {
+      fieldErrors.pickupTimeSlotCustom = "Enter your custom pickup time.";
+    } else if (pickupTimeSlotCustom.length < 3 || pickupTimeSlotCustom.length > 64) {
+      fieldErrors.pickupTimeSlotCustom = "Custom pickup time must be 3 to 64 characters.";
+    }
   }
 
   if (routeType === "international" && !row.agreed) {
@@ -193,8 +217,8 @@ export function validateBookCourier(row: BookCourierRow): {
 
   const collectionMode = row.collectionMode as "instant" | "scheduled";
   const scheduledWindow =
-    row.pickupDate && row.pickupTimeSlot
-      ? `${row.pickupDate} (${row.pickupTimeSlot})`
+    row.pickupDate && effectivePickupTimeSlot
+      ? `${row.pickupDate} (${effectivePickupTimeSlot})`
       : "";
   const pickupPreference =
     collectionMode === "instant"
@@ -232,7 +256,7 @@ export function validateBookCourier(row: BookCourierRow): {
     },
     collectionMode,
     pickupDate: row.pickupDate || undefined,
-    pickupTimeSlot: row.pickupTimeSlot || undefined,
+    pickupTimeSlot: effectivePickupTimeSlot || undefined,
     pickupPreference,
     instructions: row.instructions || undefined,
     agreedInternational: routeType === "international",
@@ -264,6 +288,7 @@ export function bookCourierRowFromFormData(formData: FormData): BookCourierRow {
     collectionMode: s("collectionMode"),
     pickupDate: s("pickupDate"),
     pickupTimeSlot: s("pickupTimeSlot"),
+    pickupTimeSlotCustom: s("pickupTimeSlotCustom"),
     senderName: s("senderName"),
     senderEmail: s("senderEmail"),
     senderPhone: s("senderPhone"),

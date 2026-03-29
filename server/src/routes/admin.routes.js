@@ -70,6 +70,16 @@ function normalizeText(value) {
   return String(value ?? "").trim();
 }
 
+function normalizeConsignment(value) {
+  return String(value ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/[_\s]+/g, "-")
+    .replace(/[^A-Z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 function normalizeEmail(value) {
   return normalizeText(value).toLowerCase();
 }
@@ -740,7 +750,7 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
     const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
     if (!_id) return;
     const status = normalizeText(req.body?.status);
-    const consignmentNumber = normalizeText(req.body?.consignmentNumber);
+    const consignmentNumber = normalizeConsignment(req.body?.consignmentNumber);
     const trackingNotes = normalizeText(req.body?.trackingNotes);
     const internalNotes = normalizeText(req.body?.internalNotes);
     const assignedAgency = normalizeText(req.body?.assignedAgency);

@@ -95,12 +95,25 @@ const bookingPayloadSchema = z
   })
   .superRefine((payload, ctx) => {
     if (payload.collectionMode !== "scheduled") return;
+    const pickupDateRaw = String(payload.pickupDate || "").trim();
     if (!String(payload.pickupDate || "").trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["pickupDate"],
         message: "Pickup date is required for scheduled pickup."
       });
+    } else {
+      const validDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(pickupDateRaw);
+      const parsed = validDateOnly ? new Date(`${pickupDateRaw}T00:00:00`) : null;
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (!parsed || Number.isNaN(parsed.getTime()) || parsed.getTime() < todayStart.getTime()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["pickupDate"],
+          message: "Pickup date cannot be in the past for scheduled pickup."
+        });
+      }
     }
     if (!String(payload.pickupTimeSlot || "").trim()) {
       ctx.addIssue({
@@ -129,6 +142,15 @@ const trackingReferenceSchema = z
   .min(6)
   .max(40)
   .regex(/^[a-zA-Z0-9-]+$/);
+
+function normalizeTrackingReference(value) {
+  return String(value ?? "")
+    .trim()
+    .replace(/[_\s]+/g, "-")
+    .replace(/[^a-zA-Z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
 
 function buildBookingFieldErrors(issues = []) {
   const out = {};
@@ -356,7 +378,8 @@ async function buildPdfDataFromBooking(req, parsedData) {
   const settingsRow = await db.collection("settings").findOne({ key: "site" });
   const normalizedSettings = normalizeSiteSettings(settingsRow);
   const payload = booking.payload || {};
-  const reference = String(booking.consignmentNumber || booking.id || parsedData.bookingId).trim();
+  const referenceRaw = String(booking.consignmentNumber || booking.id || parsedData.bookingId).trim();
+  const reference = normalizeTrackingReference(referenceRaw) || referenceRaw;
   const senderStreet = payloadValue(payload, ["sender", "street"], "");
   const senderCity = payloadValue(payload, ["sender", "city"], "");
   const senderPostal = payloadValue(payload, ["sender", "postal"], "");
@@ -1085,7 +1108,8 @@ export async function createPublicBooking(req, res, next) {
 
 export async function trackBooking(req, res, next) {
   try {
-    const parsedReference = trackingReferenceSchema.safeParse(req.params.reference ?? "");
+    const normalizedReference = normalizeTrackingReference(req.params.reference ?? "");
+    const parsedReference = trackingReferenceSchema.safeParse(normalizedReference);
     if (!parsedReference.success) {
       return sendError(
         res,

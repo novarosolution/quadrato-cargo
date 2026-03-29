@@ -34,7 +34,10 @@ function buildCustomerTrackingNote(status, row) {
 
   const base = statusMessages[normalizedStatus] || "Shipment status has been updated.";
   const consignment = cleanText(row?.consignmentNumber);
-  return consignment ? `${base} Consignment: ${consignment}.` : base;
+  const dispatchNote = cleanText(row?.trackingNotes);
+  const baseWithRef = consignment ? `${base} Consignment: ${consignment}.` : base;
+  if (!dispatchNote) return baseWithRef;
+  return `${baseWithRef}\n${dispatchNote}`;
 }
 
 export function toPublicBooking(row) {

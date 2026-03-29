@@ -13,6 +13,16 @@ function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function normalizeReference(value) {
+  const compact = String(value ?? "")
+    .trim()
+    .replace(/[_\s]+/g, "-")
+    .replace(/[^a-zA-Z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return compact;
+}
+
 function buildAgencyAssignmentFilter(agencyUser) {
   const email = String(agencyUser?.email ?? "").trim().toLowerCase();
   const name = String(agencyUser?.name ?? "").trim();
@@ -31,11 +41,18 @@ function buildAgencyAssignmentFilter(agencyUser) {
 function buildReferenceCandidates(reference) {
   const ref = String(reference ?? "").trim();
   if (!ref) return [];
+  const normalizedRef = normalizeReference(ref);
 
   const candidates = [
     { consignmentNumber: ref },
     { consignmentNumber: { $regex: `^${escapeRegex(ref)}$`, $options: "i" } }
   ];
+  if (normalizedRef && normalizedRef.toLowerCase() !== ref.toLowerCase()) {
+    candidates.push({ consignmentNumber: normalizedRef });
+    candidates.push({
+      consignmentNumber: { $regex: `^${escapeRegex(normalizedRef)}$`, $options: "i" }
+    });
+  }
   if (ObjectId.isValid(ref)) candidates.push({ _id: new ObjectId(ref) });
   return candidates;
 }
