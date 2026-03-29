@@ -751,7 +751,9 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
     if (!_id) return;
     const status = normalizeText(req.body?.status);
     const consignmentNumber = normalizeConsignment(req.body?.consignmentNumber);
-    const trackingNotes = normalizeText(req.body?.trackingNotes);
+    const publicTrackingNote = normalizeText(
+      req.body?.publicTrackingNote ?? req.body?.trackingNotes
+    );
     const internalNotes = normalizeText(req.body?.internalNotes);
     const assignedAgency = normalizeText(req.body?.assignedAgency);
     if (!status) return sendError(res, "Status is required.");
@@ -764,7 +766,7 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
         $set: {
           status,
           consignmentNumber: consignmentNumber || null,
-          trackingNotes: trackingNotes || null,
+          publicTrackingNote: publicTrackingNote || null,
           internalNotes: internalNotes || null,
           assignedAgency: assignedAgency || null,
           updatedAt: new Date()

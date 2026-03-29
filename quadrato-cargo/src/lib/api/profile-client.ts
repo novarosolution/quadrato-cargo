@@ -33,6 +33,7 @@ export type ProfileBooking = {
   status: string;
   consignmentNumber: string | null;
   trackingNotes: string | null;
+  publicTrackingNote?: string | null;
   customerTrackingNote?: string | null;
   assignedAgency?: string | null;
   courierName?: string | null;

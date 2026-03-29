@@ -438,13 +438,14 @@ export async function updateBookingByAgency(agencyUser, bookingId, update) {
   if (!agencyFilter) return null;
 
   const status = String(update?.status ?? "").trim();
-  const trackingNotes = String(update?.trackingNotes ?? "").trim() || null;
+  const publicTrackingNote =
+    String(update?.publicTrackingNote ?? update?.trackingNotes ?? "").trim() || null;
   const result = await db.collection(BOOKINGS).findOneAndUpdate(
     { _id, ...agencyFilter },
     {
       $set: {
         status,
-        trackingNotes,
+        publicTrackingNote,
         updatedAt: new Date()
       }
     },

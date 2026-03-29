@@ -30,7 +30,9 @@ export default async function TrackOrderPage({
     ? await fetchProfileBookingsServer(cookieHeader, { limit: 5, summary: true })
     : { ok: false as const };
   const userBookings = userBookingsRes.ok
-    ? (userBookingsRes.data.bookings || [])
+    ? (userBookingsRes.data.bookings || []).filter(
+        (b) => normalizeBookingStatus(b.status) !== "delivered",
+      )
     : [];
 
   return (

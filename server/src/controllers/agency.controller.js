@@ -73,7 +73,7 @@ export async function updateMyAgencyBooking(req, res, next) {
     }
     const row = await updateBookingByAgency(req.auth.user, req.params.id, {
       status,
-      trackingNotes: req.body?.trackingNotes
+      publicTrackingNote: req.body?.publicTrackingNote ?? req.body?.trackingNotes
     });
     if (!row) {
       return sendNotFound(res, "Booking not found for this agency.");

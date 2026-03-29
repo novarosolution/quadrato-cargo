@@ -18,7 +18,7 @@ type Props = {
   assignedAgency?: string | null;
   currentStatus: string;
   consignmentNumber: string | null;
-  trackingNotes: string | null;
+  publicTrackingNote: string | null;
   internalNotes: string | null;
 };
 
@@ -29,12 +29,12 @@ export function AdminBookingControls({
   assignedAgency,
   currentStatus,
   consignmentNumber,
-  trackingNotes,
+  publicTrackingNote,
   internalNotes,
 }: Props) {
   const status = normalizeBookingStatus(currentStatus);
   const [statusValue, setStatusValue] = useState<string>(status);
-  const [trackingValue, setTrackingValue] = useState(trackingNotes ?? "");
+  const [trackingValue, setTrackingValue] = useState(publicTrackingNote ?? "");
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [state, formAction, pending] = useActionState<
     BookingAdminUpdateState | undefined,
@@ -181,16 +181,16 @@ export function AdminBookingControls({
           htmlFor="admin-tracking"
           className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
         >
-          Customer-facing tracking notes
+          Customer update (shown on tracking + PDF)
         </label>
         <textarea
           id="admin-tracking"
-          name="trackingNotes"
+          name="publicTrackingNote"
           rows={4}
           value={trackingValue}
           onChange={(e) => setTrackingValue(e.target.value)}
           className="mt-2 w-full resize-y rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
-          placeholder="Pickup scheduled for… / Handed to partner…"
+          placeholder="Example: Pickup done, handed to agency, expected delivery tomorrow."
         />
         <div className="mt-3 rounded-xl border border-border bg-canvas/30 p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">

@@ -135,7 +135,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
                 assignedAgency={row.assignedAgency ?? null}
                 currentStatus={row.status}
                 consignmentNumber={row.consignmentNumber}
-                trackingNotes={row.trackingNotes}
+                publicTrackingNote={row.publicTrackingNote ?? row.customerTrackingNote ?? null}
                 internalNotes={row.internalNotes}
               />
             </div>

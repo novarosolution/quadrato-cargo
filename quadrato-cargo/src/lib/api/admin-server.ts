@@ -34,6 +34,8 @@ export type AdminBooking = {
   status: string;
   consignmentNumber: string | null;
   trackingNotes: string | null;
+  publicTrackingNote?: string | null;
+  customerTrackingNote?: string | null;
   internalNotes: string | null;
   assignedAgency?: string | null;
   payload: unknown;

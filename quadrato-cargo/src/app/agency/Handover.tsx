@@ -59,6 +59,32 @@ export function AgencyHandoverForm() {
     setPending(false);
   }
 
+  async function autoVerifyIfReady(nextOtp: string) {
+    if (nextOtp.trim().length !== 6 || !reference.trim()) return;
+    setPending(true);
+    const result = await verifyAgencyHandoverApi({ reference, otpCode: nextOtp });
+    if (result.ok) {
+      setState({
+        ok: true,
+        message: result.message,
+        booking: result.booking
+          ? {
+              id: result.booking.id,
+              routeType: result.booking.routeType,
+              status: result.booking.status,
+              consignmentNumber: result.booking.consignmentNumber,
+              payload: result.booking.payload,
+            }
+          : undefined,
+      });
+      setOtpCode("");
+      router.refresh();
+    } else {
+      setState({ ok: false, error: result.error });
+    }
+    setPending(false);
+  }
+
   return (
     <form onSubmit={onSubmit} className="space-y-3">
       <div>
@@ -87,13 +113,22 @@ export function AgencyHandoverForm() {
         <input
           id="agency-otp"
           value={otpCode}
-          onChange={(e) => setOtpCode(e.target.value)}
+          onChange={(e) => {
+            const next = e.currentTarget.value.replace(/\D/g, "").slice(0, 6);
+            setOtpCode(next);
+            if (next.length === 6) {
+              void autoVerifyIfReady(next);
+            }
+          }}
           required
+          inputMode="numeric"
+          pattern="[0-9]{6}"
+          maxLength={6}
           className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 font-mono text-sm tracking-[0.2em] text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
           placeholder="Enter OTP"
         />
         <p className="mt-1 text-[11px] text-muted-soft">
-          OTP is booking-specific. Use the reference and OTP from the same booking.
+          OTP is booking-specific. Enter 6 digits to auto-verify.
         </p>
       </div>
       <button

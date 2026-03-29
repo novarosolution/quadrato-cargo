@@ -432,7 +432,7 @@ async function buildPdfDataFromBooking(req, parsedData) {
     dimensionsLabel: dimensions,
     contentsLabel: payloadValue(payload, ["shipment", "contentsDescription"], "-"),
     instructionsLabel: payloadValue(payload, ["instructions"], "-"),
-    trackingNotesLabel: String(booking.customerTrackingNote || "-"),
+    trackingNotesLabel: String(booking.publicTrackingNote || booking.customerTrackingNote || "-"),
     agencyLabel: String(booking.assignedAgency || "-"),
     courierNameLabel: courierName,
     trackUrl,

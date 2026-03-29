@@ -181,7 +181,9 @@ export async function updateCourierBookingAdmin(
     {
       status: String(formData.get("status") ?? ""),
       consignmentNumber: String(formData.get("consignmentNumber") ?? ""),
-      trackingNotes: String(formData.get("trackingNotes") ?? ""),
+      publicTrackingNote: String(
+        formData.get("publicTrackingNote") ?? formData.get("trackingNotes") ?? "",
+      ),
       internalNotes: String(formData.get("internalNotes") ?? ""),
       assignedAgency: String(formData.get("assignedAgency") ?? ""),
     },

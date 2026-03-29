@@ -31,7 +31,7 @@ export default async function AgencyPage() {
         <p className="mt-1 text-sm text-muted-soft">
           Courier shares <strong className="font-medium text-muted">Reference</strong>{" "}
           and <strong className="font-medium text-muted">Agency OTP</strong>.
-          Verify both to auto-start agency processing.
+          Enter OTP in the booking row to auto-accept and start agency processing.
         </p>
       </div>
 
@@ -54,8 +54,8 @@ export default async function AgencyPage() {
               <th className="px-4 py-3 font-medium text-muted-soft">Route</th>
               <th className="px-4 py-3 font-medium text-muted-soft">Shipment</th>
               <th className="px-4 py-3 font-medium text-muted-soft">Status</th>
-              <th className="px-4 py-3 font-medium text-muted-soft">Notes</th>
-              <th className="px-4 py-3 font-medium text-muted-soft">Update</th>
+              <th className="px-4 py-3 font-medium text-muted-soft">Customer update</th>
+              <th className="px-4 py-3 font-medium text-muted-soft">Accept / Update</th>
             </tr>
           </thead>
           <tbody>
@@ -107,13 +107,15 @@ export default async function AgencyPage() {
                       </span>
                     </td>
                     <td className="max-w-[320px] truncate px-4 py-3 text-muted">
-                      {row.trackingNotes || "—"}
+                      {row.publicTrackingNote || row.trackingNotes || "—"}
                     </td>
                     <td className="min-w-[280px] px-4 py-3">
                       <AgencyJobControls
                         bookingId={row.id}
+                        reference={row.consignmentNumber || row.id}
                         currentStatus={row.status}
-                        trackingNotes={row.trackingNotes}
+                        agencyHandoverVerifiedAt={row.agencyHandoverVerifiedAt ?? null}
+                        publicTrackingNote={row.publicTrackingNote || row.trackingNotes || null}
                       />
                     </td>
                   </tr>

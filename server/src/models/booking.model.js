@@ -15,9 +15,8 @@ function buildAddressLine(address = {}) {
 
 function buildCustomerTrackingNote(status, row) {
   void status;
-  void row;
-  // Hide internal/system tracking text from customer-facing surfaces.
-  return null;
+  // Only show admin-curated public note on customer-facing surfaces.
+  return cleanText(row?.publicTrackingNote);
 }
 
 export function toPublicBooking(row) {
@@ -33,6 +32,7 @@ export function toPublicBooking(row) {
     status: row.status ?? "submitted",
     consignmentNumber: row.consignmentNumber ?? null,
     trackingNotes: row.trackingNotes ?? null,
+    publicTrackingNote: row.publicTrackingNote ?? null,
     customerTrackingNote: buildCustomerTrackingNote(row.status, row),
     internalNotes: row.internalNotes ?? null,
     assignedAgency: row.assignedAgency ?? null,
@@ -60,6 +60,7 @@ export function toPublicBookingSummary(row) {
     status: row.status ?? "submitted",
     consignmentNumber: row.consignmentNumber ?? null,
     trackingNotes: null,
+    publicTrackingNote: row.publicTrackingNote ?? null,
     customerTrackingNote: buildCustomerTrackingNote(row.status, row),
     assignedAgency: row.assignedAgency ?? null,
     senderName: cleanText(sender.name),
@@ -85,6 +86,7 @@ export function createBookingDoc({ routeType, payload, userId }) {
     consignmentNumber: null,
     trackingNotes:
       "Booking received. Serviceability check at pickup PIN is pending. Logistics staff assignment and pickup confirmation will be updated manually.",
+    publicTrackingNote: null,
     internalNotes: null,
     serviceabilityStatus: "pending",
     workflowStage: "awaiting_serviceability_check",
@@ -116,6 +118,7 @@ export const bookingModelSchema = {
         status: { bsonType: "string", minLength: 2, maxLength: 64 },
         consignmentNumber: { bsonType: ["string", "null"] },
         trackingNotes: { bsonType: ["string", "null"] },
+        publicTrackingNote: { bsonType: ["string", "null"] },
         internalNotes: { bsonType: ["string", "null"] },
         assignedAgency: { bsonType: ["string", "null"] },
         payload: { bsonType: "object" },

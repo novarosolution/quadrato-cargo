@@ -9,6 +9,7 @@ export type AgencyBooking = {
   status: string;
   consignmentNumber: string | null;
   trackingNotes: string | null;
+  publicTrackingNote?: string | null;
   assignedAgency?: string | null;
   agencyHandoverVerifiedAt?: string | null;
   payload: unknown;
@@ -81,7 +82,7 @@ export async function verifyAgencyHandoverApi(args: {
 export async function updateAgencyBookingApi(args: {
   bookingId: string;
   status: string;
-  trackingNotes: string;
+  publicTrackingNote: string;
 }): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
   try {
     const res = await fetch(
@@ -92,7 +93,7 @@ export async function updateAgencyBookingApi(args: {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: args.status,
-          trackingNotes: args.trackingNotes,
+          publicTrackingNote: args.publicTrackingNote,
         }),
       },
     );

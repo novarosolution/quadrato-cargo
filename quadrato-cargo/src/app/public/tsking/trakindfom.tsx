@@ -1,7 +1,20 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { BadgeCheck, CircleDot, MapPin, PackageSearch } from "lucide-react";
+import {
+  BadgeCheck,
+  CircleDot,
+  Clock3,
+  Home,
+  MapPin,
+  PackageCheck,
+  PackageSearch,
+  ScanSearch,
+  ShieldCheck,
+  Truck,
+  Warehouse,
+  XCircle,
+} from "lucide-react";
 import {
   BOOKING_STATUS_LABELS,
   type BookingStatusId,
@@ -21,6 +34,7 @@ type State =
         status: string;
         consignmentNumber: string | null;
         trackingNotes: string | null;
+        publicTrackingNote?: string | null;
         customerTrackingNote: string | null;
         courierName: string | null;
         agencyName: string | null;
@@ -84,6 +98,41 @@ function stepLocationLabel(
     return data.senderAddress || "Pickup address";
   }
   return data.agencyName || "Quadrato Cargo Hub";
+}
+
+function stepIcon(stepId: BookingStatusId) {
+  switch (stepId) {
+    case "submitted":
+      return PackageSearch;
+    case "confirmed":
+      return ShieldCheck;
+    case "serviceability_check":
+      return ScanSearch;
+    case "serviceable":
+      return BadgeCheck;
+    case "pickup_scheduled":
+      return Clock3;
+    case "out_for_pickup":
+      return Truck;
+    case "picked_up":
+      return PackageCheck;
+    case "agency_processing":
+      return Warehouse;
+    case "in_transit":
+      return Truck;
+    case "out_for_delivery":
+      return MapPin;
+    case "delivery_attempted":
+      return Home;
+    case "on_hold":
+      return Clock3;
+    case "delivered":
+      return BadgeCheck;
+    case "cancelled":
+      return XCircle;
+    default:
+      return CircleDot;
+  }
 }
 
 export function TrackOrderForm({ initialReference = "" }: { initialReference?: string }) {
@@ -231,8 +280,11 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
                   {visible.map((step, idx) => {
                     const isCurrent = idx === 0;
                     const noteText = isCurrent
-                      ? state.data.customerTrackingNote || step.hint
+                      ? state.data.publicTrackingNote ||
+                        state.data.customerTrackingNote ||
+                        step.hint
                       : step.hint;
+                    const StepIcon = stepIcon(step.id);
                     return (
                       <li key={step.id} className="relative">
                         <span
@@ -249,15 +301,20 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
                           )}
                         </span>
                         <div
-                          className={`rounded-xl border px-3 py-3 ${
+                          className={`rounded-xl border px-3 py-3 shadow-sm ${
                             isCurrent
-                              ? "border-accent/40 bg-accent/8"
+                              ? "border-accent/40 bg-linear-to-br from-accent/10 to-canvas/30 shadow-accent/10"
                               : "border-border-strong bg-canvas/30"
                           }`}
                         >
-                          <p className="text-sm font-semibold text-ink">
-                            {BOOKING_STATUS_LABELS[step.id]}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border-strong bg-surface-elevated/70 text-muted">
+                              <StepIcon className="h-3.5 w-3.5" />
+                            </span>
+                            <p className="text-sm font-semibold text-ink">
+                              {BOOKING_STATUS_LABELS[step.id]}
+                            </p>
+                          </div>
                           <p className="mt-1 whitespace-pre-wrap text-xs text-muted">{noteText}</p>
                           <p className="mt-2 inline-flex max-w-full items-center gap-1 rounded-md border border-border-strong bg-canvas/50 px-2 py-1 text-[11px] text-muted-soft">
                             <MapPin className="h-3 w-3 shrink-0" />
