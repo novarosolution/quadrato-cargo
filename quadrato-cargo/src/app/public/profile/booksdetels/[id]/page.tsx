@@ -69,7 +69,9 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
     width: 220
   }).catch(() => null);
   const pickupOtp = otpRes.ok ? otpRes.data.pickupOtp : null;
-  const canDownloadPdf = Boolean(pickupOtp?.verifiedAt);
+  const pickupVerified = Boolean(pickupOtp?.verifiedAt);
+  const allowInvoicePdf = row.invoicePdfReady !== false;
+  const canDownloadInvoicePdf = pickupVerified && allowInvoicePdf;
   const pdfSettings = {
     companyName: siteSettings.pdfCompanyName || "Quadrato Cargo",
     companyAddress: siteSettings.pdfCompanyAddress || "",
@@ -278,8 +280,13 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                 >
                   Open tracking page
                 </Link>
-                {canDownloadPdf ? (
+                {!pickupVerified ? (
+                  <p className="rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-xs text-muted-soft">
+                    PDF downloads unlock after courier pickup OTP verification.
+                  </p>
+                ) : (
                   <>
+                    {canDownloadInvoicePdf ? (
                     <DownloadBookingPdfButton
                       template="invoice"
                       buttonLabel="Download Invoice PDF"
@@ -333,6 +340,12 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                       trackUrl={trackUrl}
                       settings={pdfSettings}
                     />
+                    ) : (
+                      <p className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-950 dark:text-amber-200">
+                        Invoice PDF will appear here after support finalizes billing for this
+                        shipment in admin.
+                      </p>
+                    )}
                     <DownloadBookingPdfButton
                       template="tracking"
                       buttonLabel="Download Tracking PDF"
@@ -387,10 +400,6 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                       settings={pdfSettings}
                     />
                   </>
-                ) : (
-                  <p className="rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-xs text-muted-soft">
-                    Invoice/Tracking PDF download unlocks after courier pickup OTP verification.
-                  </p>
                 )}
               </div>
             </div>

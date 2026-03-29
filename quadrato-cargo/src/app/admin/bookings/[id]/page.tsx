@@ -12,6 +12,7 @@ import { AdminBookingControls } from "../Controls";
 import { AdminBookingCourierAssign } from "../asingtocuriyarboy";
 import { AdminBookingCustomerLink } from "../linkcustomer";
 import { AdminBookingDataForm } from "../booking";
+import { AdminBookingInvoiceForm } from "../AdminBookingInvoiceForm";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -48,6 +49,22 @@ export default async function AdminBookingDetailPage({ params }: Props) {
   const pickupPreference =
     typeof payload.pickupPreference === "string" ? payload.pickupPreference : "";
   const pickupPin = typeof sender.postal === "string" ? sender.postal : "";
+  const inv =
+    row.invoice && typeof row.invoice === "object"
+      ? (row.invoice as Record<string, string | null | undefined>)
+      : {};
+  const invoiceInitial = {
+    number: String(inv.number ?? ""),
+    currency: String(inv.currency ?? "INR"),
+    subtotal: String(inv.subtotal ?? ""),
+    tax: String(inv.tax ?? ""),
+    insurance: String(inv.insurance ?? ""),
+    customsDuties: String(inv.customsDuties ?? ""),
+    discount: String(inv.discount ?? ""),
+    total: String(inv.total ?? ""),
+    lineDescription: String(inv.lineDescription ?? ""),
+    notes: String(inv.notes ?? ""),
+  };
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -128,6 +145,22 @@ export default async function AdminBookingDetailPage({ params }: Props) {
               Customer sees status, Tracking ID, and tracking notes on
               their profile. Internal notes stay in admin only.
             </p>
+            <div className="mt-6 rounded-xl border border-border bg-canvas/20 p-4">
+              <h3 className="font-display text-sm font-semibold text-ink">
+                Customer invoice PDF
+              </h3>
+              <p className="mt-1 text-xs text-muted-soft">
+                Enter billing lines and totals; the customer&apos;s downloaded invoice uses this
+                booking ID and always reflects the latest saved values.
+              </p>
+              <div className="mt-4">
+                <AdminBookingInvoiceForm
+                  bookingId={row.id}
+                  allowCustomerInvoicePdf={row.invoicePdfReady !== false}
+                  initial={invoiceInitial}
+                />
+              </div>
+            </div>
             <div className="mt-6">
               <AdminBookingControls
                 key={row.id}

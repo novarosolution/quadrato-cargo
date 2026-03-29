@@ -28,6 +28,19 @@ export type AdminUser = {
   courierAssignments?: AdminBooking[];
 };
 
+export type AdminBookingInvoice = {
+  number?: string | null;
+  currency?: string | null;
+  subtotal?: string | null;
+  tax?: string | null;
+  insurance?: string | null;
+  customsDuties?: string | null;
+  discount?: string | null;
+  total?: string | null;
+  lineDescription?: string | null;
+  notes?: string | null;
+};
+
 export type AdminBooking = {
   id: string;
   routeType: string;
@@ -42,6 +55,10 @@ export type AdminBooking = {
   userId: string | null;
   courierId: string | null;
   createdAt: string;
+  /** When false, customer invoice PDF is blocked until admin re-enables. Omitted/undefined treated as allowed (legacy rows). */
+  invoicePdfReady?: boolean;
+  invoice?: AdminBookingInvoice | null;
+  publicBarcodeCode?: string | null;
   user?: AdminUser | null;
   courier?: AdminUser | null;
 };

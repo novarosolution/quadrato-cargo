@@ -2,11 +2,24 @@ import crypto from "crypto";
 import { ObjectId } from "mongodb";
 import { getDb } from "../../db/mongo.js";
 import { createBookingDoc, toPublicBooking } from "../../models/booking.model.js";
+import {
+  computePublicBarcodeCode,
+  isPublicBarcodeCodeFormat
+} from "../../shared/public-barcode-code.js";
 
 const BOOKINGS = "bookings";
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizeReference(value) {
+  return String(value ?? "")
+    .trim()
+    .replace(/[_\s]+/g, "-")
+    .replace(/[^a-zA-Z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function buildAgencyAssignmentFilter(agencyUser) {
@@ -27,13 +40,49 @@ function buildAgencyAssignmentFilter(agencyUser) {
 function buildReferenceCandidates(reference) {
   const ref = String(reference ?? "").trim();
   if (!ref) return [];
+  const normalizedRef = normalizeReference(ref);
 
-  const candidates = [
+  const candidates = [];
+  if (isPublicBarcodeCodeFormat(normalizedRef)) {
+    candidates.push({ publicBarcodeCode: normalizedRef.toUpperCase() });
+  }
+
+  candidates.push(
     { consignmentNumber: ref },
     { consignmentNumber: { $regex: `^${escapeRegex(ref)}$`, $options: "i" } }
-  ];
+  );
+  if (normalizedRef && normalizedRef.toLowerCase() !== ref.toLowerCase()) {
+    candidates.push({ consignmentNumber: normalizedRef });
+    candidates.push({
+      consignmentNumber: { $regex: `^${escapeRegex(normalizedRef)}$`, $options: "i" }
+    });
+  }
   if (ObjectId.isValid(ref)) candidates.push({ _id: new ObjectId(ref) });
   return candidates;
+}
+
+export async function backfillPublicBarcodeCodes() {
+  const db = await getDb();
+  const cursor = db.collection(BOOKINGS).find({
+    $or: [{ publicBarcodeCode: { $exists: false } }, { publicBarcodeCode: null }, { publicBarcodeCode: "" }]
+  });
+  let updated = 0;
+  for await (const doc of cursor) {
+    const code = computePublicBarcodeCode(String(doc._id));
+    try {
+      const res = await db.collection(BOOKINGS).updateOne(
+        { _id: doc._id, $or: [{ publicBarcodeCode: { $exists: false } }, { publicBarcodeCode: null }, { publicBarcodeCode: "" }] },
+        { $set: { publicBarcodeCode: code, updatedAt: new Date() } }
+      );
+      if (res.modifiedCount) updated += 1;
+    } catch (e) {
+      if (e && e.code === 11000) continue;
+      throw e;
+    }
+  }
+  if (updated > 0) {
+    console.info(`[bookings] Backfilled publicBarcodeCode on ${updated} booking(s).`);
+  }
 }
 
 function hashOtp(code) {
@@ -146,7 +195,13 @@ export async function createBooking({
   created.pickupOtpCode = generatePickupOtpCode();
   created.pickupOtpHash = hashOtp(created.pickupOtpCode);
   const result = await db.collection(BOOKINGS).insertOne(created);
-  return toPublicBooking({ ...created, _id: result.insertedId });
+  const idStr = String(result.insertedId);
+  const publicBarcodeCode = computePublicBarcodeCode(idStr);
+  await db.collection(BOOKINGS).updateOne(
+    { _id: result.insertedId },
+    { $set: { publicBarcodeCode, updatedAt: new Date() } }
+  );
+  return toPublicBooking({ ...created, _id: result.insertedId, publicBarcodeCode });
 }
 
 export async function findBookingByReference(reference) {

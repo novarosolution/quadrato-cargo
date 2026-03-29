@@ -14,6 +14,7 @@ import {
 import { createContactSubmission } from "../modules/contacts/contact-repo.js";
 import { verifyAuthToken } from "../modules/auth/token.js";
 import { findUserById } from "../modules/users/user-repo.js";
+import { computePublicBarcodeCode } from "../shared/public-barcode-code.js";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2),
@@ -279,13 +280,46 @@ function normalizeHex(color, fallback) {
   return match ? `#${match[1]}` : fallback;
 }
 
-function buildCustomerCode(reference, bookingId) {
-  const seed = String(bookingId || reference || "").trim() || "0";
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = (hash * 31 + seed.charCodeAt(i)) % 10000000000;
+function buildShipmentSummaryForPublicTrack(payload) {
+  if (!payload || typeof payload !== "object") return null;
+  const s = payload.shipment;
+  if (!s || typeof s !== "object") return null;
+  const clip = (v, max = 800) => {
+    const t = String(v ?? "").trim();
+    if (!t) return null;
+    return t.length > max ? `${t.slice(0, max)}…` : t;
+  };
+  let weightKg = null;
+  if (typeof s.weightKg === "number" && Number.isFinite(s.weightKg)) {
+    weightKg = s.weightKg;
+  } else if (s.weightKg != null) {
+    const n = Number.parseFloat(String(s.weightKg).replace(/[^0-9.-]/g, ""));
+    if (Number.isFinite(n)) weightKg = n;
   }
-  return `QC${String(hash).padStart(10, "0")}`;
+  const dims = s.dimensionsCm && typeof s.dimensionsCm === "object" ? s.dimensionsCm : null;
+  const dimensionsCm =
+    dims && (dims.l != null || dims.w != null || dims.h != null)
+      ? {
+          l: dims.l != null ? String(dims.l) : null,
+          w: dims.w != null ? String(dims.w) : null,
+          h: dims.h != null ? String(dims.h) : null
+        }
+      : null;
+  const out = {
+    contentsDescription: clip(s.contentsDescription, 1200),
+    weightKg,
+    declaredValue: clip(s.declaredValue, 120),
+    dimensionsCm
+  };
+  if (
+    !out.contentsDescription &&
+    out.weightKg == null &&
+    !out.declaredValue &&
+    !out.dimensionsCm
+  ) {
+    return null;
+  }
+  return out;
 }
 
 async function launchPdfBrowser() {
@@ -406,6 +440,9 @@ async function buildPdfDataFromBooking(req, parsedData) {
   if (!booking.pickupOtpVerifiedAt) {
     throw new Error("Pickup OTP verification pending.");
   }
+  if (parsedData.template === "invoice" && booking.invoicePdfReady === false) {
+    throw new Error("Invoice PDF disabled until billing is enabled by admin.");
+  }
 
   const db = await getDb();
   const settingsRow = await db.collection("settings").findOne({ key: "site" });
@@ -442,6 +479,30 @@ async function buildPdfDataFromBooking(req, parsedData) {
     parsedData.trackUrl ||
     `${website.replace(/\/$/, "")}/public/tsking?reference=${encodeURIComponent(reference)}`;
 
+  const inv = booking.invoice && typeof booking.invoice === "object" ? booking.invoice : null;
+  const adminInvoice = inv
+    ? {
+        number: String(inv.number ?? "").trim() || null,
+        currency: String(inv.currency ?? "INR").trim().slice(0, 12) || "INR",
+        subtotal: String(inv.subtotal ?? "").trim() || null,
+        tax: String(inv.tax ?? "").trim() || null,
+        insurance: String(inv.insurance ?? "").trim() || null,
+        customsDuties: String(inv.customsDuties ?? "").trim() || null,
+        discount: String(inv.discount ?? "").trim() || null,
+        total: String(inv.total ?? "").trim() || null,
+        lineDescription: String(inv.lineDescription ?? "").trim() || null,
+        notes: String(inv.notes ?? "").trim() || null
+      }
+    : null;
+  const contentsBase = payloadValue(payload, ["shipment", "contentsDescription"], "-");
+  const lineDesc = adminInvoice?.lineDescription ? String(adminInvoice.lineDescription).trim() : "";
+  const contentsLabel =
+    lineDesc && contentsBase !== "-"
+      ? `${lineDesc} — ${contentsBase}`
+      : lineDesc || contentsBase;
+  const adminTotal = adminInvoice?.total ? String(adminInvoice.total).trim() : "";
+  const amountLabel = adminTotal || payloadValue(payload, ["shipment", "declaredValue"], "-");
+
   return {
     ...parsedData,
     bookingDateLabel: safeDateLabel(booking.createdAt),
@@ -460,10 +521,10 @@ async function buildPdfDataFromBooking(req, parsedData) {
     recipientAddress,
     recipientPhone: payloadValue(payload, ["recipient", "phone"], "-"),
     recipientEmail: payloadValue(payload, ["recipient", "email"], "-"),
-    amountLabel: payloadValue(payload, ["shipment", "declaredValue"], "-"),
+    amountLabel,
     weightLabel: String(weightValue === "-" ? "-" : `${weightValue} kg`),
     dimensionsLabel: dimensions,
-    contentsLabel: payloadValue(payload, ["shipment", "contentsDescription"], "-"),
+    contentsLabel,
     instructionsLabel: payloadValue(payload, ["instructions"], "-"),
     trackingNotesLabel: String(booking.publicTrackingNote || booking.customerTrackingNote || "-"),
     agencyLabel: String(booking.assignedAgency || "-"),
@@ -482,7 +543,11 @@ async function buildPdfDataFromBooking(req, parsedData) {
       website,
       watermarkText: String(normalizedSettings.pdfWatermarkText || "Quadrato Cargo"),
       footerNote: String(normalizedSettings.pdfFooterNote || "Thank you for choosing Quadrato Cargo.")
-    }
+    },
+    publicBarcodeCode:
+      String(booking.publicBarcodeCode || "").trim().toUpperCase() ||
+      computePublicBarcodeCode(String(booking.id)),
+    adminInvoice
   };
 }
 
@@ -490,6 +555,10 @@ function buildPdfHtml(input, barcodeDataUrl) {
   const primary = normalizeHex(input.settings.primaryColor, "#0f766e");
   const accent = normalizeHex(input.settings.accentColor, "#16a34a");
   const card = normalizeHex(input.settings.cardColor, "#f8fafc");
+  const ai = input.adminInvoice && typeof input.adminInvoice === "object" ? input.adminInvoice : null;
+  const useAdminCharges = Boolean(
+    ai && (String(ai.total || "").trim() || String(ai.subtotal || "").trim())
+  );
   const amountRaw = String(input.amountLabel || "").trim();
   const amountNumber = Number.parseFloat(amountRaw.replace(/[^0-9.-]/g, ""));
   const amount = Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : amountRaw || "0.00";
@@ -505,9 +574,29 @@ function buildPdfHtml(input, barcodeDataUrl) {
   const fixedCharge = Number.isFinite(amountNumber) ? (amountNumber * 0.05).toFixed(2) : "-";
   const declaredValue = amount;
   const safeReference = String(input.reference || input.bookingId || "").trim() || input.bookingId;
-  const customerCode = buildCustomerCode(safeReference, input.bookingId);
+  const scanCode = String(input.publicBarcodeCode || safeReference).trim() || input.bookingId;
+  const showAltTrackingRef = Boolean(safeReference && scanCode && safeReference !== scanCode);
+  const displayInvoiceId = String(ai?.number || "").trim() || scanCode;
   const subtotal = Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : amount;
   const declaredTotal = Number.isFinite(amountNumber) ? (amountNumber * 1.03).toFixed(2) : amount;
+  const currencyLabel = String(ai?.currency || "INR").trim() || "INR";
+  const chargeDiscount = useAdminCharges ? String(ai.discount || "").trim() || "0" : "0";
+  const chargeInsurance = useAdminCharges
+    ? String(ai.insurance || "").trim() || fixedCharge
+    : fixedCharge;
+  const chargeCustoms = useAdminCharges
+    ? String(ai.customsDuties || "").trim() || "—"
+    : "1";
+  const chargeTax = useAdminCharges ? String(ai.tax || "").trim() || "—" : "0";
+  const chargeDeclaredTotal = useAdminCharges
+    ? String(ai.total || "").trim() || declaredTotal
+    : declaredTotal;
+  const chargeDeclaredValue = useAdminCharges
+    ? String(ai.subtotal || "").trim() || declaredValue
+    : declaredValue;
+  const chargeTotalEnvio = useAdminCharges
+    ? `${currencyLabel} ${String(ai.total || ai.subtotal || subtotal).trim()}`
+    : `INR ${subtotal}`;
   const data = {
     ...input,
     settings: {
@@ -527,7 +616,17 @@ function buildPdfHtml(input, barcodeDataUrl) {
     subtotal,
     declaredTotal,
     safeReference,
-    customerCode
+    scanCode,
+    showAltTrackingRef,
+    displayInvoiceId,
+    chargeDiscount,
+    chargeInsurance,
+    chargeCustoms,
+    chargeTax,
+    chargeDeclaredTotal,
+    chargeDeclaredValue,
+    chargeTotalEnvio,
+    adminInvoiceNotes: ai?.notes ? String(ai.notes).trim() : ""
   };
 
   return `<!doctype html>
@@ -584,6 +683,12 @@ function buildPdfHtml(input, barcodeDataUrl) {
         font-size: 28px;
         font-family: "Courier New", monospace;
         letter-spacing: .7px;
+      }
+      .barcode .code-sub {
+        margin-top: 2px;
+        font-size: 12px;
+        color: #64748b;
+        font-family: "Courier New", monospace;
       }
       .separator {
         margin: 12px 0 14px;
@@ -718,7 +823,12 @@ function buildPdfHtml(input, barcodeDataUrl) {
         </div>
         <div class="barcode">
           <img src="${esc(barcodeDataUrl)}" alt="Invoice barcode" />
-          <div class="code">${esc(data.safeReference)}</div>
+          <div class="code">${esc(data.scanCode)}</div>
+          ${
+            data.showAltTrackingRef
+              ? `<div class="code-sub">Consignment / ref: ${esc(data.safeReference)}</div>`
+              : ""
+          }
         </div>
       </section>
 
@@ -737,7 +847,7 @@ function buildPdfHtml(input, barcodeDataUrl) {
           <tr><td>Courier company</td><td>${esc(data.agencyLabel)}</td></tr>
           <tr><td>Service Mode</td><td>${esc(data.statusLabel)}</td></tr>
           <tr><td>Shipping Date</td><td>${esc(data.bookingDateLabel)}</td></tr>
-          <tr><td>Invoice #</td><td><strong>${esc(data.customerCode)}</strong></td></tr>
+          <tr><td>Invoice #</td><td><strong>${esc(data.displayInvoiceId)}</strong></td></tr>
         </table>
       </section>
 
@@ -794,16 +904,23 @@ function buildPdfHtml(input, barcodeDataUrl) {
         </thead>
         <tbody>
           <tr>
-            <td>0</td>
-            <td>${esc(data.fixedCharge)}</td>
-            <td>1</td>
-            <td>0</td>
-            <td>${esc(data.declaredTotal)}</td>
-            <td>${esc(data.declaredValue)}</td>
-            <td>INR ${esc(data.subtotal)}</td>
+            <td>${esc(data.chargeDiscount)}</td>
+            <td>${esc(data.chargeInsurance)}</td>
+            <td>${esc(data.chargeCustoms)}</td>
+            <td>${esc(data.chargeTax)}</td>
+            <td>${esc(data.chargeDeclaredTotal)}</td>
+            <td>${esc(data.chargeDeclaredValue)}</td>
+            <td>${esc(data.chargeTotalEnvio)}</td>
           </tr>
         </tbody>
       </table>
+
+      ${
+        data.adminInvoiceNotes
+          ? `<div class="terms-title">BILLING NOTES</div>
+      <div class="terms-text">${esc(data.adminInvoiceNotes)}</div>`
+          : ""
+      }
 
       <div class="terms-title">TERMS</div>
       <div class="terms-text">
@@ -819,7 +936,8 @@ function buildPdfHtml(input, barcodeDataUrl) {
 function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
   const primary = normalizeHex(input.settings.primaryColor, "#0f766e");
   const safeReference = String(input.reference || input.bookingId || "").trim() || input.bookingId;
-  const customerCode = buildCustomerCode(safeReference, input.bookingId);
+  const scanCode = String(input.publicBarcodeCode || safeReference).trim() || input.bookingId;
+  const showAltRef = Boolean(safeReference && scanCode && safeReference !== scanCode);
   const routeLine = `${input.fromCity || "-"} - ${input.toCity || "-"}`;
 
   return `<!doctype html>
@@ -1027,9 +1145,14 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
 
       <div class="barcode-wrap">
         <img src="${esc(barcodeDataUrl)}" alt="Tracking Barcode" />
-        <div class="barcode-id">${esc(customerCode)}</div>
+        <div class="barcode-id">${esc(scanCode)}</div>
       </div>
-      <div class="code-big">${esc(customerCode)}</div>
+      <div class="code-big">${esc(scanCode)}</div>
+      ${
+        showAltRef
+          ? `<div class="line" style="font-size:13px;font-weight:600;margin-top:6px;">Consignment / booking ref: ${esc(safeReference)}</div>`
+          : ""
+      }
 
       <div class="package-ref">PACKAGE REFERENCE:</div>
       <div class="line">
@@ -1174,6 +1297,7 @@ export async function trackBooking(req, res, next) {
         routeType: row.routeType,
         status: row.status,
         consignmentNumber: row.consignmentNumber,
+        publicBarcodeCode: row.publicBarcodeCode || computePublicBarcodeCode(row.id),
         trackingNotes: row.customerTrackingNote || null,
         customerTrackingNote: row.customerTrackingNote || null,
         courierName,
@@ -1182,7 +1306,8 @@ export async function trackBooking(req, res, next) {
         senderAddress: row.senderAddress || null,
         recipientName: row.recipientName || null,
         recipientAddress: row.recipientAddress || null,
-        createdAt: row.createdAt
+        createdAt: row.createdAt,
+        shipment: buildShipmentSummaryForPublicTrack(row.payload)
       }
     });
   } catch (error) {
@@ -1224,7 +1349,7 @@ export async function generateBookingPdf(req, res, next) {
         : Promise.resolve(""),
       bwipjs.toBuffer({
         bcid: "code128",
-        text: String(input.reference || input.bookingId || "QC-INVOICE"),
+        text: String(input.publicBarcodeCode || input.reference || input.bookingId || "QC-INVOICE"),
         scale: 3,
         height: 16,
         includetext: false,
@@ -1239,7 +1364,24 @@ export async function generateBookingPdf(req, res, next) {
     const browser = await getPdfBrowser();
     page = await browser.newPage();
     await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 2 });
-    await page.setContent(html, { waitUntil: "domcontentloaded" });
+    await page.setContent(html, { waitUntil: "load", timeout: 45_000 });
+    await page
+      .evaluate(async () => {
+        await Promise.all(
+          Array.from(document.images).map(
+            (img) =>
+              new Promise((resolve) => {
+                if (img.complete) {
+                  resolve();
+                  return;
+                }
+                img.addEventListener("load", () => resolve(), { once: true });
+                img.addEventListener("error", () => resolve(), { once: true });
+              }),
+          ),
+        );
+      })
+      .catch(() => {});
     const pdfBuffer = await page.pdf({
       format: "A4",
       printBackground: true,
@@ -1279,6 +1421,16 @@ export async function generateBookingPdf(req, res, next) {
       return sendError(
         res,
         "Invoice/PDF is available after courier pickup OTP verification.",
+        403
+      );
+    }
+    if (
+      error instanceof Error &&
+      error.message.includes("Invoice PDF disabled until billing is enabled by admin.")
+    ) {
+      return sendError(
+        res,
+        "Invoice PDF is not available yet. Billing must be finalized in admin for this booking.",
         403
       );
     }

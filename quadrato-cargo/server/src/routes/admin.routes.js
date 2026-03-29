@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { Router } from "express";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { getDb } from "../db/mongo.js";
 import { requireAdminApi } from "../modules/admin/admin-middleware.js";
 import { createUserDoc, toPublicUser } from "../models/user.model.js";
@@ -11,6 +12,53 @@ import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
 
 const router = Router();
 const PAGE_SIZE = 25;
+
+const bookingInvoiceSchema = z.object({
+  invoicePdfReady: z.boolean(),
+  invoice: z
+    .object({
+      number: z.string().trim().max(120).optional().default(""),
+      currency: z.string().trim().max(12).optional().default("INR"),
+      subtotal: z.string().trim().max(500).optional().default(""),
+      tax: z.string().trim().max(500).optional().default(""),
+      insurance: z.string().trim().max(500).optional().default(""),
+      customsDuties: z.string().trim().max(500).optional().default(""),
+      discount: z.string().trim().max(500).optional().default(""),
+      total: z.string().trim().max(500).optional().default(""),
+      lineDescription: z.string().trim().max(4000).optional().default(""),
+      notes: z.string().trim().max(4000).optional().default("")
+    })
+    .default({})
+});
+
+function normalizeBookingInvoiceForDb(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const out = {};
+  const keys = [
+    "number",
+    "currency",
+    "subtotal",
+    "tax",
+    "insurance",
+    "customsDuties",
+    "discount",
+    "total",
+    "lineDescription",
+    "notes"
+  ];
+  for (const k of keys) {
+    let v = String(raw[k] ?? "").trim();
+    if (!v) continue;
+    if (k === "currency") {
+      out[k] = v.toUpperCase().slice(0, 12);
+    } else if (k === "lineDescription" || k === "notes") {
+      out[k] = v.slice(0, 4000);
+    } else {
+      out[k] = v.slice(0, 500);
+    }
+  }
+  return Object.keys(out).length ? out : null;
+}
 const USER_ROLES = ["customer", "staff", "courier", "agency"];
 const USER_ROLES_SET = new Set(USER_ROLES);
 const ALLOWED_BOOKING_STATUSES = new Set([
@@ -685,7 +733,8 @@ router.patch("/users/:id", async (req, res, next) => {
     const name = normalizeText(req.body?.name);
     const email = normalizeEmail(req.body?.email);
     const role = normalizeText(req.body?.role || "customer");
-    const isActive = req.body?.isActive !== false;
+    const isActive =
+      typeof req.body?.isActive === "boolean" ? req.body.isActive : true;
     const hasIsOnDuty = typeof req.body?.isOnDuty === "boolean";
     const isOnDuty = req.body?.isOnDuty === true;
     const newPassword = String(req.body?.newPassword ?? "");
@@ -780,6 +829,30 @@ router.patch("/bookings/:id/data", async (req, res, next) => {
     await db.collection("bookings").updateOne(
       { _id },
       { $set: { routeType, payload, updatedAt: new Date() } }
+    );
+    return sendOk(res);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/bookings/:id/invoice", async (req, res, next) => {
+  try {
+    const db = await getDb();
+    const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
+    if (!_id) return;
+    const parsed = bookingInvoiceSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return sendError(res, "Invalid invoice payload.");
+    const invoiceDoc = normalizeBookingInvoiceForDb(parsed.data.invoice);
+    await db.collection("bookings").updateOne(
+      { _id },
+      {
+        $set: {
+          invoicePdfReady: parsed.data.invoicePdfReady,
+          invoice: invoiceDoc,
+          updatedAt: new Date()
+        }
+      }
     );
     return sendOk(res);
   } catch (error) {

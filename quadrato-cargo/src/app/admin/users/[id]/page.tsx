@@ -162,7 +162,18 @@ export default async function AdminUserDetailPage({ params }: Props) {
 
       <section className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-6">
         <h2 className="font-display text-lg font-semibold">Account &amp; sign-in</h2>
-        <p className="mt-1 text-xs text-muted-soft">
+        {!user.isActive ? (
+          <p
+            className="mt-3 rounded-xl border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-200"
+            role="status"
+          >
+            This account is <strong>inactive</strong> (cannot sign in). Turn on{" "}
+            <strong>Active account</strong> below and save to restore access.
+          </p>
+        ) : null}
+        <p
+          className={`text-xs text-muted-soft ${user.isActive ? "mt-1" : "mt-3"}`}
+        >
           Update name, email, or set a new password. Deleting this user unlinks
           their bookings (guest bookings) and removes the account.
         </p>

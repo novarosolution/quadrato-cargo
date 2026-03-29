@@ -42,6 +42,9 @@ export type ProfileBooking = {
   recipientName?: string | null;
   recipientAddress?: string | null;
   pickupOtpVerifiedAt?: string | null;
+  invoicePdfReady?: boolean;
+  invoice?: Record<string, string | null> | null;
+  publicBarcodeCode?: string | null;
   payload?: unknown;
 };
 

@@ -111,6 +111,13 @@ export async function postBookCourierApi(
   }
 }
 
+export type PublicTrackingShipment = {
+  contentsDescription: string | null;
+  weightKg: number | null;
+  declaredValue: string | null;
+  dimensionsCm: { l: string | null; w: string | null; h: string | null } | null;
+};
+
 export type PublicTrackingResponse =
   | {
       ok: true;
@@ -119,6 +126,7 @@ export type PublicTrackingResponse =
         routeType: string;
         status: string;
         consignmentNumber: string | null;
+        publicBarcodeCode?: string | null;
         trackingNotes: string | null;
         publicTrackingNote?: string | null;
         customerTrackingNote: string | null;
@@ -129,6 +137,7 @@ export type PublicTrackingResponse =
         recipientName: string | null;
         recipientAddress: string | null;
         createdAt: string;
+        shipment: PublicTrackingShipment | null;
       };
     }
   | { ok: false; message: string };

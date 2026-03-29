@@ -225,6 +225,38 @@ export async function updateCourierBookingDataAdmin(
   return { ok: true, message: "Booking route and payload updated." };
 }
 
+export async function updateBookingInvoiceAdmin(
+  _prev: DataManageState | undefined,
+  formData: FormData,
+): Promise<DataManageState> {
+  const bookingId = String(formData.get("bookingId") ?? "").trim();
+  const invoicePdfReady = String(formData.get("invoicePdfReady") ?? "") === "on";
+  const result = await adminMutation(
+    `/api/admin/bookings/${encodeURIComponent(bookingId)}/invoice`,
+    {
+      invoicePdfReady,
+      invoice: {
+        number: String(formData.get("invoiceNumber") ?? "").trim(),
+        currency: String(formData.get("invoiceCurrency") ?? "INR").trim(),
+        subtotal: String(formData.get("invoiceSubtotal") ?? "").trim(),
+        tax: String(formData.get("invoiceTax") ?? "").trim(),
+        insurance: String(formData.get("invoiceInsurance") ?? "").trim(),
+        customsDuties: String(formData.get("invoiceCustomsDuties") ?? "").trim(),
+        discount: String(formData.get("invoiceDiscount") ?? "").trim(),
+        total: String(formData.get("invoiceTotal") ?? "").trim(),
+        lineDescription: String(formData.get("invoiceLineDescription") ?? "").trim(),
+        notes: String(formData.get("invoiceNotes") ?? "").trim(),
+      },
+    },
+  );
+  if (!result.ok) {
+    return { ok: false, error: result.message || "Failed to save invoice settings." };
+  }
+  revalidatePath("/admin/bookings");
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  return { ok: true, message: "Invoice PDF settings saved." };
+}
+
 export async function updateContactSubmissionAdmin(
   _prev: DataManageState | undefined,
   formData: FormData,

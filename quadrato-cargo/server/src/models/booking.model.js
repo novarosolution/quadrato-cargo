@@ -1,3 +1,25 @@
+function toPublicInvoice(row) {
+  const inv = row?.invoice;
+  if (!inv || typeof inv !== "object") return null;
+  const pick = (key) => {
+    const v = String(inv[key] ?? "").trim();
+    return v.length ? v : null;
+  };
+  const out = {
+    number: pick("number"),
+    currency: pick("currency"),
+    subtotal: pick("subtotal"),
+    tax: pick("tax"),
+    insurance: pick("insurance"),
+    customsDuties: pick("customsDuties"),
+    discount: pick("discount"),
+    total: pick("total"),
+    lineDescription: pick("lineDescription"),
+    notes: pick("notes")
+  };
+  return Object.values(out).some(Boolean) ? out : null;
+}
+
 export function toPublicBooking(row) {
   if (!row) return null;
   return {
@@ -14,7 +36,12 @@ export function toPublicBooking(row) {
     pickupOtpVerifiedAt: row.pickupOtpVerifiedAt ?? null,
     agencyHandoverVerifiedAt: row.agencyHandoverVerifiedAt ?? null,
     payload: row.payload ?? null,
-    courierId: row.courierId ? String(row.courierId) : null
+    courierId: row.courierId ? String(row.courierId) : null,
+    invoicePdfReady: row.invoicePdfReady !== false,
+    invoice: toPublicInvoice(row),
+    publicBarcodeCode: row.publicBarcodeCode
+      ? String(row.publicBarcodeCode).trim().toUpperCase()
+      : null
   };
 }
 
@@ -46,6 +73,8 @@ export function createBookingDoc({ routeType, payload, userId }) {
     agencyHandoverVerifiedAt: null,
     userId: userId ?? null,
     courierId: null,
+    invoicePdfReady: false,
+    invoice: null,
     createdAt: now,
     updatedAt: now
   };
@@ -86,6 +115,10 @@ export const bookingModelSchema = {
     { key: { userId: 1, createdAt: -1 }, options: { name: "ix_bookings_user_createdAt" } },
     { key: { courierId: 1, status: 1 }, options: { name: "ix_bookings_courier_status" } },
     { key: { consignmentNumber: 1 }, options: { sparse: true, name: "ix_bookings_consignment" } },
-    { key: { assignedAgency: 1, createdAt: -1 }, options: { name: "ix_bookings_agency_createdAt" } }
+    { key: { assignedAgency: 1, createdAt: -1 }, options: { name: "ix_bookings_agency_createdAt" } },
+    {
+      key: { publicBarcodeCode: 1 },
+      options: { unique: true, sparse: true, name: "ix_bookings_publicBarcodeCode" }
+    }
   ]
 };

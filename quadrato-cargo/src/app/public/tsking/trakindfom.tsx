@@ -20,7 +20,10 @@ import {
   type BookingStatusId,
   normalizeBookingStatus,
 } from "@/lib/booking-status";
-import { fetchPublicTracking } from "@/lib/api/public-client";
+import {
+  fetchPublicTracking,
+  type PublicTrackingShipment,
+} from "@/lib/api/public-client";
 
 type State =
   | { kind: "idle" }
@@ -33,6 +36,7 @@ type State =
         routeType: string;
         status: string;
         consignmentNumber: string | null;
+        publicBarcodeCode?: string | null;
         trackingNotes: string | null;
         publicTrackingNote?: string | null;
         customerTrackingNote: string | null;
@@ -43,6 +47,7 @@ type State =
         recipientName: string | null;
         recipientAddress: string | null;
         createdAt: string;
+        shipment: PublicTrackingShipment | null;
       };
     };
 
@@ -186,12 +191,17 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
         <label htmlFor="track-reference" className="text-sm font-medium text-ink">
           Booking ID or Tracking ID
         </label>
+        <p className="text-xs text-muted-soft">
+          Enter the <strong className="font-medium text-muted">QC</strong> code from your receipt/PDF,
+          your Tracking ID (consignment), or your 24-character booking ID — all resolve to the same
+          shipment.
+        </p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <input
             id="track-reference"
             name="reference"
             type="text"
-            placeholder="e.g. QC12345678 or booking ID"
+            placeholder="e.g. QC0123456789, Tracking ID, or booking ID"
             value={reference}
             onChange={(e) => setReference(e.target.value)}
             inputMode="text"
@@ -243,6 +253,12 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
               Reference:{" "}
               <span className="font-mono text-muted">{state.data.id}</span>
             </p>
+            {state.data.publicBarcodeCode ? (
+              <p className="mt-1 text-xs text-muted-soft">
+                Barcode / scan code:{" "}
+                <span className="font-mono text-ink">{state.data.publicBarcodeCode}</span>
+              </p>
+            ) : null}
             <div className="mt-4 grid gap-2.5 text-xs text-muted sm:grid-cols-2">
               <p>
                 <span className="font-semibold text-ink">Pickup courier:</span>{" "}
@@ -262,6 +278,47 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
               </p>
             </div>
           </div>
+
+          {state.data.shipment ? (
+            <div className="panel-card">
+              <h3 className="text-sm font-semibold text-ink">Shipment details</h3>
+              <dl className="mt-3 space-y-2 text-sm text-muted">
+                {state.data.shipment.contentsDescription ? (
+                  <div>
+                    <dt className="text-xs font-medium text-muted-soft">Contents</dt>
+                    <dd className="mt-0.5 whitespace-pre-wrap text-ink">
+                      {state.data.shipment.contentsDescription}
+                    </dd>
+                  </div>
+                ) : null}
+                {state.data.shipment.weightKg != null ? (
+                  <div>
+                    <dt className="text-xs font-medium text-muted-soft">Weight</dt>
+                    <dd className="mt-0.5 text-ink">{state.data.shipment.weightKg} kg</dd>
+                  </div>
+                ) : null}
+                {state.data.shipment.dimensionsCm &&
+                (state.data.shipment.dimensionsCm.l ||
+                  state.data.shipment.dimensionsCm.w ||
+                  state.data.shipment.dimensionsCm.h) ? (
+                  <div>
+                    <dt className="text-xs font-medium text-muted-soft">Dimensions (cm)</dt>
+                    <dd className="mt-0.5 text-ink">
+                      {state.data.shipment.dimensionsCm.l ?? "?"} ×{" "}
+                      {state.data.shipment.dimensionsCm.w ?? "?"} ×{" "}
+                      {state.data.shipment.dimensionsCm.h ?? "?"}
+                    </dd>
+                  </div>
+                ) : null}
+                {state.data.shipment.declaredValue ? (
+                  <div>
+                    <dt className="text-xs font-medium text-muted-soft">Declared value</dt>
+                    <dd className="mt-0.5 text-ink">{state.data.shipment.declaredValue}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            </div>
+          ) : null}
 
           <div className="panel-card">
             <div className="mb-4 flex items-center gap-2">

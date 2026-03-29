@@ -94,7 +94,7 @@ export function AdminUserEditForm({
           Account availability
         </p>
         <label className="mt-3 inline-flex items-center gap-2 text-sm text-ink">
-          <input type="hidden" name="isActive" value="off" />
+          {/* Checkbox must come before hidden "off" so FormData.get("isActive") is "on" when checked (first value wins). */}
           <input
             name="isActive"
             type="checkbox"
@@ -102,11 +102,11 @@ export function AdminUserEditForm({
             defaultChecked={initialIsActive}
             className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-2 focus:ring-teal/25"
           />
-          Active account (available for new assignments)
+          <input type="hidden" name="isActive" value="off" />
+          Active account (user can sign in; couriers/agencies can be assigned when active)
         </label>
         {initialRole === "courier" ? (
           <label className="mt-3 inline-flex items-center gap-2 text-sm text-ink">
-            <input type="hidden" name="isOnDuty" value="off" />
             <input
               name="isOnDuty"
               type="checkbox"
@@ -114,6 +114,7 @@ export function AdminUserEditForm({
               defaultChecked={initialIsOnDuty}
               className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-2 focus:ring-teal/25"
             />
+            <input type="hidden" name="isOnDuty" value="off" />
             On duty (ready to receive new job)
           </label>
         ) : (

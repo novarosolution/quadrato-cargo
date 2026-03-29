@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { authNav, mainNav } from "@/lib/nav";
+import { siteName } from "@/lib/site";
 import { ThemeToggle } from "@/components/ThemeBtn";
 import { postLogoutApi, type ApiUser } from "@/lib/api/auth-client";
 import { getApiBaseUrl } from "@/lib/api/base-url";
@@ -73,7 +74,7 @@ function HeaderNavLink({
       prefetch={false}
       data-active={active ? "true" : "false"}
       onClick={onNavigate}
-      className={`nav-link shrink-0 rounded-full px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal data-[active=true]:bg-pill data-[active=true]:text-ink lg:px-3.5 lg:py-2 lg:text-sm ${
+      className={`nav-link shrink-0 rounded-full px-2 py-1.5 text-xs font-medium text-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal data-[active=true]:bg-pill data-[active=true]:text-ink lg:px-2 lg:py-2 lg:text-[13px] ${
         comfortableTouch
           ? "flex min-h-12 items-center px-3.5 py-3 text-sm lg:min-h-0 lg:px-3.5 lg:py-2 lg:text-sm"
           : ""
@@ -278,7 +279,7 @@ export function Header() {
       <div className="mx-auto grid h-[4.25rem] max-w-7xl grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
         <Link
           href="/public"
-          className="group flex min-w-0 max-w-full items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal sm:gap-2.5"
+          className="group flex min-w-0 max-w-full items-center gap-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal sm:gap-2"
         >
           <motion.span
             className="relative flex h-10 w-10 shrink-0 overflow-hidden bg-transparent lg:h-11 lg:w-11"
@@ -290,24 +291,26 @@ export function Header() {
           >
             <Image
               src="/quadrato-logo-icon.png"
-              alt="Quadrato Cargo"
+              alt=""
               fill
               sizes="(max-width: 1023px) 40px, 44px"
               className="object-cover rounded-none"
               priority
             />
           </motion.span>
-          <span className="sr-only">Quadrato Cargo</span>
+          <span className="font-display min-w-0 max-w-[7.5rem] truncate text-sm font-semibold leading-tight tracking-tight text-ink sm:max-w-[10rem] sm:text-base md:max-w-[12rem] lg:max-w-none">
+            {siteName}
+          </span>
         </Link>
 
         <motion.nav
-          className="glass-panel hidden min-h-0 min-w-0 justify-center justify-self-stretch overflow-x-auto overflow-y-hidden rounded-full border border-border px-1 py-1 [scrollbar-width:none] lg:flex lg:py-1.5 [&::-webkit-scrollbar]:hidden"
+          className="glass-panel hidden min-h-0 min-w-0 justify-center justify-self-stretch overflow-x-auto overflow-y-hidden rounded-full border border-border px-0.5 py-1 [scrollbar-width:none] lg:flex lg:py-1 [&::-webkit-scrollbar]:hidden"
           aria-label="Main"
           initial={reduce ? false : { opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.14, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="mx-auto flex w-max max-w-full items-center gap-0.5 px-0.5">
+          <div className="mx-auto flex w-max max-w-full items-center gap-0 px-0.5">
             {mainNav.map((primaryNavEntry) => (
               <HeaderNavLink
                 key={primaryNavEntry.href}

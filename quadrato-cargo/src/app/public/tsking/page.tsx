@@ -54,7 +54,8 @@ export default async function TrackOrderPage({
               </p>
               <ul className="mt-4 space-y-2">
                 {userBookings.map((b) => {
-                  const reference = b.consignmentNumber || b.id;
+                  const reference =
+                    b.publicBarcodeCode || b.consignmentNumber || b.id;
                   return (
                     <li key={b.id} className="panel-card-soft flex flex-wrap items-center justify-between gap-2 text-sm">
                       <span className="text-muted-soft">

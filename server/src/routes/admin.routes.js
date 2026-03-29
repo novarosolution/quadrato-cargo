@@ -141,6 +141,53 @@ const bookingDataSchema = z.object({
     })
 });
 
+const bookingInvoiceSchema = z.object({
+  invoicePdfReady: z.boolean(),
+  invoice: z
+    .object({
+      number: z.string().trim().max(120).optional().default(""),
+      currency: z.string().trim().max(12).optional().default("INR"),
+      subtotal: z.string().trim().max(500).optional().default(""),
+      tax: z.string().trim().max(500).optional().default(""),
+      insurance: z.string().trim().max(500).optional().default(""),
+      customsDuties: z.string().trim().max(500).optional().default(""),
+      discount: z.string().trim().max(500).optional().default(""),
+      total: z.string().trim().max(500).optional().default(""),
+      lineDescription: z.string().trim().max(4000).optional().default(""),
+      notes: z.string().trim().max(4000).optional().default("")
+    })
+    .default({})
+});
+
+function normalizeBookingInvoiceForDb(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const out = {};
+  const keys = [
+    "number",
+    "currency",
+    "subtotal",
+    "tax",
+    "insurance",
+    "customsDuties",
+    "discount",
+    "total",
+    "lineDescription",
+    "notes"
+  ];
+  for (const k of keys) {
+    let v = String(raw[k] ?? "").trim();
+    if (!v) continue;
+    if (k === "currency") {
+      out[k] = v.toUpperCase().slice(0, 12);
+    } else if (k === "lineDescription" || k === "notes") {
+      out[k] = v.slice(0, 4000);
+    } else {
+      out[k] = v.slice(0, 500);
+    }
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 const linkBookingSchema = z.object({
   customerEmail: z.string().trim().max(320).optional().default("")
 });
@@ -748,7 +795,9 @@ router.patch("/users/:id", async (req, res, next) => {
     const name = normalizeText(parsed.data.name);
     const email = normalizeEmail(parsed.data.email);
     const role = normalizeText(parsed.data.role || "customer");
-    const isActive = parsed.data.isActive !== false;
+    /** Explicit boolean from JSON; default true only when field omitted (legacy clients). */
+    const isActive =
+      typeof parsed.data.isActive === "boolean" ? parsed.data.isActive : true;
     const hasIsOnDuty = typeof parsed.data.isOnDuty === "boolean";
     const isOnDuty = parsed.data.isOnDuty === true;
     const newPassword = String(parsed.data.newPassword ?? "");
@@ -852,6 +901,30 @@ router.patch("/bookings/:id/data", async (req, res, next) => {
     await db.collection("bookings").updateOne(
       { _id },
       { $set: { routeType, payload, updatedAt: new Date() } }
+    );
+    return sendOk(res);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/bookings/:id/invoice", async (req, res, next) => {
+  try {
+    const db = await getDb();
+    const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
+    if (!_id) return;
+    const parsed = bookingInvoiceSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return sendError(res, "Invalid invoice payload.");
+    const invoiceDoc = normalizeBookingInvoiceForDb(parsed.data.invoice);
+    await db.collection("bookings").updateOne(
+      { _id },
+      {
+        $set: {
+          invoicePdfReady: parsed.data.invoicePdfReady,
+          invoice: invoiceDoc,
+          updatedAt: new Date()
+        }
+      }
     );
     return sendOk(res);
   } catch (error) {

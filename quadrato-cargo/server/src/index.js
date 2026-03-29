@@ -1,6 +1,7 @@
 import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { getDb } from "./db/mongo.js";
+import { backfillPublicBarcodeCodes } from "./modules/bookings/booking-repo.js";
 
 function listenOnPort(app, port) {
   return new Promise((resolve, reject) => {
@@ -12,6 +13,9 @@ function listenOnPort(app, port) {
 
 async function start() {
   await getDb();
+  await backfillPublicBarcodeCodes().catch((err) => {
+    console.warn("[bookings] publicBarcodeCode backfill skipped or failed:", err?.message || err);
+  });
   const app = createApp();
   const basePort = Number.isInteger(env.port) ? env.port : 4000;
   const tryPorts = [basePort, basePort + 1, basePort + 2];
