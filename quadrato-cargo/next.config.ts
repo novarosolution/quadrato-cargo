@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 
+/** Single root for Turbopack and output file tracing (must match; see Next.js warning). */
+const tracingRoot = path.resolve(__dirname);
+
 const isProd = process.env.NODE_ENV === "production";
 const scriptSrc = isProd
   ? "script-src 'self' 'unsafe-inline' https:;"
@@ -11,8 +14,9 @@ const connectSrc = isProd
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  outputFileTracingRoot: tracingRoot,
   turbopack: {
-    root: path.resolve(__dirname),
+    root: tracingRoot,
   },
   async headers() {
     return [

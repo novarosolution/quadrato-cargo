@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdminCollapsible } from "@/components/admin/AdminCollapsible";
 import { AdminListFilters } from "@/components/admin/ListFilters";
 import { AdminPagination } from "@/components/admin/Pager";
 import { fetchAdminUsers } from "@/lib/api/admin-server";
@@ -83,11 +84,17 @@ export default async function AdminUsersPage({ searchParams }: Props) {
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <AdminCreateStaffForm />
-        <AdminCreateCourierForm />
-        <AdminCreateAgencyForm />
-      </div>
+      <AdminCollapsible
+        id="admin-create-accounts"
+        title="Create accounts"
+        description="Add team, courier, or agency logins. Forms stay mounted while collapsed so drafts are not lost."
+      >
+        <div className="grid gap-6 lg:grid-cols-2">
+          <AdminCreateStaffForm />
+          <AdminCreateCourierForm />
+          <AdminCreateAgencyForm />
+        </div>
+      </AdminCollapsible>
 
       <AdminListFilters
         basePath="/admin/users"

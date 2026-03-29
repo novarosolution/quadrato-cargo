@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { AdminFormField, adminInputClassName } from "@/components/admin/AdminFormField";
 import {
   linkBookingToUserAdmin,
   unlinkBookingFromUserAdmin,
@@ -10,11 +11,16 @@ import {
 type Props = {
   bookingId: string;
   linkedUserEmail: string | null;
+  /** Omit outer card/title when nested inside AdminCollapsible */
+  embedded?: boolean;
 };
+
+const inputClass = adminInputClassName();
 
 export function AdminBookingCustomerLink({
   bookingId,
   linkedUserEmail,
+  embedded = false,
 }: Props) {
   const [linkState, linkAction, linkPending] = useActionState<
     DataManageState | undefined,
@@ -27,13 +33,12 @@ export function AdminBookingCustomerLink({
   >(unlinkBookingFromUserAdmin, undefined);
 
   if (linkedUserEmail) {
-    return (
-      <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-5">
-        <h2 className="font-display text-lg font-semibold">Customer account</h2>
-        <p className="mt-1 text-xs text-muted-soft">
-          This booking is linked to{" "}
-          <span className="font-medium text-ink">{linkedUserEmail}</span>. Unlink
-          if it should not appear on that profile (e.g. wrong account).
+    const body = (
+      <>
+        <p className="text-sm text-muted-soft">
+          Linked to{" "}
+          <span className="font-medium text-ink">{linkedUserEmail}</span>. Unlink if this booking
+          should not appear on that profile.
         </p>
         <form action={unlinkAction} className="mt-4">
           <input type="hidden" name="bookingId" value={bookingId} />
@@ -55,28 +60,33 @@ export function AdminBookingCustomerLink({
             {unlinkPending ? "…" : "Unlink from customer account"}
           </button>
         </form>
+      </>
+    );
+
+    if (embedded) return body;
+
+    return (
+      <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-5">
+        <h2 className="font-display text-lg font-semibold">Customer account</h2>
+        <div className="mt-4">{body}</div>
       </div>
     );
   }
 
-  return (
-    <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-5">
-      <h2 className="font-display text-lg font-semibold">Link to customer</h2>
-      <p className="mt-1 text-xs text-muted-soft">
-        Guest booking — not on anyone&apos;s profile. Enter the email of a user
-        who registered on the site (customer role). They will see this shipment
-        on their profile; you set status and tracking in Dispatch controls
-        above.
-      </p>
-      <form action={linkAction} className="mt-4 space-y-4">
+  const body = (
+    <>
+      {!embedded ? null : (
+        <p className="mb-4 text-sm text-muted-soft">
+          Guest booking — not on anyone{"'"}s profile. Enter a registered customer email; they will
+          see this shipment on their profile.
+        </p>
+      )}
+      <form action={linkAction} className="space-y-4">
         <input type="hidden" name="bookingId" value={bookingId} />
-        <div>
-          <label
-            htmlFor="admin-link-email"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
-            Customer email (registered account)
-          </label>
+        <AdminFormField
+          label="Customer email (registered account)"
+          htmlFor="admin-link-email"
+        >
           <input
             id="admin-link-email"
             name="customerEmail"
@@ -84,9 +94,9 @@ export function AdminBookingCustomerLink({
             required
             autoComplete="off"
             placeholder="name@example.com"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={inputClass}
           />
-        </div>
+        </AdminFormField>
         {linkState?.ok === false && linkState.error ? (
           <p className="text-sm text-rose-400" role="alert">
             {linkState.error}
@@ -105,6 +115,20 @@ export function AdminBookingCustomerLink({
           {linkPending ? "Linking…" : "Link to account"}
         </button>
       </form>
+    </>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-5">
+      <h2 className="font-display text-lg font-semibold">Link to customer</h2>
+      <p className="mt-1 text-xs text-muted-soft">
+        Guest booking — not on anyone{"'"}s profile. Enter the email of a user who registered on
+        the site (customer role). They will see this shipment on their profile; you set status and
+        tracking in Dispatch {"&"} tracking.
+      </p>
+      <div className="mt-6">{body}</div>
     </div>
   );
 }

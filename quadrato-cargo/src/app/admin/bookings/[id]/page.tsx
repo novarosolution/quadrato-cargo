@@ -5,7 +5,11 @@ import {
   BOOKING_STATUS_LABELS,
   normalizeBookingStatus,
 } from "@/lib/booking-status";
-import { fetchAdminBookingDetail } from "@/lib/api/admin-server";
+import {
+  fetchAdminBookingDetail,
+  fetchAdminUsers,
+} from "@/lib/api/admin-server";
+import { AdminCollapsible } from "@/components/admin/AdminCollapsible";
 import { DeleteRowButton } from "@/components/admin/DeleteBtn";
 import { deleteCourierBooking } from "../../dashboard/actions";
 import { AdminBookingControls } from "../Controls";
@@ -26,7 +30,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function AdminBookingDetailPage({ params }: Props) {
   const { id } = await params;
-  const res = await fetchAdminBookingDetail(id);
+  const [res, agenciesRes] = await Promise.all([
+    fetchAdminBookingDetail(id),
+    fetchAdminUsers({ role: "agency", page: 1 }),
+  ]);
   const row = res.booking
     ? {
         ...res.booking,
@@ -35,6 +42,11 @@ export default async function AdminBookingDetailPage({ params }: Props) {
     : null;
   const couriers = res.couriers || [];
   if (!row) notFound();
+
+  const agencyOptions = (agenciesRes.users || []).map((u) => ({
+    email: u.email,
+    name: u.name,
+  }));
 
   const json = JSON.stringify(row.payload, null, 2);
   const st = normalizeBookingStatus(row.status);
@@ -67,7 +79,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="mx-auto max-w-4xl space-y-6">
       <Link href="/admin/bookings" prefetch={false} className="text-sm text-teal hover:underline">
         ← All bookings
       </Link>
@@ -78,55 +90,9 @@ export default async function AdminBookingDetailPage({ params }: Props) {
             {row.routeType} booking
           </h1>
           <p className="mt-1 text-sm text-muted-soft">
-            {row.createdAt.toLocaleString()} · ID {row.id}
+            {row.createdAt.toLocaleString()} · ID{" "}
+            <span className="font-mono text-xs">{row.id}</span>
           </p>
-          <p className="mt-2 text-sm">
-            <span className="text-muted-soft">Status: </span>
-            <span className="font-medium text-teal">
-              {BOOKING_STATUS_LABELS[st]}
-            </span>
-          </p>
-          {row.user ? (
-            <p className="mt-2 text-sm text-muted">
-              Account:{" "}
-              <Link
-                href={`/admin/users/${row.user.id}`}
-                prefetch={false}
-                className="font-medium text-teal hover:underline"
-              >
-                {row.user.name ?? row.user.email}
-              </Link>
-              <span className="text-muted-soft"> ({row.user.email})</span>
-            </p>
-          ) : (
-            <p className="mt-2 text-sm text-muted-soft">
-              Guest booking (not linked to a user account)
-            </p>
-          )}
-          {row.courier ? (
-            <p className="mt-2 text-sm text-muted">
-              Courier:{" "}
-              <Link
-                href={`/admin/users/${row.courier.id}`}
-                prefetch={false}
-                className="font-medium text-teal hover:underline"
-              >
-                {row.courier.name ?? row.courier.email}
-              </Link>
-              <span className="text-muted-soft"> ({row.courier.email})</span>
-              {!row.courier.isActive ? (
-                <span className="ml-2 rounded-full bg-rose-500/15 px-2 py-0.5 text-xs font-medium text-rose-400">
-                  Inactive
-                </span>
-              ) : !row.courier.isOnDuty ? (
-                <span className="ml-2 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-                  Off duty
-                </span>
-              ) : null}
-            </p>
-          ) : (
-            <p className="mt-2 text-sm text-muted-soft">No courier assigned.</p>
-          )}
         </div>
         <DeleteRowButton
           label="Delete booking"
@@ -135,110 +101,186 @@ export default async function AdminBookingDetailPage({ params }: Props) {
         />
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-5">
-        <div className="space-y-6 lg:col-span-2">
-          <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-5">
-            <h2 className="font-display text-lg font-semibold">
-              Dispatch controls
-            </h2>
-            <p className="mt-1 text-xs text-muted-soft">
-              Customer sees status, Tracking ID, and tracking notes on
-              their profile. Internal notes stay in admin only.
-            </p>
-            <div className="mt-6 rounded-xl border border-border bg-canvas/20 p-4">
-              <h3 className="font-display text-sm font-semibold text-ink">
-                Customer invoice PDF
-              </h3>
-              <p className="mt-1 text-xs text-muted-soft">
-                Enter billing lines and totals; the customer&apos;s downloaded invoice uses this
-                booking ID and always reflects the latest saved values.
-              </p>
-              <div className="mt-4">
-                <AdminBookingInvoiceForm
-                  bookingId={row.id}
-                  allowCustomerInvoicePdf={row.invoicePdfReady !== false}
-                  initial={invoiceInitial}
-                />
-              </div>
-            </div>
-            <div className="mt-6">
-              <AdminBookingControls
-                key={row.id}
-                bookingId={row.id}
-                routeType={row.routeType}
-                pickupPin={pickupPin}
-                assignedAgency={row.assignedAgency ?? null}
-                currentStatus={row.status}
-                consignmentNumber={row.consignmentNumber}
-                publicTrackingNote={row.publicTrackingNote ?? row.customerTrackingNote ?? null}
-                internalNotes={row.internalNotes}
-              />
-            </div>
+      <section className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-5">
+        <h2 className="font-display text-lg font-semibold">Shipment summary</h2>
+        <p className="mt-1 text-xs text-muted-soft">
+          Read-only snapshot. Open sections below to edit.
+        </p>
+        <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
+          <div className="min-w-0">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
+              Status
+            </dt>
+            <dd className="mt-1 font-medium text-teal">{BOOKING_STATUS_LABELS[st]}</dd>
           </div>
+          <div className="min-w-0">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
+              Tracking ID
+            </dt>
+            <dd className="mt-1 font-mono text-ink">
+              {row.consignmentNumber || "—"}
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
+              Assigned agency
+            </dt>
+            <dd className="mt-1 break-words text-ink">{row.assignedAgency || "—"}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
+              Courier
+            </dt>
+            <dd className="mt-1 flex flex-wrap items-center gap-2 text-ink">
+              {row.courier ? (
+                <>
+                  <Link
+                    href={`/admin/users/${row.courier.id}`}
+                    prefetch={false}
+                    className="font-medium text-teal hover:underline"
+                  >
+                    {row.courier.name ?? row.courier.email}
+                  </Link>
+                  {!row.courier.isActive ? (
+                    <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-xs font-medium text-rose-400">
+                      Inactive
+                    </span>
+                  ) : !row.courier.isOnDuty ? (
+                    <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                      Off duty
+                    </span>
+                  ) : null}
+                </>
+              ) : (
+                "—"
+              )}
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
+              Customer
+            </dt>
+            <dd className="mt-1 text-ink">
+              {row.user ? (
+                <Link
+                  href={`/admin/users/${row.user.id}`}
+                  prefetch={false}
+                  className="font-medium text-teal hover:underline"
+                >
+                  {row.user.name ?? row.user.email}
+                </Link>
+              ) : (
+                <span className="text-muted-soft">Guest (not linked)</span>
+              )}
+            </dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
+              Public barcode
+            </dt>
+            <dd className="mt-1 font-mono text-xs text-ink">
+              {row.publicBarcodeCode || "—"}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <div className="space-y-4">
+        <AdminCollapsible
+          id="booking-dispatch"
+          title="Dispatch & tracking"
+          description="Status, agency, Tracking ID, customer-facing updates, internal notes."
+          defaultOpen
+        >
+          <AdminBookingControls
+            key={row.id}
+            bookingId={row.id}
+            routeType={row.routeType}
+            pickupPin={pickupPin}
+            assignedAgency={row.assignedAgency ?? null}
+            agencyOptions={agencyOptions}
+            currentStatus={row.status}
+            consignmentNumber={row.consignmentNumber}
+            publicTrackingNote={row.publicTrackingNote ?? row.customerTrackingNote ?? null}
+            internalNotes={row.internalNotes}
+          />
+        </AdminCollapsible>
+
+        <AdminCollapsible
+          id="booking-invoice"
+          title="Customer invoice PDF"
+          description="Billing lines and whether the customer can download the invoice PDF after pickup OTP."
+        >
+          <AdminBookingInvoiceForm
+            bookingId={row.id}
+            allowCustomerInvoicePdf={row.invoicePdfReady !== false}
+            initial={invoiceInitial}
+          />
+        </AdminCollapsible>
+
+        <AdminCollapsible
+          id="booking-customer"
+          title="Customer account"
+          description="Link or unlink this booking to a registered customer profile."
+        >
           <AdminBookingCustomerLink
             bookingId={row.id}
             linkedUserEmail={row.user?.email ?? null}
+            embedded
           />
+        </AdminCollapsible>
+
+        <AdminCollapsible
+          id="booking-courier"
+          title="Courier assignment"
+          description="Assign or change the courier for pickup and delivery."
+        >
           <AdminBookingCourierAssign
             bookingId={row.id}
             couriers={couriers}
             assignedCourierId={row.courierId}
+            embedded
           />
-        </div>
+        </AdminCollapsible>
 
-        <div className="space-y-6 lg:col-span-3">
-          <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-5">
-            <h2 className="font-display text-lg font-semibold">
-              Operations workflow snapshot
-            </h2>
-            <p className="mt-1 text-xs text-muted-soft">
-              International courier operations are backend-managed manually until
-              handoff to partner carrier.
-            </p>
-            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-              <div className="rounded-xl border border-border bg-canvas/30 p-3">
-                <dt className="text-xs uppercase tracking-wide text-muted-soft">
-                  Collection mode
-                </dt>
-                <dd className="mt-1 font-medium capitalize text-ink">
-                  {collectionMode || "Not set"}
-                </dd>
-              </div>
-              <div className="rounded-xl border border-border bg-canvas/30 p-3">
-                <dt className="text-xs uppercase tracking-wide text-muted-soft">
-                  Pickup Postal Code / ZIP
-                </dt>
-                <dd className="mt-1 font-medium text-ink">
-                  {pickupPin || "Not set"}
-                </dd>
-              </div>
-              <div className="rounded-xl border border-border bg-canvas/30 p-3">
-                <dt className="text-xs uppercase tracking-wide text-muted-soft">
-                  Pickup window / note
-                </dt>
-                <dd className="mt-1 font-medium text-ink">
-                  {pickupPreference || "Not set"}
-                </dd>
-              </div>
-            </dl>
-          </div>
-          <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-5">
-            <h2 className="font-display text-lg font-semibold">
-              Booking data
-            </h2>
-            <p className="mt-1 text-xs text-muted-soft">
-              Route type and form payload (JSON object). Customer profile shows
-              this data; edit carefully.
-            </p>
-            <div className="mt-6">
-              <AdminBookingDataForm
-                bookingId={row.id}
-                routeType={row.routeType}
-                payloadJson={json}
-              />
+        <AdminCollapsible
+          id="booking-ops"
+          title="Operations snapshot"
+          description="Collection mode, pickup PIN, and pickup window from the booking payload."
+        >
+          <dl className="grid gap-3 text-sm sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-canvas/30 p-3">
+              <dt className="text-xs uppercase tracking-wide text-muted-soft">Collection mode</dt>
+              <dd className="mt-1 font-medium capitalize text-ink">
+                {collectionMode || "Not set"}
+              </dd>
             </div>
-          </div>
-        </div>
+            <div className="rounded-xl border border-border bg-canvas/30 p-3">
+              <dt className="text-xs uppercase tracking-wide text-muted-soft">
+                Pickup Postal Code / ZIP
+              </dt>
+              <dd className="mt-1 font-medium text-ink">{pickupPin || "Not set"}</dd>
+            </div>
+            <div className="rounded-xl border border-border bg-canvas/30 p-3 sm:col-span-1">
+              <dt className="text-xs uppercase tracking-wide text-muted-soft">
+                Pickup window / note
+              </dt>
+              <dd className="mt-1 font-medium text-ink">{pickupPreference || "Not set"}</dd>
+            </div>
+          </dl>
+        </AdminCollapsible>
+
+        <AdminCollapsible
+          id="booking-data"
+          title="Booking data (JSON)"
+          description="Route type and raw payload. Customer profile reflects this; edit carefully."
+        >
+          <AdminBookingDataForm
+            bookingId={row.id}
+            routeType={row.routeType}
+            payloadJson={json}
+          />
+        </AdminCollapsible>
       </div>
     </div>
   );

@@ -1,37 +1,52 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useId, useMemo, useState } from "react";
 import {
   BOOKING_STATUSES,
   BOOKING_STATUS_LABELS,
   normalizeBookingStatus,
 } from "@/lib/booking-status";
 import {
+  AdminFormField,
+  adminInputClassName,
+} from "@/components/admin/AdminFormField";
+import {
   updateCourierBookingAdmin,
   type BookingAdminUpdateState,
 } from "../dashboard/actions";
+
+export type AgencyOption = {
+  email: string;
+  name: string | null;
+};
 
 type Props = {
   bookingId: string;
   routeType: string;
   pickupPin?: string | null;
   assignedAgency?: string | null;
+  agencyOptions?: AgencyOption[];
   currentStatus: string;
   consignmentNumber: string | null;
   publicTrackingNote: string | null;
   internalNotes: string | null;
 };
 
+const inputClass = adminInputClassName();
+
 export function AdminBookingControls({
   bookingId,
   routeType,
   pickupPin,
   assignedAgency,
+  agencyOptions = [],
   currentStatus,
   consignmentNumber,
   publicTrackingNote,
   internalNotes,
 }: Props) {
+  const uid = useId().replace(/:/g, "");
+  const agencyDatalistId = `admin-agency-dl-${uid}`;
   const status = normalizeBookingStatus(currentStatus);
   const [statusValue, setStatusValue] = useState<string>(status);
   const [trackingValue, setTrackingValue] = useState(publicTrackingNote ?? "");
@@ -103,19 +118,13 @@ export function AdminBookingControls({
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="bookingId" value={bookingId} />
-      <div>
-        <label
-          htmlFor="admin-booking-status"
-          className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-        >
-          Status
-        </label>
+      <AdminFormField label="Status" htmlFor="admin-booking-status">
         <select
           id="admin-booking-status"
           name="status"
           value={statusValue}
           onChange={(e) => setStatusValue(e.target.value)}
-          className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          className={inputClass}
         >
           {BOOKING_STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -135,61 +144,60 @@ export function AdminBookingControls({
             </button>
           ))}
         </div>
-      </div>
+      </AdminFormField>
 
-      <div>
-        <label
-          htmlFor="admin-assigned-agency"
-          className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-        >
-          Assigned agency (email or name)
-        </label>
+      <AdminFormField
+        label="Assigned agency"
+        htmlFor="admin-assigned-agency"
+        hint={
+          <>
+            Use the agency account <strong className="font-medium text-muted">email</strong> for{" "}
+            <span className="font-mono text-[11px]">/agency</span>. Pick from the list or type a
+            custom value.
+          </>
+        }
+      >
+        {agencyOptions.length > 0 ? (
+          <datalist id={agencyDatalistId}>
+            {agencyOptions.map((a) => (
+              <option key={a.email} value={a.email}>
+                {a.name ? `${a.name} (${a.email})` : a.email}
+              </option>
+            ))}
+          </datalist>
+        ) : null}
         <input
           id="admin-assigned-agency"
           name="assignedAgency"
           type="text"
           defaultValue={assignedAgency ?? ""}
-          className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          className={inputClass}
           placeholder="e.g. agency1@partner.local"
           autoComplete="off"
+          list={agencyOptions.length > 0 ? agencyDatalistId : undefined}
         />
-        <p className="mt-1 text-xs text-muted-soft">
-          To show on <span className="font-mono text-[11px]">/agency</span>, use the agency account email.
-        </p>
-      </div>
+      </AdminFormField>
 
-      <div>
-        <label
-          htmlFor="admin-tracking-id"
-          className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-        >
-          Tracking ID (visible to customer)
-        </label>
+      <AdminFormField label="Tracking ID (visible to customer)" htmlFor="admin-tracking-id">
         <input
           id="admin-tracking-id"
           name="consignmentNumber"
           type="text"
           defaultValue={consignmentNumber ?? ""}
-          className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          className={inputClass}
           placeholder="e.g. QC-2025-001234"
           autoComplete="off"
         />
-      </div>
+      </AdminFormField>
 
-      <div>
-        <label
-          htmlFor="admin-tracking"
-          className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-        >
-          Customer update (shown on tracking + PDF)
-        </label>
+      <AdminFormField label="Customer update (shown on tracking + PDF)" htmlFor="admin-tracking">
         <textarea
           id="admin-tracking"
           name="publicTrackingNote"
           rows={4}
           value={trackingValue}
           onChange={(e) => setTrackingValue(e.target.value)}
-          className="mt-2 w-full resize-y rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          className={`${inputClass} resize-y`}
           placeholder="Example: Pickup done, handed to agency, expected delivery tomorrow."
         />
         <div className="mt-3 rounded-xl border border-border bg-canvas/30 p-3">
@@ -227,24 +235,22 @@ export function AdminBookingControls({
             </button>
           </div>
         </div>
-      </div>
+      </AdminFormField>
 
-      <div>
-        <label
-          htmlFor="admin-internal"
-          className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-        >
-          Internal notes (admin only)
-        </label>
+      <AdminFormField
+        label="Internal notes (admin only)"
+        htmlFor="admin-internal"
+        hint="Not shown on the customer profile."
+      >
         <textarea
           id="admin-internal"
           name="internalNotes"
           rows={3}
           defaultValue={internalNotes ?? ""}
-          className="mt-2 w-full resize-y rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
-          placeholder="Not shown on the customer profile"
+          className={`${inputClass} resize-y`}
+          placeholder="Internal use only"
         />
-      </div>
+      </AdminFormField>
 
       {state?.ok === false && state.error ? (
         <p className="text-sm text-rose-400" role="alert">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { AdminFormField, adminInputClassName } from "@/components/admin/AdminFormField";
 import {
   updateBookingInvoiceAdmin,
   type DataManageState,
@@ -24,6 +25,9 @@ type Props = {
   allowCustomerInvoicePdf: boolean;
   initial: InvoiceFormInitial;
 };
+
+const inputClass = adminInputClassName();
+const textareaClass = `${inputClass} min-h-[4.5rem] resize-y`;
 
 export function AdminBookingInvoiceForm({
   bookingId,
@@ -61,109 +65,112 @@ export function AdminBookingInvoiceForm({
         Leave fields blank to fall back to booking declared value and contents on the PDF.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="block text-xs font-medium text-muted-soft">
-          Invoice number (optional)
+        <AdminFormField label="Invoice number (optional)" htmlFor="admin-inv-number">
           <input
+            id="admin-inv-number"
             name="invoiceNumber"
             type="text"
             defaultValue={initial.number}
-            className="mt-1 w-full rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-sm text-ink"
+            className={inputClass}
             placeholder="e.g. INV-2026-0042"
             autoComplete="off"
           />
-        </label>
-        <label className="block text-xs font-medium text-muted-soft">
-          Currency
+        </AdminFormField>
+        <AdminFormField label="Currency" htmlFor="admin-inv-currency">
           <input
+            id="admin-inv-currency"
             name="invoiceCurrency"
             type="text"
             defaultValue={initial.currency}
-            className="mt-1 w-full rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-sm text-ink"
+            className={inputClass}
             placeholder="INR"
             autoComplete="off"
           />
-        </label>
-        <label className="block text-xs font-medium text-muted-soft">
-          Subtotal
+        </AdminFormField>
+        <AdminFormField label="Subtotal" htmlFor="admin-inv-subtotal">
           <input
+            id="admin-inv-subtotal"
             name="invoiceSubtotal"
             type="text"
             defaultValue={initial.subtotal}
-            className="mt-1 w-full rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-sm text-ink"
+            className={inputClass}
             placeholder="e.g. 4500"
             autoComplete="off"
           />
-        </label>
-        <label className="block text-xs font-medium text-muted-soft">
-          Tax
+        </AdminFormField>
+        <AdminFormField label="Tax" htmlFor="admin-inv-tax">
           <input
+            id="admin-inv-tax"
             name="invoiceTax"
             type="text"
             defaultValue={initial.tax}
-            className="mt-1 w-full rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-sm text-ink"
+            className={inputClass}
             autoComplete="off"
           />
-        </label>
-        <label className="block text-xs font-medium text-muted-soft">
-          Insurance
+        </AdminFormField>
+        <AdminFormField label="Insurance" htmlFor="admin-inv-insurance">
           <input
+            id="admin-inv-insurance"
             name="invoiceInsurance"
             type="text"
             defaultValue={initial.insurance}
-            className="mt-1 w-full rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-sm text-ink"
+            className={inputClass}
             autoComplete="off"
           />
-        </label>
-        <label className="block text-xs font-medium text-muted-soft">
-          Customs / duties
+        </AdminFormField>
+        <AdminFormField label="Customs / duties" htmlFor="admin-inv-customs">
           <input
+            id="admin-inv-customs"
             name="invoiceCustomsDuties"
             type="text"
             defaultValue={initial.customsDuties}
-            className="mt-1 w-full rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-sm text-ink"
+            className={inputClass}
             autoComplete="off"
           />
-        </label>
-        <label className="block text-xs font-medium text-muted-soft">
-          Discount
+        </AdminFormField>
+        <AdminFormField label="Discount" htmlFor="admin-inv-discount">
           <input
+            id="admin-inv-discount"
             name="invoiceDiscount"
             type="text"
             defaultValue={initial.discount}
-            className="mt-1 w-full rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-sm text-ink"
+            className={inputClass}
             autoComplete="off"
           />
-        </label>
-        <label className="block text-xs font-medium text-muted-soft">
-          Total
+        </AdminFormField>
+        <AdminFormField label="Total" htmlFor="admin-inv-total">
           <input
+            id="admin-inv-total"
             name="invoiceTotal"
             type="text"
             defaultValue={initial.total}
-            className="mt-1 w-full rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-sm text-ink"
+            className={inputClass}
             placeholder="Final total shown on PDF"
             autoComplete="off"
           />
-        </label>
+        </AdminFormField>
       </div>
-      <label className="block text-xs font-medium text-muted-soft">
-        Line description (optional, appears with contents on PDF)
+      <AdminFormField
+        label="Line description (optional, appears with contents on PDF)"
+        htmlFor="admin-inv-line"
+      >
         <textarea
+          id="admin-inv-line"
           name="invoiceLineDescription"
           rows={2}
           defaultValue={initial.lineDescription}
-          className="mt-1 w-full rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-sm text-ink"
+          className={textareaClass}
         />
-      </label>
-      <label className="block text-xs font-medium text-muted-soft">
-        Billing notes (optional, printed on PDF)
+      </AdminFormField>
+      <AdminFormField label="Billing notes (optional, printed on PDF)" htmlFor="admin-inv-notes">
         <textarea
+          id="admin-inv-notes"
           name="invoiceNotes"
           rows={3}
           defaultValue={initial.notes}
-          className="mt-1 w-full rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-sm text-ink"
+          className={textareaClass}
         />
-      </label>
+      </AdminFormField>
       <button
         type="submit"
         disabled={pending}
