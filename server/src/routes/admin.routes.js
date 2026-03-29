@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { Router } from "express";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { getDb } from "../db/mongo.js";
 import { requireAdminApi } from "../modules/admin/admin-middleware.js";
 import { createUserDoc, toPublicUser } from "../models/user.model.js";
@@ -8,6 +9,7 @@ import { toPublicBooking } from "../models/booking.model.js";
 import { toPublicContact } from "../models/contact.model.js";
 import { normalizeSiteSettings } from "../models/site-settings.model.js";
 import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
+import { MIN_PASSWORD_LENGTH } from "../shared/constants.js";
 
 const router = Router();
 const PAGE_SIZE = 25;
@@ -70,6 +72,10 @@ function normalizeText(value) {
   return String(value ?? "").trim();
 }
 
+function escapeRegex(value) {
+  return String(value ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function normalizeConsignment(value) {
   return String(value ?? "")
     .trim()
@@ -94,19 +100,62 @@ function requireObjectIdOrNotFound(res, rawValue, message) {
 }
 
 function parseUserCreateInput(body) {
-  const name = normalizeText(body?.name);
-  const email = normalizeEmail(body?.email);
-  const password = String(body?.password ?? "");
-  const confirmPassword = String(body?.confirmPassword ?? "");
-
-  if (!name || !email || !password) {
-    return { error: "Name, email and password are required." };
-  }
-  if (password !== confirmPassword) {
-    return { error: "Passwords do not match." };
-  }
-  return { name, email, password };
+  const schema = z.object({
+    name: z.string().trim().min(2).max(120),
+    email: z.string().trim().email().max(320),
+    password: z.string().min(MIN_PASSWORD_LENGTH).max(72),
+    confirmPassword: z.string().min(MIN_PASSWORD_LENGTH).max(72)
+  });
+  const parsed = schema.safeParse(body ?? {});
+  if (!parsed.success) return { error: "Name, email and password are required." };
+  const { name, email, password, confirmPassword } = parsed.data;
+  if (password !== confirmPassword) return { error: "Passwords do not match." };
+  return { name: normalizeText(name), email: normalizeEmail(email), password };
 }
+
+const updateUserSchema = z.object({
+  name: z.string().trim().max(120).optional().default(""),
+  email: z.string().trim().email().max(320),
+  role: z.enum(USER_ROLES).optional().default("customer"),
+  isActive: z.boolean().optional(),
+  isOnDuty: z.boolean().optional(),
+  newPassword: z.string().max(72).optional().default(""),
+  confirmPassword: z.string().max(72).optional().default("")
+});
+
+const bookingControlsSchema = z.object({
+  status: z.string().trim().min(1),
+  consignmentNumber: z.string().trim().max(120).optional().default(""),
+  publicTrackingNote: z.string().trim().max(4000).optional().default(""),
+  trackingNotes: z.string().trim().max(4000).optional().default(""),
+  internalNotes: z.string().trim().max(4000).optional().default(""),
+  assignedAgency: z.string().trim().max(320).optional().default("")
+});
+
+const bookingDataSchema = z.object({
+  routeType: z.enum(["domestic", "international"]).optional().default("domestic"),
+  payload: z
+    .unknown()
+    .refine((value) => Boolean(value) && typeof value === "object" && !Array.isArray(value), {
+      message: "Payload must be a valid JSON object."
+    })
+});
+
+const linkBookingSchema = z.object({
+  customerEmail: z.string().trim().max(320).optional().default("")
+});
+
+const assignCourierSchema = z.object({
+  courierUserId: z.string().trim().min(1)
+});
+
+const updateContactSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  email: z.string().trim().email().max(320),
+  phone: z.string().trim().max(24).optional().default(""),
+  service: z.string().trim().min(1).max(120),
+  message: z.string().trim().min(1).max(2000)
+});
 
 function createUserByRoleHandler(role) {
   return async (req, res, next) => {
@@ -143,9 +192,10 @@ function buildUserListFilter(rawQuery, rawRole) {
   const filter = {};
 
   if (query) {
+    const safeQuery = escapeRegex(query);
     filter.$or = [
-      { email: { $regex: query, $options: "i" } },
-      { name: { $regex: query, $options: "i" } }
+      { email: { $regex: safeQuery, $options: "i" } },
+      { name: { $regex: safeQuery, $options: "i" } }
     ];
   }
 
@@ -502,9 +552,10 @@ router.get("/bookings", async (req, res, next) => {
     if (accountFilter === "guest") bookingFilter.userId = null;
     if (accountFilter === "linked") bookingFilter.userId = { $ne: null };
     if (bookingQuery) {
+      const safeBookingQuery = escapeRegex(bookingQuery);
       const bookingSearchClauses = [
-        { consignmentNumber: { $regex: bookingQuery, $options: "i" } },
-        { routeType: { $regex: bookingQuery, $options: "i" } }
+        { consignmentNumber: { $regex: safeBookingQuery, $options: "i" } },
+        { routeType: { $regex: safeBookingQuery, $options: "i" } }
       ];
       const queryObjectId = parseObjectId(bookingQuery);
       if (queryObjectId) bookingSearchClauses.push({ _id: queryObjectId });
@@ -610,10 +661,10 @@ router.get("/contacts", async (req, res, next) => {
       contactQuery.length > 0
         ? {
             $or: [
-              { name: { $regex: contactQuery, $options: "i" } },
-              { email: { $regex: contactQuery, $options: "i" } },
-              { service: { $regex: contactQuery, $options: "i" } },
-              { message: { $regex: contactQuery, $options: "i" } }
+              { name: { $regex: escapeRegex(contactQuery), $options: "i" } },
+              { email: { $regex: escapeRegex(contactQuery), $options: "i" } },
+              { service: { $regex: escapeRegex(contactQuery), $options: "i" } },
+              { message: { $regex: escapeRegex(contactQuery), $options: "i" } }
             ]
           }
         : {};
@@ -692,17 +743,25 @@ router.patch("/users/:id", async (req, res, next) => {
     const db = await getDb();
     const _id = requireObjectIdOrNotFound(res, req.params.id, "User not found.");
     if (!_id) return;
-    const name = normalizeText(req.body?.name);
-    const email = normalizeEmail(req.body?.email);
-    const role = normalizeText(req.body?.role || "customer");
-    const isActive = req.body?.isActive !== false;
-    const hasIsOnDuty = typeof req.body?.isOnDuty === "boolean";
-    const isOnDuty = req.body?.isOnDuty === true;
-    const newPassword = String(req.body?.newPassword ?? "");
-    const confirmPassword = String(req.body?.confirmPassword ?? "");
+    const parsed = updateUserSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return sendError(res, "Invalid user update payload.");
+    const name = normalizeText(parsed.data.name);
+    const email = normalizeEmail(parsed.data.email);
+    const role = normalizeText(parsed.data.role || "customer");
+    const isActive = parsed.data.isActive !== false;
+    const hasIsOnDuty = typeof parsed.data.isOnDuty === "boolean";
+    const isOnDuty = parsed.data.isOnDuty === true;
+    const newPassword = String(parsed.data.newPassword ?? "");
+    const confirmPassword = String(parsed.data.confirmPassword ?? "");
     if (!email) return sendError(res, "Email is required.");
     if (!USER_ROLES_SET.has(role)) {
       return sendError(res, "Invalid role.");
+    }
+    if (newPassword && newPassword.length < MIN_PASSWORD_LENGTH) {
+      return sendError(
+        res,
+        `New password must be at least ${MIN_PASSWORD_LENGTH} characters.`
+      );
     }
     if (newPassword && newPassword !== confirmPassword) {
       return sendError(res, "Passwords do not match.");
@@ -749,13 +808,15 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
     const db = await getDb();
     const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
     if (!_id) return;
-    const status = normalizeText(req.body?.status);
-    const consignmentNumber = normalizeConsignment(req.body?.consignmentNumber);
+    const parsed = bookingControlsSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return sendError(res, "Invalid booking control payload.");
+    const status = normalizeText(parsed.data.status);
+    const consignmentNumber = normalizeConsignment(parsed.data.consignmentNumber);
     const publicTrackingNote = normalizeText(
-      req.body?.publicTrackingNote ?? req.body?.trackingNotes
+      parsed.data.publicTrackingNote || parsed.data.trackingNotes
     );
-    const internalNotes = normalizeText(req.body?.internalNotes);
-    const assignedAgency = normalizeText(req.body?.assignedAgency);
+    const internalNotes = normalizeText(parsed.data.internalNotes);
+    const assignedAgency = normalizeText(parsed.data.assignedAgency);
     if (!status) return sendError(res, "Status is required.");
     if (!ALLOWED_BOOKING_STATUSES.has(status)) {
       return sendError(res, "Invalid booking status.");
@@ -784,11 +845,10 @@ router.patch("/bookings/:id/data", async (req, res, next) => {
     const db = await getDb();
     const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
     if (!_id) return;
-    const routeType = normalizeText(req.body?.routeType || "domestic");
-    const payload = req.body?.payload;
-    if (!payload || typeof payload !== "object") {
-      return sendError(res, "Payload must be a valid JSON object.");
-    }
+    const parsed = bookingDataSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return sendError(res, "Payload must be a valid JSON object.");
+    const routeType = normalizeText(parsed.data.routeType || "domestic");
+    const payload = parsed.data.payload;
     await db.collection("bookings").updateOne(
       { _id },
       { $set: { routeType, payload, updatedAt: new Date() } }
@@ -804,12 +864,16 @@ router.patch("/bookings/:id/link-user", async (req, res, next) => {
     const db = await getDb();
     const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
     if (!_id) return;
-    const customerEmail = normalizeEmail(req.body?.customerEmail);
-    if (!customerEmail) {
+    const parsed = linkBookingSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return sendError(res, "Invalid customer email.");
+    const customerEmailRaw = normalizeEmail(parsed.data.customerEmail);
+    const customerEmail = customerEmailRaw ? z.string().email().safeParse(customerEmailRaw) : null;
+    if (!customerEmailRaw) {
       await db.collection("bookings").updateOne({ _id }, { $set: { userId: null, updatedAt: new Date() } });
       return sendOk(res);
     }
-    const user = await db.collection("users").findOne({ email: customerEmail });
+    if (!customerEmail?.success) return sendError(res, "Invalid customer email.");
+    const user = await db.collection("users").findOne({ email: customerEmailRaw });
     if (!user) return sendNotFound(res, "No user found with this email.");
     await db.collection("bookings").updateOne({ _id }, { $set: { userId: user._id, updatedAt: new Date() } });
     return sendOk(res);
@@ -823,7 +887,9 @@ router.patch("/bookings/:id/assign-courier", async (req, res, next) => {
     const db = await getDb();
     const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
     if (!_id) return;
-    const courierUserId = normalizeText(req.body?.courierUserId);
+    const parsed = assignCourierSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return sendError(res, "Invalid courier account.");
+    const courierUserId = normalizeText(parsed.data.courierUserId);
     if (!courierUserId || courierUserId === "__unassigned") {
       await db.collection("bookings").updateOne({ _id }, { $set: { courierId: null, updatedAt: new Date() } });
       return sendOk(res);
@@ -874,16 +940,17 @@ router.patch("/contacts/:id", async (req, res, next) => {
     const db = await getDb();
     const _id = requireObjectIdOrNotFound(res, req.params.id, "Contact not found.");
     if (!_id) return;
-    const update = {
-      name: normalizeText(req.body?.name),
-      email: normalizeEmail(req.body?.email),
-      phone: normalizeText(req.body?.phone) || null,
-      service: normalizeText(req.body?.service),
-      message: normalizeText(req.body?.message)
-    };
-    if (!update.name || !update.email || !update.service || !update.message) {
+    const parsed = updateContactSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
       return sendError(res, "Name, email, service and message are required.");
     }
+    const update = {
+      name: normalizeText(parsed.data.name),
+      email: normalizeEmail(parsed.data.email),
+      phone: normalizeText(parsed.data.phone) || null,
+      service: normalizeText(parsed.data.service),
+      message: normalizeText(parsed.data.message)
+    };
     await db.collection("contacts").updateOne({ _id }, { $set: update });
     return sendOk(res);
   } catch (error) {

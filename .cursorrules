@@ -1,0 +1,9 @@
+# Security Rules for Next.js & Express
+- NEVER suggest storing sensitive tokens (JWT, API keys) in localStorage or sessionStorage. Use HttpOnly cookies.
+- ALWAYS use Zod schemas for validating incoming request body, params, and query in Express routes/controllers.
+- ALWAYS include Helmet.js middleware in Express app initialization.
+- FORBID the use of dangerouslySetInnerHTML in React unless explicitly required and sanitized with DOMPurify.
+- PREFER argon2 for password hashing logic in new code; keep migration/backward compatibility for existing bcrypt hashes.
+- ENFORCE least privilege for database access (scope reads/writes by authenticated user/role and avoid broad selectors).
+- ALWAYS apply route-level rate limiting for authentication and expensive public endpoints.
+- ALWAYS validate and sanitize user-controlled search inputs before using regex/database filters.

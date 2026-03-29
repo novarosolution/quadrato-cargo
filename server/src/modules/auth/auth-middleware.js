@@ -1,5 +1,6 @@
 import { env } from "../../config/env.js";
 import { findUserById, toPublicUser } from "../users/user-repo.js";
+import { clearAuthCookie } from "./token.js";
 import { verifyAuthToken } from "./token.js";
 
 export async function requireAuth(req, res, next) {
@@ -16,7 +17,8 @@ export async function requireAuth(req, res, next) {
     }
 
     const userDoc = await findUserById(userId);
-    if (!userDoc) {
+    if (!userDoc || userDoc.isActive === false) {
+      clearAuthCookie(res);
       return res.status(401).json({ ok: false, message: "Unauthorized" });
     }
 

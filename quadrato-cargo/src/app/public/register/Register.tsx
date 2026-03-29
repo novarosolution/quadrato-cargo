@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
 import { authFieldClass } from "@/components/auth/authStyles";
-import { MIN_PASSWORD_LENGTH } from "@/lib/auth-validation";
+import { emailLocalMinPattern, MIN_PASSWORD_LENGTH } from "@/lib/auth-validation";
 import { postRegisterApi } from "@/lib/api/auth-client";
 type RegisterState = {
   ok: boolean;
@@ -29,7 +29,7 @@ export function RegisterForm({ redirectTo = "/public/profile" }: { redirectTo?: 
     const form = e.currentTarget;
     const fd = new FormData(form);
     const body = {
-      name: String(fd.get("name") ?? "").trim() || undefined,
+      name: String(fd.get("name") ?? "").trim(),
       email: String(fd.get("email") ?? "").trim(),
       password: String(fd.get("password") ?? ""),
       confirmPassword: String(fd.get("confirmPassword") ?? ""),
@@ -59,13 +59,16 @@ export function RegisterForm({ redirectTo = "/public/profile" }: { redirectTo?: 
       <input type="hidden" name="redirectTo" value={redirectTo} />
       <div>
         <label htmlFor="reg-name" className="text-sm font-medium text-ink">
-          Full name <span className="text-muted-soft">(optional)</span>
+          Full name <span className="text-teal">*</span>
         </label>
         <input
           id="reg-name"
           name="name"
           type="text"
           autoComplete="name"
+          required
+          minLength={8}
+          maxLength={120}
           className={authFieldClass}
           aria-invalid={Boolean(state.fieldErrors.name)}
           aria-describedby={state.fieldErrors.name ? "reg-name-err" : undefined}
@@ -86,6 +89,9 @@ export function RegisterForm({ redirectTo = "/public/profile" }: { redirectTo?: 
           name="email"
           type="email"
           autoComplete="email"
+          pattern={emailLocalMinPattern.source}
+          title="Email must have at least 5 characters before @."
+          maxLength={320}
           required
           className={authFieldClass}
           aria-invalid={Boolean(state.fieldErrors.email)}
@@ -107,6 +113,10 @@ export function RegisterForm({ redirectTo = "/public/profile" }: { redirectTo?: 
           name="password"
           type="password"
           autoComplete="new-password"
+          minLength={MIN_PASSWORD_LENGTH}
+          maxLength={72}
+          pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,72}"
+          title="Use 8-72 chars with uppercase, lowercase, number, and special character."
           required
           className={authFieldClass}
           aria-invalid={Boolean(state.fieldErrors.password)}
@@ -124,7 +134,7 @@ export function RegisterForm({ redirectTo = "/public/profile" }: { redirectTo?: 
           </p>
         ) : (
           <p className="mt-1 text-xs text-muted-soft">
-            Minimum {MIN_PASSWORD_LENGTH} characters.
+            Minimum {MIN_PASSWORD_LENGTH} characters with uppercase and special character.
           </p>
         )}
       </div>
@@ -141,6 +151,8 @@ export function RegisterForm({ redirectTo = "/public/profile" }: { redirectTo?: 
           name="confirmPassword"
           type="password"
           autoComplete="new-password"
+          minLength={MIN_PASSWORD_LENGTH}
+          maxLength={72}
           required
           className={authFieldClass}
           aria-invalid={Boolean(state.fieldErrors.confirmPassword)}

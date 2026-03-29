@@ -1,6 +1,28 @@
 import jwt from "jsonwebtoken";
 import { env } from "../../config/env.js";
 
+function parseJwtTtlToMs(ttlValue) {
+  const raw = String(ttlValue ?? "").trim();
+  if (!raw) return 7 * 24 * 60 * 60 * 1000;
+  const asNumber = Number.parseInt(raw, 10);
+  if (Number.isFinite(asNumber) && String(asNumber) === raw) {
+    return Math.max(1000, asNumber * 1000);
+  }
+  const match = raw.match(/^(\d+)\s*([smhd])$/i);
+  if (!match) return 7 * 24 * 60 * 60 * 1000;
+  const amount = Number.parseInt(match[1], 10);
+  const unit = match[2].toLowerCase();
+  const factors = {
+    s: 1000,
+    m: 60 * 1000,
+    h: 60 * 60 * 1000,
+    d: 24 * 60 * 60 * 1000
+  };
+  return Math.max(1000, amount * factors[unit]);
+}
+
+const authCookieMaxAgeMs = parseJwtTtlToMs(env.jwtTtl);
+
 export function signAuthToken(user) {
   return jwt.sign(
     {
@@ -25,7 +47,7 @@ export function setAuthCookie(res, token) {
     secure: env.cookieSecure,
     domain: env.cookieDomain,
     path: "/",
-    maxAge: 1000 * 60 * 60 * 24 * 7
+    maxAge: authCookieMaxAgeMs
   });
 }
 
@@ -65,7 +87,7 @@ export function setAdminCookie(res, token) {
     secure: env.cookieSecure,
     domain: env.cookieDomain,
     path: "/",
-    maxAge: 1000 * 60 * 60 * 24 * 7
+    maxAge: authCookieMaxAgeMs
   });
 }
 

@@ -23,10 +23,17 @@ const trackLimiter = rateLimit({
   legacyHeaders: false,
   message: { ok: false, message: "Too many tracking checks. Please slow down." }
 });
+const pdfLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 12,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, message: "Too many PDF requests. Please try again later." }
+});
 
 router.post("/contact", publicWriteLimiter, createContact);
 router.post("/bookings", publicWriteLimiter, createPublicBooking);
-router.post("/bookings/pdf", generateBookingPdf);
+router.post("/bookings/pdf", pdfLimiter, generateBookingPdf);
 router.get("/track/:reference", trackLimiter, trackBooking);
 router.get("/site-settings", getSiteSettings);
 

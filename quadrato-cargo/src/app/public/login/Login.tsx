@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
 import { authFieldClass } from "@/components/auth/authStyles";
+import { emailLocalMinPattern } from "@/lib/auth-validation";
 import { postLoginApi } from "@/lib/api/auth-client";
 
 type LoginState = {
@@ -79,6 +80,9 @@ export function LoginForm({
           name="email"
           type="email"
           autoComplete="email"
+          pattern={emailLocalMinPattern.source}
+          title="Email must have at least 5 characters before @."
+          maxLength={320}
           required
           className={authFieldClass}
           aria-invalid={Boolean(state.fieldErrors.email)}
@@ -112,6 +116,8 @@ export function LoginForm({
           name="password"
           type="password"
           autoComplete="current-password"
+          minLength={8}
+          maxLength={72}
           required
           className={authFieldClass}
           aria-invalid={Boolean(state.fieldErrors.password)}

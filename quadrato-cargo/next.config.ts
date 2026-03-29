@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 
+const isProd = process.env.NODE_ENV === "production";
+const scriptSrc = isProd
+  ? "script-src 'self' 'unsafe-inline' https:;"
+  : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;";
+const connectSrc = isProd
+  ? "connect-src 'self' https:;"
+  : "connect-src 'self' https: ws: wss:;";
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
   turbopack: {
@@ -13,12 +21,18 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-DNS-Prefetch-Control", value: "off" },
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains; preload"
+          },
+          {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; font-src 'self' data: https:; connect-src 'self' https: ws: wss:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+              `default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https:; ${scriptSrc} font-src 'self' data: https:; ${connectSrc} frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests`
           }
         ]
       }
