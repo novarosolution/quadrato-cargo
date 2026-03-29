@@ -231,7 +231,7 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
                   {visible.map((step, idx) => {
                     const isCurrent = idx === 0;
                     const noteText = isCurrent
-                      ? state.data.customerTrackingNote || state.data.trackingNotes || step.hint
+                      ? state.data.customerTrackingNote || step.hint
                       : step.hint;
                     return (
                       <li key={step.id} className="relative">

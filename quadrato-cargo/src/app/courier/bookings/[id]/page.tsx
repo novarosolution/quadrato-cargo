@@ -9,6 +9,7 @@ import {
 import { fetchCourierBookingDetailServer } from "@/lib/api/courier-client";
 import { CourierStartJobButton } from "../../startjob";
 import { CourierPickupOtpForm } from "../../picotp";
+import { DeliveryCompletePopup } from "./DeliveryCompletePopup";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -72,6 +73,20 @@ export default async function CourierBookingDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-8">
+      {st === "delivered" ? (
+        <DeliveryCompletePopup
+          reference={row.consignmentNumber || row.id}
+          recipientName={String(recipient.name ?? "")}
+          recipientPhone={String(recipient.phone ?? "")}
+          recipientAddress={
+            [recipient.street, recipient.city, recipient.postal, recipient.country]
+              .map((x) => String(x ?? "").trim())
+              .filter(Boolean)
+              .join(", ")
+          }
+          parcelSummary={String(shipment.contentsDescription ?? "")}
+        />
+      ) : null}
       <Link href="/courier" className="text-sm text-teal hover:underline">
         ← All my deliveries
       </Link>

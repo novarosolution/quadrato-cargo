@@ -14,30 +14,10 @@ function buildAddressLine(address = {}) {
 }
 
 function buildCustomerTrackingNote(status, row) {
-  const normalizedStatus = String(status ?? "").trim() || "submitted";
-  const statusMessages = {
-    submitted: "Booking received and waiting for confirmation.",
-    confirmed: "Shipment details have been confirmed by dispatch.",
-    serviceability_check: "Pickup area serviceability is being verified.",
-    serviceable: "Pickup location is serviceable.",
-    pickup_scheduled: "Pickup has been scheduled.",
-    out_for_pickup: "Courier partner is on the way for pickup.",
-    picked_up: "Shipment has been picked up from sender.",
-    agency_processing: "Shipment is under agency processing.",
-    in_transit: "Shipment is in transit to destination.",
-    out_for_delivery: "Shipment is out for delivery.",
-    delivery_attempted: "A delivery attempt was recorded.",
-    on_hold: "Shipment is currently on hold.",
-    delivered: "Shipment has been delivered successfully.",
-    cancelled: "Shipment has been cancelled."
-  };
-
-  const base = statusMessages[normalizedStatus] || "Shipment status has been updated.";
-  const consignment = cleanText(row?.consignmentNumber);
-  const dispatchNote = cleanText(row?.trackingNotes);
-  const baseWithRef = consignment ? `${base} Consignment: ${consignment}.` : base;
-  if (!dispatchNote) return baseWithRef;
-  return `${baseWithRef}\n${dispatchNote}`;
+  void status;
+  void row;
+  // Hide internal/system tracking text from customer-facing surfaces.
+  return null;
 }
 
 export function toPublicBooking(row) {

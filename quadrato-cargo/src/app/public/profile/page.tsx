@@ -238,9 +238,9 @@ export default async function ProfilePage() {
                             ? ` · Consignment ${b.consignmentNumber}`
                             : ""}
                         </p>
-                        {b.customerTrackingNote || b.trackingNotes ? (
+                        {b.customerTrackingNote ? (
                           <p className="mt-2 line-clamp-2 text-sm text-muted">
-                            {b.customerTrackingNote || b.trackingNotes}
+                            {b.customerTrackingNote}
                           </p>
                         ) : null}
                       </Link>
