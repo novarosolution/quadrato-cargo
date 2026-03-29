@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "dev:webpack": "next dev --webpack",
+    "dev": "next dev --webpack",
+    "dev:turbo": "next dev",
+    "dev:fresh": "npm run clean && next dev --webpack",
     "clean": "node -e \"require('node:fs').rmSync('.next',{recursive:true,force:true}); console.log('removed .next')\"",
     "build": "next build",
     "postbuild": "node scripts/ensure-routes-manifest-deterministic.mjs",

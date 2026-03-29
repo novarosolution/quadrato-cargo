@@ -15,9 +15,8 @@ const connectSrc = isProd
 const nextConfig: NextConfig = {
   reactCompiler: true,
   /**
-   * Turbopack’s on-disk cache (SST) can fail on some setups (paths with spaces,
-   * concurrent writers), leaving `.next/dev` half-written and causing 500s.
-   * Disabling dev FS cache avoids corrupt manifests; cold dev starts are slightly slower.
+   * Turbopack dev can corrupt `.next/dev` (SST / lockfiles / paths with spaces).
+   * Default `npm run dev` uses webpack; use `npm run dev:turbo` only if you need Turbopack.
    */
   experimental: {
     turbopackFileSystemCacheForDev: false,
