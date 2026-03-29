@@ -120,6 +120,13 @@ export type PublicTrackingResponse =
         status: string;
         consignmentNumber: string | null;
         trackingNotes: string | null;
+        customerTrackingNote: string | null;
+        courierName: string | null;
+        agencyName: string | null;
+        senderName: string | null;
+        senderAddress: string | null;
+        recipientName: string | null;
+        recipientAddress: string | null;
         createdAt: string;
       };
     }

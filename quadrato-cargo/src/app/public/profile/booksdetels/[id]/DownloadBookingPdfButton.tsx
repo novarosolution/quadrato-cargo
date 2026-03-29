@@ -45,6 +45,7 @@ type Props = {
   instructionsLabel: string;
   trackingNotesLabel: string;
   agencyLabel: string;
+  courierNameLabel: string;
   trackUrl: string;
   settings: PdfSettings;
 };
@@ -76,6 +77,7 @@ export function DownloadBookingPdfButton({
   instructionsLabel,
   trackingNotesLabel,
   agencyLabel,
+  courierNameLabel,
   trackUrl,
   settings,
 }: Props) {
@@ -156,7 +158,10 @@ export function DownloadBookingPdfButton({
     y += 10;
     drawPair("Instructions:", instructionsLabel, 14, y);
     y += 10;
-    drawPair("Dispatch Notes:", trackingNotesLabel, 14, y);
+    drawPair("Tracking Update:", trackingNotesLabel, 14, y);
+    y += 10;
+    drawPair("Pickup Courier:", courierNameLabel, 14, y);
+    drawPair("Agency:", agencyLabel, 106, y);
 
     doc.setTextColor(100, 116, 139);
     doc.setFont("helvetica", "normal");
@@ -201,6 +206,7 @@ export function DownloadBookingPdfButton({
           instructionsLabel,
           trackingNotesLabel,
           agencyLabel,
+          courierNameLabel,
           trackUrl,
           settings,
         }),

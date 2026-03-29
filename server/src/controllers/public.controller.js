@@ -12,6 +12,7 @@ import {
 } from "../modules/bookings/booking-repo.js";
 import { createContactSubmission } from "../modules/contacts/contact-repo.js";
 import { verifyAuthToken } from "../modules/auth/token.js";
+import { findUserById } from "../modules/users/user-repo.js";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1),
@@ -47,6 +48,7 @@ const pdfRequestSchema = z.object({
   instructionsLabel: z.string().trim().default(""),
   trackingNotesLabel: z.string().trim().default(""),
   agencyLabel: z.string().trim().default(""),
+  courierNameLabel: z.string().trim().default(""),
   trackUrl: z.string().trim().min(1),
   settings: z.object({
     companyName: z.string().trim().default("Quadrato Cargo"),
@@ -136,7 +138,7 @@ async function launchPdfBrowser() {
   }
 }
 
-function buildPdfHtml(input, qrDataUrl, barcodeDataUrl) {
+function buildPdfHtml(input, barcodeDataUrl) {
   const primary = normalizeHex(input.settings.primaryColor, "#0f766e");
   const accent = normalizeHex(input.settings.accentColor, "#16a34a");
   const card = normalizeHex(input.settings.cardColor, "#f8fafc");
@@ -460,13 +462,6 @@ function buildPdfHtml(input, qrDataUrl, barcodeDataUrl) {
         ACCEPTED: The sender declares that shipment details are accurate and no prohibited items are included. In case of customs checks, the client is responsible for duties and supporting documents. Courier transit timelines may vary by route, service mode, and destination compliance checks.
       </div>
 
-      <section style="display:none">
-        <div class="qr">
-          <img src="${esc(qrDataUrl)}" alt="Tracking QR" />
-          <div class="caption">SCAN TO TRACK</div>
-        </div>
-      </section>
-
       <div class="footer">${esc(data.settings.footerNote)}</div>
     </div>
   </body>
@@ -592,6 +587,31 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
         line-height: 1.15;
         color: #111827;
       }
+      .ops {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .ops .cell {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 8px 10px;
+        background: #f8fafc;
+      }
+      .ops .label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        color: #6b7280;
+      }
+      .ops .value {
+        margin-top: 2px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #111827;
+        word-break: break-word;
+      }
       .people {
         margin-top: 14px;
         display: grid;
@@ -672,13 +692,19 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
       </div>
 
       <div class="service">
-        <strong>SERVICE REFERENCE</strong> ${esc(input.statusLabel)} | ${esc(input.agencyLabel)}
+        <strong>SERVICE REFERENCE</strong> ${esc(input.statusLabel)}
       </div>
 
-      <div class="pay-wrap">
-        <div class="pay-title">Payment status</div>
-        <span class="badge">Paid</span>
-      </div>
+      <section class="ops">
+        <div class="cell">
+          <div class="label">Pickup courier</div>
+          <div class="value">${esc(input.courierNameLabel || "Pending assignment")}</div>
+        </div>
+        <div class="cell">
+          <div class="label">Assigned agency</div>
+          <div class="value">${esc(input.agencyLabel || "Pending assignment")}</div>
+        </div>
+      </section>
 
       <div class="route">${esc(routeLine)}</div>
 
@@ -769,13 +795,25 @@ export async function trackBooking(req, res, next) {
     if (!row) {
       return sendNotFound(res, "Tracking not found.");
     }
+    let courierName = null;
+    if (row.courierId) {
+      const courier = await findUserById(row.courierId);
+      courierName = String(courier?.name || courier?.email || "").trim() || null;
+    }
     return sendOk(res, {
       tracking: {
         id: row.id,
         routeType: row.routeType,
         status: row.status,
         consignmentNumber: row.consignmentNumber,
-        trackingNotes: row.trackingNotes,
+        trackingNotes: row.customerTrackingNote || null,
+        customerTrackingNote: row.customerTrackingNote || null,
+        courierName,
+        agencyName: row.assignedAgency || null,
+        senderName: row.senderName || null,
+        senderAddress: row.senderAddress || null,
+        recipientName: row.recipientName || null,
+        recipientAddress: row.recipientAddress || null,
         createdAt: row.createdAt
       }
     });
@@ -802,15 +840,17 @@ export async function generateBookingPdf(req, res, next) {
       return sendError(res, "Invalid PDF data payload.", 400);
     }
 
-    const safeTrackUrl = String(parsed.data.trackUrl || "").trim();
-    const qrDataUrl = await QRCode.toDataURL(safeTrackUrl || "https://quadratocargo.com", {
-      margin: 1,
-      width: 220,
-      color: {
-        dark: normalizeHex(parsed.data.settings.primaryColor, "#0f766e"),
-        light: "#ffffff"
-      }
-    });
+    const isTrackingTemplate = parsed.data.template === "tracking";
+    const qrDataUrl = isTrackingTemplate
+      ? await QRCode.toDataURL(String(parsed.data.trackUrl || "").trim() || "https://quadratocargo.com", {
+          margin: 1,
+          width: 220,
+          color: {
+            dark: normalizeHex(parsed.data.settings.primaryColor, "#0f766e"),
+            light: "#ffffff"
+          }
+        })
+      : "";
     const barcodePng = await bwipjs.toBuffer({
       bcid: "code128",
       text: String(parsed.data.reference || parsed.data.bookingId || "QC-INVOICE"),
@@ -820,10 +860,9 @@ export async function generateBookingPdf(req, res, next) {
       backgroundcolor: "FFFFFF"
     });
     const barcodeDataUrl = `data:image/png;base64,${barcodePng.toString("base64")}`;
-    const html =
-      parsed.data.template === "tracking"
-        ? buildTrackingPdfHtml(parsed.data, qrDataUrl, barcodeDataUrl)
-        : buildPdfHtml(parsed.data, qrDataUrl, barcodeDataUrl);
+    const html = isTrackingTemplate
+      ? buildTrackingPdfHtml(parsed.data, qrDataUrl, barcodeDataUrl)
+      : buildPdfHtml(parsed.data, barcodeDataUrl);
 
     browser = await launchPdfBrowser();
     const page = await browser.newPage();

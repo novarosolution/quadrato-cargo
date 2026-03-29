@@ -20,6 +20,13 @@ type State =
         status: string;
         consignmentNumber: string | null;
         trackingNotes: string | null;
+        customerTrackingNote: string | null;
+        courierName: string | null;
+        agencyName: string | null;
+        senderName: string | null;
+        senderAddress: string | null;
+        recipientName: string | null;
+        recipientAddress: string | null;
         createdAt: string;
       };
     };
@@ -41,11 +48,18 @@ const TRACKING_FLOW: Array<{
   { id: "delivery_attempted", hint: "Delivery attempt recorded." },
   { id: "on_hold", hint: "Shipment is temporarily on hold." },
   { id: "delivered", hint: "Shipment delivered successfully." },
+];
+
+const CANCELLED_FLOW: Array<{
+  id: BookingStatusId;
+  hint: string;
+}> = [
+  { id: "submitted", hint: "Parcel created and submitted successfully." },
   { id: "cancelled", hint: "Shipment has been cancelled." },
 ];
 
-function statusIndex(status: BookingStatusId) {
-  const index = TRACKING_FLOW.findIndex((x) => x.id === status);
+function statusIndex(status: BookingStatusId, flow: Array<{ id: BookingStatusId }>) {
+  const index = flow.findIndex((x) => x.id === status);
   return index < 0 ? 0 : index;
 }
 
@@ -151,13 +165,34 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
               Reference:{" "}
               <span className="font-mono text-muted">{state.data.id}</span>
             </p>
+            <div className="mt-4 grid gap-2 text-xs text-muted sm:grid-cols-2">
+              <p>
+                <span className="font-semibold text-ink">Pickup courier:</span>{" "}
+                {state.data.courierName || "Pending assignment"}
+              </p>
+              <p>
+                <span className="font-semibold text-ink">Agency:</span>{" "}
+                {state.data.agencyName || "Pending assignment"}
+              </p>
+              <p>
+                <span className="font-semibold text-ink">Pickup address:</span>{" "}
+                {state.data.senderAddress || "-"}
+              </p>
+              <p>
+                <span className="font-semibold text-ink">Delivery address:</span>{" "}
+                {state.data.recipientAddress || "-"}
+              </p>
+            </div>
           </div>
 
           <div className="rounded-2xl border border-border bg-surface-elevated/70 p-4 sm:p-5">
             <ol className="relative ml-2 border-l border-border-strong pl-4">
-              {TRACKING_FLOW.map((step, idx) => {
+              {(normalizeBookingStatus(state.data.status) === "cancelled"
+                ? CANCELLED_FLOW
+                : TRACKING_FLOW
+              ).map((step, idx, flow) => {
                 const normalized = normalizeBookingStatus(state.data.status);
-                const currentIdx = statusIndex(normalized);
+                const currentIdx = statusIndex(normalized, flow);
                 const done = idx < currentIdx;
                 const current = idx === currentIdx;
                 const visible = idx <= currentIdx + 2;
@@ -189,9 +224,9 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
                         {BOOKING_STATUS_LABELS[step.id]}
                       </p>
                       <p className="mt-1 text-xs text-muted">{step.hint}</p>
-                      {current && state.data.trackingNotes ? (
+                      {current && (state.data.customerTrackingNote || state.data.trackingNotes) ? (
                         <p className="mt-2 whitespace-pre-wrap text-xs text-ink">
-                          {state.data.trackingNotes}
+                          {state.data.customerTrackingNote || state.data.trackingNotes}
                         </p>
                       ) : null}
                       <p className="mt-2 text-[11px] text-muted-soft">

@@ -18,7 +18,13 @@ export type ProfileBooking = {
   status: string;
   consignmentNumber: string | null;
   trackingNotes: string | null;
+  customerTrackingNote?: string | null;
   assignedAgency?: string | null;
+  courierName?: string | null;
+  senderName?: string | null;
+  senderAddress?: string | null;
+  recipientName?: string | null;
+  recipientAddress?: string | null;
   pickupOtpVerifiedAt?: string | null;
   payload: unknown;
 };

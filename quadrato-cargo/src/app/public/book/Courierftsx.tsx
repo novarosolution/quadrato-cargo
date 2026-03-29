@@ -1,11 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 import { postBookCourierApi } from "@/lib/api/public-client";
 import { authFieldClass, authInputClass } from "@/components/auth/authStyles";
 import {
+  type BookCourierStep,
   bookCourierRowFromFormData,
+  validateBookCourierStep,
   validateBookCourier,
 } from "@/lib/validators/book-courier";
 
@@ -34,7 +36,27 @@ function Err({ id, msg }: { id: string; msg?: string }) {
 export function BookCourierForm() {
   const [pending, setPending] = useState(false);
   const [state, setState] = useState<BookCourierState>(initial);
+  const [step, setStep] = useState<BookCourierStep>(1);
+  const formRef = useRef<HTMLFormElement | null>(null);
   const e = state.fieldErrors;
+
+  const canShow = (target: BookCourierStep) => step === target;
+
+  const onNextStep = (target: BookCourierStep) => {
+    if (!formRef.current) return;
+    const row = bookCourierRowFromFormData(new FormData(formRef.current));
+    const fieldErrors = validateBookCourierStep(row, step);
+    if (Object.keys(fieldErrors).length > 0) {
+      setState({
+        ok: false,
+        message: "Please complete this step before continuing.",
+        fieldErrors,
+      });
+      return;
+    }
+    setState((prev) => ({ ...prev, message: "", fieldErrors: {} }));
+    setStep(target);
+  };
 
   async function onSubmit(ev: FormEvent<HTMLFormElement>) {
     ev.preventDefault();
@@ -42,6 +64,11 @@ export function BookCourierForm() {
     const row = bookCourierRowFromFormData(new FormData(form));
     const parsed = validateBookCourier(row);
     if (!parsed.ok) {
+      const firstInvalidStep = ([1, 2, 3, 4] as BookCourierStep[]).find(
+        (candidate) =>
+          Object.keys(validateBookCourierStep(row, candidate)).length > 0,
+      );
+      if (firstInvalidStep) setStep(firstInvalidStep);
       setState({
         ok: false,
         message: "Please fix the highlighted fields.",
@@ -67,6 +94,7 @@ export function BookCourierForm() {
         bookingReference: result.bookingReference,
       });
       form.reset();
+      setStep(1);
     } else {
       setState({
         ok: false,
@@ -77,15 +105,33 @@ export function BookCourierForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-10" noValidate>
-      <fieldset className="space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6">
+    <form ref={formRef} onSubmit={onSubmit} className="space-y-8" noValidate>
+      <div className="rounded-2xl border border-border bg-canvas/20 p-4 sm:p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-soft">
+          Booking step {step} of 4
+        </p>
+        <div className="mt-3 grid grid-cols-4 gap-2">
+          {[1, 2, 3, 4].map((s) => (
+            <div
+              key={s}
+              className={`h-2 rounded-full ${
+                step >= s ? "bg-teal" : "bg-border"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <fieldset
+        className={`space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6 ${
+          canShow(1) ? "" : "hidden"
+        }`}
+      >
         <legend className="font-display text-lg font-semibold text-ink px-1">
-          Shipment route
+          Step 1: Shipment route
         </legend>
         <p className="text-sm text-muted">
-          Book domestic or international (out of country). We specialise in
-          international courier at your doorstep — the rest of the experience
-          follows familiar logistics patterns you know from the market.
+          Select domestic or international shipment and pickup mode.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-strong bg-ghost-fill px-4 py-3 has-checked:border-teal/40 has-checked:bg-teal/5">
@@ -112,19 +158,17 @@ export function BookCourierForm() {
         <Err id="routeType-err" msg={e.routeType} />
       </fieldset>
 
-      <fieldset className="space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6">
+      <fieldset
+        className={`space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6 ${
+          canShow(1) ? "" : "hidden"
+        }`}
+      >
         <legend className="font-display text-lg font-semibold text-ink px-1">
           Collection at your PIN / address
         </legend>
         <p className="text-sm text-muted">
-          Tell us how you want us to reach you for pickup. If your PIN or area
-          is serviceable, our logistics staff are assigned from the backend;
-          after they accept the parcel you receive a{" "}
-          <strong className="font-medium text-ink">consignment number</strong>.
-          International shipments are then handled manually through export,
-          customs, and handoff to the partner carrier (you won&apos;t see which
-          carrier in the early stage — tracking updates are entered manually at
-          first).
+          Choose instant or scheduled pickup. Scheduled mode requires date and
+          time slot.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-strong bg-ghost-fill px-4 py-3 has-checked:border-teal/40 has-checked:bg-teal/5">
@@ -190,9 +234,13 @@ export function BookCourierForm() {
         <Err id="collectionMode-err" msg={e.collectionMode} />
       </fieldset>
 
-      <fieldset className="space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6">
+      <fieldset
+        className={`space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6 ${
+          canShow(2) ? "" : "hidden"
+        }`}
+      >
         <legend className="font-display text-lg font-semibold text-ink px-1">
-          Sender &amp; pickup
+          Step 2: Sender &amp; pickup
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
@@ -299,9 +347,13 @@ export function BookCourierForm() {
         </div>
       </fieldset>
 
-      <fieldset className="space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6">
+      <fieldset
+        className={`space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6 ${
+          canShow(3) ? "" : "hidden"
+        }`}
+      >
         <legend className="font-display text-lg font-semibold text-ink px-1">
-          Recipient &amp; delivery
+          Step 3: Recipient &amp; delivery
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
@@ -427,9 +479,13 @@ export function BookCourierForm() {
         </div>
       </fieldset>
 
-      <fieldset className="space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6">
+      <fieldset
+        className={`space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6 ${
+          canShow(4) ? "" : "hidden"
+        }`}
+      >
         <legend className="font-display text-lg font-semibold text-ink px-1">
-          Parcel details
+          Step 4: Parcel details
         </legend>
         <div>
           <label htmlFor="contentsDescription" className="text-sm font-medium text-ink">
@@ -503,17 +559,16 @@ export function BookCourierForm() {
         </div>
       </fieldset>
 
-      <fieldset className="space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6">
+      <fieldset
+        className={`space-y-4 rounded-2xl border border-border bg-canvas/20 p-5 sm:p-6 ${
+          canShow(4) ? "" : "hidden"
+        }`}
+      >
         <legend className="font-display text-lg font-semibold text-ink px-1">
           Pickup timing &amp; notes
         </legend>
         <p className="text-sm text-muted">
-          <strong className="font-medium text-ink">Instant:</strong> optional
-          note (e.g. gate code). We target reaching your pickup PIN in about{" "}
-          <strong className="font-medium text-ink">10 minutes</strong> where the
-          location is serviceable — not a guarantee.{" "}
-          <strong className="font-medium text-ink">Scheduled:</strong> enter the
-          date and time window you need (required).
+          Add pickup preference and special instructions for handling.
         </p>
         <div>
           <label
@@ -552,7 +607,11 @@ export function BookCourierForm() {
         </div>
       </fieldset>
 
-      <div className="rounded-2xl border border-border bg-ghost-fill p-5">
+      <div
+        className={`rounded-2xl border border-border bg-ghost-fill p-5 ${
+          canShow(4) ? "" : "hidden"
+        }`}
+      >
         <label className="flex cursor-pointer gap-3 text-sm text-muted">
           <input
             type="checkbox"
@@ -571,15 +630,41 @@ export function BookCourierForm() {
         <Err id="agreed-err" msg={e.agreed} />
       </div>
 
-      <motion.button
-        type="submit"
-        disabled={pending}
-        whileHover={{ scale: pending ? 1 : 1.01 }}
-        whileTap={{ scale: pending ? 1 : 0.99 }}
-        className="btn-primary w-full rounded-2xl bg-linear-to-r from-accent-deep via-accent to-accent-hover py-4 text-sm font-semibold text-white shadow-lg shadow-accent/25 disabled:opacity-60"
-      >
-        {pending ? "Submitting booking…" : "Submit booking"}
-      </motion.button>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {step > 1 ? (
+          <button
+            type="button"
+            onClick={() => {
+              setState((prev) => ({ ...prev, message: "", fieldErrors: {} }));
+              setStep((prev) => (prev - 1) as BookCourierStep);
+            }}
+            className="rounded-2xl border border-border-strong bg-canvas/40 px-4 py-3 text-sm font-semibold text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+          >
+            Back
+          </button>
+        ) : (
+          <div />
+        )}
+        {step < 4 ? (
+          <button
+            type="button"
+            onClick={() => onNextStep((step + 1) as BookCourierStep)}
+            className="btn-primary w-full rounded-2xl bg-linear-to-r from-accent-deep via-accent to-accent-hover py-3 text-sm font-semibold text-white shadow-lg shadow-accent/25"
+          >
+            Next
+          </button>
+        ) : (
+          <motion.button
+            type="submit"
+            disabled={pending}
+            whileHover={{ scale: pending ? 1 : 1.01 }}
+            whileTap={{ scale: pending ? 1 : 0.99 }}
+            className="btn-primary w-full rounded-2xl bg-linear-to-r from-accent-deep via-accent to-accent-hover py-3 text-sm font-semibold text-white shadow-lg shadow-accent/25 disabled:opacity-60"
+          >
+            {pending ? "Submitting booking..." : "Submit booking"}
+          </motion.button>
+        )}
+      </div>
 
       {state.ok && state.message ? (
         <motion.p

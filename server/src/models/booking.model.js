@@ -1,5 +1,46 @@
+function cleanText(value) {
+  const text = String(value ?? "").trim();
+  return text.length ? text : null;
+}
+
+function buildAddressLine(address = {}) {
+  const parts = [
+    cleanText(address.street),
+    cleanText(address.city),
+    cleanText(address.postal),
+    cleanText(address.country)
+  ].filter(Boolean);
+  return parts.length ? parts.join(", ") : null;
+}
+
+function buildCustomerTrackingNote(status, row) {
+  const normalizedStatus = String(status ?? "").trim() || "submitted";
+  const statusMessages = {
+    submitted: "Booking received and waiting for confirmation.",
+    confirmed: "Shipment details have been confirmed by dispatch.",
+    serviceability_check: "Pickup area serviceability is being verified.",
+    serviceable: "Pickup location is serviceable.",
+    pickup_scheduled: "Pickup has been scheduled.",
+    out_for_pickup: "Courier partner is on the way for pickup.",
+    picked_up: "Shipment has been picked up from sender.",
+    agency_processing: "Shipment is under agency processing.",
+    in_transit: "Shipment is in transit to destination.",
+    out_for_delivery: "Shipment is out for delivery.",
+    delivery_attempted: "A delivery attempt was recorded.",
+    on_hold: "Shipment is currently on hold.",
+    delivered: "Shipment has been delivered successfully.",
+    cancelled: "Shipment has been cancelled."
+  };
+
+  const base = statusMessages[normalizedStatus] || "Shipment status has been updated.";
+  const consignment = cleanText(row?.consignmentNumber);
+  return consignment ? `${base} Consignment: ${consignment}.` : base;
+}
+
 export function toPublicBooking(row) {
   if (!row) return null;
+  const sender = row.payload?.sender ?? {};
+  const recipient = row.payload?.recipient ?? {};
   return {
     id: String(row._id),
     userId: row.userId ? String(row.userId) : null,
@@ -9,8 +50,13 @@ export function toPublicBooking(row) {
     status: row.status ?? "submitted",
     consignmentNumber: row.consignmentNumber ?? null,
     trackingNotes: row.trackingNotes ?? null,
+    customerTrackingNote: buildCustomerTrackingNote(row.status, row),
     internalNotes: row.internalNotes ?? null,
     assignedAgency: row.assignedAgency ?? null,
+    senderName: cleanText(sender.name),
+    senderAddress: buildAddressLine(sender),
+    recipientName: cleanText(recipient.name),
+    recipientAddress: buildAddressLine(recipient),
     pickupOtpVerifiedAt: row.pickupOtpVerifiedAt ?? null,
     agencyHandoverVerifiedAt: row.agencyHandoverVerifiedAt ?? null,
     payload: row.payload ?? null,

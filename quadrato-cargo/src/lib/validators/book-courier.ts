@@ -31,6 +31,31 @@ export type BookCourierRow = {
   agreed: boolean;
 };
 
+export const BOOKING_STEP_FIELDS = {
+  1: ["routeType", "collectionMode", "pickupDate", "pickupTimeSlot", "pickupPreference"],
+  2: [
+    "senderName",
+    "senderEmail",
+    "senderPhone",
+    "senderStreet",
+    "senderCity",
+    "senderPostal",
+    "senderCountry"
+  ],
+  3: [
+    "recipientName",
+    "recipientEmail",
+    "recipientPhone",
+    "recipientStreet",
+    "recipientCity",
+    "recipientPostal",
+    "recipientCountry"
+  ],
+  4: ["contentsDescription", "weightKg", "agreed", "instructions", "declaredValue", "lengthCm", "widthCm", "heightCm"]
+} as const;
+
+export type BookCourierStep = keyof typeof BOOKING_STEP_FIELDS;
+
 export function validateBookCourier(row: BookCourierRow): {
   ok: true;
   routeType: "domestic" | "international";
@@ -163,6 +188,18 @@ export function validateBookCourier(row: BookCourierRow): {
     routeType: routeType as "domestic" | "international",
     bookingPayload,
   };
+}
+
+export function validateBookCourierStep(
+  row: BookCourierRow,
+  step: BookCourierStep
+): Record<string, string> {
+  const validation = validateBookCourier(row);
+  if (validation.ok) return {};
+  const allowed = new Set<string>(BOOKING_STEP_FIELDS[step]);
+  return Object.fromEntries(
+    Object.entries(validation.fieldErrors).filter(([key]) => allowed.has(key))
+  );
 }
 
 export function bookCourierRowFromFormData(formData: FormData): BookCourierRow {

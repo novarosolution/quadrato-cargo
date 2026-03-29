@@ -47,7 +47,15 @@ export async function updateMyProfile(req, res, next) {
 export async function listMyBookings(req, res, next) {
   try {
     const rows = await listBookingsByUserId(req.auth.user.id, req.auth.user.email);
-    return sendOk(res, { bookings: rows });
+    const bookings = await Promise.all(
+      rows.map(async (row) => {
+        if (!row?.courierId) return row;
+        const courier = await findUserById(row.courierId);
+        const courierName = String(courier?.name || courier?.email || "").trim() || null;
+        return { ...row, courierName };
+      })
+    );
+    return sendOk(res, { bookings });
   } catch (error) {
     return next(error);
   }
@@ -63,7 +71,12 @@ export async function getMyBookingById(req, res, next) {
     if (!row) {
       return sendNotFound(res, "Booking not found.");
     }
-    return sendOk(res, { booking: row });
+    let courierName = null;
+    if (row.courierId) {
+      const courier = await findUserById(row.courierId);
+      courierName = String(courier?.name || courier?.email || "").trim() || null;
+    }
+    return sendOk(res, { booking: { ...row, courierName } });
   } catch (error) {
     return next(error);
   }

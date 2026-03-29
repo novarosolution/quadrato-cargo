@@ -127,13 +127,31 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                 </p>
               </div>
             ) : null}
-            {row.trackingNotes ? (
+            <div className="mt-4 grid gap-2 text-xs text-muted sm:grid-cols-2">
+              <p>
+                <span className="font-semibold text-ink">Pickup courier:</span>{" "}
+                {row.courierName || "Pending assignment"}
+              </p>
+              <p>
+                <span className="font-semibold text-ink">Agency:</span>{" "}
+                {row.assignedAgency || "Pending assignment"}
+              </p>
+              <p>
+                <span className="font-semibold text-ink">Pickup address:</span>{" "}
+                {row.senderAddress || "-"}
+              </p>
+              <p>
+                <span className="font-semibold text-ink">Delivery address:</span>{" "}
+                {row.recipientAddress || "-"}
+              </p>
+            </div>
+            {row.customerTrackingNote ? (
               <div className="mt-6">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-soft">
                   Updates from dispatch
                 </h3>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted">
-                  {row.trackingNotes}
+                  {row.customerTrackingNote}
                 </p>
               </div>
             ) : (
@@ -306,8 +324,9 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                   }
                   contentsLabel={preview.contents || "-"}
                   instructionsLabel={preview.instructions || "-"}
-                  trackingNotesLabel={row.trackingNotes || "-"}
+                  trackingNotesLabel={row.customerTrackingNote || "-"}
                   agencyLabel={row.assignedAgency || "-"}
+                  courierNameLabel={row.courierName || "-"}
                   trackUrl={trackUrl}
                   settings={pdfSettings}
                 />
@@ -358,8 +377,9 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                   }
                   contentsLabel={preview.contents || "-"}
                   instructionsLabel={preview.instructions || "-"}
-                  trackingNotesLabel={row.trackingNotes || "-"}
+                  trackingNotesLabel={row.customerTrackingNote || "-"}
                   agencyLabel={row.assignedAgency || "-"}
+                  courierNameLabel={row.courierName || "-"}
                   trackUrl={trackUrl}
                   settings={pdfSettings}
                 />
