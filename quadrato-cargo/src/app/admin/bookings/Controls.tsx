@@ -160,13 +160,13 @@ export function AdminBookingControls({
 
       <div>
         <label
-          htmlFor="admin-consignment"
+          htmlFor="admin-tracking-id"
           className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
         >
           Tracking ID (visible to customer)
         </label>
         <input
-          id="admin-consignment"
+          id="admin-tracking-id"
           name="consignmentNumber"
           type="text"
           defaultValue={consignmentNumber ?? ""}

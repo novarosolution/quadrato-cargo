@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   BOOKING_STATUS_LABELS,
   normalizeBookingStatus,
@@ -21,6 +21,37 @@ const AGENCY_ALLOWED_STATUSES = [
   "delivered",
 ] as const;
 
+type AgencyAllowed = (typeof AGENCY_ALLOWED_STATUSES)[number];
+
+/** Prefilled customer-facing lines per status (edit [brackets] before sending). */
+const STATUS_UPDATE_TEMPLATES: Partial<Record<AgencyAllowed, string[]>> = {
+  agency_processing: [
+    "Received at agency hub. Sorting and dispatch preparation in progress.",
+    "Parcel logged at agency. Next scan: outbound to destination region.",
+  ],
+  in_transit: [
+    "In transit to destination hub. ETA update: [date / time].",
+    "Shipment en route to destination city. Tracking will refresh after arrival scan.",
+    "Departed origin facility; in network transit — no action needed from recipient yet.",
+  ],
+  out_for_delivery: [
+    "Out for delivery today. Courier may contact recipient if access or OTP is required.",
+    "With delivery associate for final mile. Expected attempt today.",
+  ],
+  delivery_attempted: [
+    "Delivery attempted — [reason]. We will retry / await recipient instruction.",
+    "Could not complete delivery. Recipient can contact support with Tracking ID for reschedule.",
+  ],
+  on_hold: [
+    "Temporarily on hold: [reason]. We will update when movement resumes.",
+    "Awaiting [documents / customs / recipient response]. Shipment is safe at our facility.",
+  ],
+  delivered: [
+    "Delivered successfully to recipient. Thank you for using Quadrato Cargo.",
+    "Delivery completed. Signed / handed over as per local process.",
+  ],
+};
+
 type Props = {
   bookingId: string;
   reference: string;
@@ -39,7 +70,7 @@ export function AgencyJobControls({
   const router = useRouter();
   const normalized = normalizeBookingStatus(currentStatus);
   const initialStatus = AGENCY_ALLOWED_STATUSES.includes(
-    normalized as (typeof AGENCY_ALLOWED_STATUSES)[number],
+    normalized as AgencyAllowed,
   )
     ? normalized
     : "agency_processing";
@@ -52,6 +83,11 @@ export function AgencyJobControls({
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const [statusValue, setStatusValue] = useState<string>(initialStatus);
   const [trackingValue, setTrackingValue] = useState(publicTrackingNote ?? "");
+
+  const templatesForStatus = useMemo(() => {
+    const list = STATUS_UPDATE_TEMPLATES[statusValue as AgencyAllowed];
+    return list ?? [];
+  }, [statusValue]);
 
   async function verifyHandover(codeArg?: string) {
     const code = String(codeArg ?? otpCode).trim();
@@ -68,6 +104,14 @@ export function AgencyJobControls({
       setAcceptError(result.error);
     }
     setAccepting(false);
+  }
+
+  function insertTemplate(text: string) {
+    setTrackingValue((prev) => {
+      const t = text.trim();
+      if (!prev.trim()) return t;
+      return `${prev.trim()}\n${t}`;
+    });
   }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -160,15 +204,30 @@ export function AgencyJobControls({
           htmlFor={`agency-notes-${bookingId}`}
           className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
         >
-          Customer update text
+          Customer update text (shown on tracking + delivery note context)
         </label>
+        {templatesForStatus.length > 0 ? (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {templatesForStatus.map((tpl) => (
+              <button
+                key={tpl}
+                type="button"
+                title={tpl}
+                onClick={() => insertTemplate(tpl)}
+                className="max-w-full rounded-lg border border-border-strong bg-canvas/40 px-2.5 py-1.5 text-left text-[11px] font-medium leading-snug text-ink transition hover:border-teal/40 hover:bg-pill-hover"
+              >
+                <span className="line-clamp-2">{tpl}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
         <textarea
           id={`agency-notes-${bookingId}`}
           rows={4}
           value={trackingValue}
           onChange={(e) => setTrackingValue(e.target.value)}
           className="mt-2 w-full resize-y rounded-xl border border-border-strong bg-canvas/50 px-3 py-2 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
-          placeholder="Example: Shipment reached agency hub, dispatching to destination city tonight."
+          placeholder="Tap a template above or write your own. Replace [brackets] with real dates or reasons before saving."
         />
       </div>
       {state?.ok === false ? (

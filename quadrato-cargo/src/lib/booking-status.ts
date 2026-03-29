@@ -34,13 +34,29 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatusId, string> = {
   cancelled: "Cancelled",
 };
 
+/** US spelling and common legacy labels → canonical id */
+const STATUS_ALIASES: Record<string, BookingStatusId> = {
+  canceled: "cancelled",
+  complete: "delivered",
+  completed: "delivered",
+};
+
 export function isBookingStatusId(v: string): v is BookingStatusId {
   return (BOOKING_STATUSES as readonly string[]).includes(v);
 }
 
+/**
+ * Normalize status strings from API or legacy data (spacing, case, US spelling).
+ */
 export function normalizeBookingStatus(
   raw: string | null | undefined,
 ): BookingStatusId {
-  if (raw && isBookingStatusId(raw)) return raw;
+  if (raw == null) return "submitted";
+  let s = String(raw).trim().toLowerCase();
+  if (!s) return "submitted";
+  s = s.replace(/[\s-]+/g, "_");
+  if (isBookingStatusId(s)) return s;
+  const alias = STATUS_ALIASES[s];
+  if (alias) return alias;
   return "submitted";
 }

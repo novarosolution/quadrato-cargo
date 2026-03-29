@@ -58,11 +58,14 @@ function HeaderNavLink({
   label,
   active,
   onNavigate,
+  comfortableTouch,
 }: {
   href: string;
   label: string;
   active: boolean;
   onNavigate?: () => void;
+  /** Larger tap target for mobile drawer (zoom-friendly). */
+  comfortableTouch?: boolean;
 }) {
   return (
     <Link
@@ -70,7 +73,11 @@ function HeaderNavLink({
       prefetch={false}
       data-active={active ? "true" : "false"}
       onClick={onNavigate}
-      className="nav-link shrink-0 rounded-full px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal data-[active=true]:bg-pill data-[active=true]:text-ink lg:px-3.5 lg:py-2 lg:text-sm"
+      className={`nav-link shrink-0 rounded-full px-2.5 py-1.5 text-xs font-medium text-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal data-[active=true]:bg-pill data-[active=true]:text-ink lg:px-3.5 lg:py-2 lg:text-sm ${
+        comfortableTouch
+          ? "flex min-h-12 items-center px-3.5 py-3 text-sm lg:min-h-0 lg:px-3.5 lg:py-2 lg:text-sm"
+          : ""
+      }`}
     >
       {label}
     </Link>
@@ -188,6 +195,7 @@ function AccountMenu({
 export function Header() {
   const pathname = usePathname();
   const reduce = useReducedMotion();
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<HeaderAuthStatus>("loading");
   const [user, setUser] = useState<ApiUser | null>(null);
@@ -196,7 +204,12 @@ export function Header() {
   const displayName = user?.name ?? null;
   const email = user?.email ?? null;
   const primaryLabel = displayName || email || "Account";
-  const closeMobileMenu = () => setOpen(false);
+  const closeMobileMenu = () => {
+    setOpen(false);
+    requestAnimationFrame(() => {
+      mobileMenuButtonRef.current?.focus();
+    });
+  };
   const handleSignOut = async () => {
     await postLogoutApi();
     setUser(null);
@@ -237,6 +250,28 @@ export function Header() {
     media.addEventListener("change", sync);
     return () => media.removeEventListener("change", sync);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setOpen(false);
+        requestAnimationFrame(() => mobileMenuButtonRef.current?.focus());
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-canvas/75 backdrop-blur-2xl backdrop-saturate-150">
@@ -332,13 +367,14 @@ export function Header() {
           <div className="flex items-center gap-1.5 lg:hidden">
             <ThemeToggle className="h-9 w-9 rounded-xl" />
             <button
+              ref={mobileMenuButtonRef}
               type="button"
-              className="inline-flex items-center justify-center rounded-2xl border border-border bg-ghost-fill p-2.5 text-ink transition hover:bg-pill-hover"
+              className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-2xl border border-border bg-ghost-fill p-2.5 text-ink transition hover:bg-pill-hover"
               aria-expanded={open}
               aria-controls="mobile-nav"
+              aria-label={open ? "Close menu" : "Open menu"}
               onClick={() => setOpen((v) => !v)}
             >
-              <span className="sr-only">Toggle menu</span>
               {open ? (
                 <X className="h-6 w-6" strokeWidth={2} aria-hidden />
               ) : (
@@ -361,7 +397,8 @@ export function Header() {
             className="overflow-hidden border-t border-border lg:hidden"
           >
             <nav
-              className="flex max-h-[min(80dvh,calc(100dvh-4.25rem))] flex-col gap-1 overflow-y-auto bg-surface-elevated/98 px-4 py-5 backdrop-blur-xl"
+              className="flex max-h-[min(80dvh,calc(100dvh-4.25rem))] flex-col gap-1 overflow-y-auto overscroll-y-contain bg-surface-elevated/98 px-4 py-5 backdrop-blur-xl [touch-action:pan-y]"
+              style={{ overscrollBehavior: "contain" }}
               aria-label="Mobile main"
             >
               {mainNav.map((primaryNavEntry, index) => (
@@ -376,6 +413,7 @@ export function Header() {
                     label={primaryNavEntry.label}
                     active={pathname === primaryNavEntry.href}
                     onNavigate={closeMobileMenu}
+                    comfortableTouch
                   />
                 </motion.div>
               ))}
@@ -450,7 +488,7 @@ export function Header() {
               <Link
                 href="/public/contact"
                 prefetch={false}
-                className="btn-primary mt-1 inline-flex h-12 items-center justify-center rounded-2xl bg-teal px-4 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5 hover:bg-teal/90"
+                className="btn-primary mt-1 inline-flex min-h-12 items-center justify-center rounded-2xl bg-teal px-4 py-3 text-sm font-semibold text-slate-950 transition hover:-translate-y-0.5 hover:bg-teal/90"
                 onClick={closeMobileMenu}
               >
                 Get a Quote

@@ -1155,7 +1155,7 @@ export async function trackBooking(req, res, next) {
     if (!parsedReference.success) {
       return sendError(
         res,
-        "Enter a valid booking ID or consignment number.",
+        "Enter a valid Tracking ID or booking reference.",
         400
       );
     }
