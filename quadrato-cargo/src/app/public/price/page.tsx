@@ -11,19 +11,19 @@ export const metadata: Metadata = {
 
 const zones = [
   {
-    name: "Instant pickup - serviceable areas",
-    range: "Postal codes where fast dispatch is available",
-    note: "Best for urgent collection requests.",
+    name: "Instant pickup",
+    range: "ZIP / postal codes with fast dispatch",
+    note: "Urgent collection.",
   },
   {
-    name: "Scheduled and extended coverage",
-    range: "Booked windows and wider city coverage",
-    note: "Pricing depends on distance, time window, and vehicle class.",
+    name: "Scheduled coverage",
+    range: "Booked windows, wider city",
+    note: "Distance, window, and vehicle affect price.",
   },
   {
-    name: "International and cargo",
-    range: "Cross-border and heavy shipments",
-    note: "Includes handling complexity such as compliance and movement stages.",
+    name: "International & cargo",
+    range: "Cross-border and heavy",
+    note: "Compliance and handling stages included.",
   },
 ];
 
@@ -39,12 +39,7 @@ export default function PricingPage() {
       <PageHero
         eyebrow="Rates"
         title="Pricing by service type"
-        description={
-          <>
-            Final rates depend on pickup area, service mode, parcel profile,
-            and shipment lane. Share your route for a written quote.
-          </>
-        }
+        description="Depends on area, mode, and parcel profile — share your route for a quote."
       />
 
       <section className="page-section">

@@ -34,7 +34,7 @@ export function PageHero({ eyebrow, title, description }: PageHeroProps) {
         animate={canAnimateAmbient ? { scale: [1, 1.05, 1], x: [0, 10, 0] } : {}}
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 1 }}
       />
-      <Container className="relative py-16 sm:py-20 lg:py-24">
+      <Container className="relative py-12 sm:py-16 lg:py-20">
         <motion.div
           initial="hidden"
           animate="visible"
@@ -47,14 +47,14 @@ export function PageHero({ eyebrow, title, description }: PageHeroProps) {
           ) : null}
           <motion.h1
             variants={fadeUpItem}
-            className="mt-3 max-w-4xl text-4xl font-semibold tracking-tight text-ink sm:text-5xl lg:text-[3.25rem] lg:leading-[1.08]"
+            className="mt-3 max-w-4xl text-3xl font-semibold tracking-tight text-ink sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]"
           >
             {title}
           </motion.h1>
           {description ? (
             <motion.div
               variants={fadeUpItem}
-              className="mt-5 max-w-2xl text-lg leading-relaxed text-muted"
+              className="mt-4 max-w-2xl text-base leading-relaxed text-muted"
             >
               {description}
             </motion.div>

@@ -13,27 +13,27 @@ export const metadata: Metadata = {
 const services = [
   {
     name: "Instant collection",
-    body: "Request immediate pickup at your address. Where serviceable, our team dispatches quickly.",
+    body: "Request pickup now; we dispatch where your area is serviceable.",
   },
   {
     name: "Scheduled pickup",
-    body: "Choose a date and time window for collection and we assign the pickup accordingly.",
+    body: "Pick a date and window; we align collection to it.",
   },
   {
-    name: "International shipment support",
-    body: "For cross-border deliveries, we coordinate documentation, movement, and partner handoff.",
+    name: "International",
+    body: "Cross-border moves with docs, transit, and carrier handoff.",
   },
   {
-    name: "Tracking milestones",
-    body: "Status updates are shared through the tracking flow so customers can follow progress clearly.",
+    name: "Tracking",
+    body: "Milestones in the tracking flow so you can follow progress.",
   },
   {
     name: "Delivery confirmation",
-    body: "Delivery status and references remain available for support and record keeping.",
+    body: "Final status and references kept for support and records.",
   },
   {
-    name: "Traditional logistics suite",
-    body: "We also support cargo, lane-based pricing, and standard logistics operations for business flows.",
+    name: "Business logistics",
+    body: "Cargo, lane pricing, and standard ops for business flows.",
   },
 ];
 
@@ -41,7 +41,7 @@ export default function ServicesPage() {
   return (
     <div>
       <PageHero
-        eyebrow="What we run"
+        eyebrow="Services"
         title="International courier at your doorstep"
         description={siteDescription}
       />
@@ -52,32 +52,31 @@ export default function ServicesPage() {
             {services.map((s) => (
               <li
                 key={s.name}
-                className="card-interactive rounded-2xl border border-border bg-surface-elevated/70 p-8 backdrop-blur-sm"
+                className="card-interactive rounded-2xl border border-border bg-surface-elevated/70 p-6 backdrop-blur-sm sm:p-7"
               >
-                <div className="mb-5 h-1 w-14 rounded-full bg-teal" />
-                <h2 className="font-display text-xl font-semibold text-ink">{s.name}</h2>
-                <p className="mt-3 text-sm leading-relaxed text-muted">{s.body}</p>
+                <div className="mb-4 h-1 w-12 rounded-full bg-teal" />
+                <h2 className="font-display text-lg font-semibold text-ink">{s.name}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{s.body}</p>
               </li>
             ))}
           </ul>
 
-          <div className="mt-16 rounded-[1.5rem] border border-dashed border-teal/30 bg-teal/5 p-10 text-center backdrop-blur-sm">
+          <div className="mt-12 rounded-2xl border border-dashed border-teal/30 bg-teal/5 p-6 text-center backdrop-blur-sm sm:p-8">
             <p className="text-sm text-muted">
-              Sending internationally? Submit your booking details and our team
-              will guide pickup, documentation, and the next shipment stage.
+              International send? Book online or talk to dispatch for the next step.
             </p>
-            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">
               <Link
                 href="/public/book"
-                className="btn-primary inline-flex items-center justify-center rounded-2xl border border-teal/70 bg-teal px-8 py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/20"
+                className="btn-primary inline-flex items-center justify-center rounded-2xl border border-teal/70 bg-teal px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/20"
               >
                 Book courier
               </Link>
               <Link
                 href="/public/contact"
-                className="inline-flex items-center justify-center rounded-2xl border border-ghost-border px-8 py-3.5 text-sm font-semibold text-ink transition hover:bg-pill-hover"
+                className="inline-flex items-center justify-center rounded-2xl border border-ghost-border px-6 py-3 text-sm font-semibold text-ink transition hover:bg-pill-hover"
               >
-                Talk to dispatch
+                Contact
               </Link>
             </div>
           </div>

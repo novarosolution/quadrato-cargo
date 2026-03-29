@@ -13,34 +13,31 @@ export default function ContactPage() {
   return (
     <div>
       <PageHero
-        eyebrow="Reach us"
-        title="Tell us what you are moving"
-        description="Share your pickup and delivery details. We will confirm serviceability, timeline, and quote."
+        eyebrow="Contact"
+        title="Talk to dispatch"
+        description="Route, timing, and quote — send details in the form."
       />
 
       <section className="page-section">
         <Container>
-          <div className="grid gap-12 lg:grid-cols-5">
+          <div className="grid gap-10 lg:grid-cols-5">
             <div className="lg:col-span-2">
               <h2 className="font-display text-lg font-semibold text-ink">Dispatch</h2>
-              <p className="mt-3 text-sm leading-relaxed text-muted">
-                For faster support, use the form to share route, service type,
-                and contact details in one place.
+              <p className="mt-2 text-sm text-muted">
+                Form is fastest — route, service, and contact in one go.
               </p>
-              <dl className="mt-8 space-y-4 text-sm">
+              <dl className="mt-6 space-y-3 text-sm">
                 <div className="panel-card">
                   <dt className="font-medium text-ink">Phone</dt>
                   <dd className="mt-1 text-muted">+1 (555) 010-0199</dd>
                 </div>
                 <div className="panel-card">
                   <dt className="font-medium text-ink">Hours</dt>
-                  <dd className="mt-1 text-muted">Mon–Fri 7:00–19:00 local</dd>
+                  <dd className="mt-1 text-muted">Mon–Fri 7:00–19:00</dd>
                 </div>
                 <div className="panel-card">
-                  <dt className="font-medium text-ink">Urgent support</dt>
-                  <dd className="mt-1 text-muted">
-                    For active jobs after hours, use the number shared in your booking confirmation.
-                  </dd>
+                  <dt className="font-medium text-ink">After hours</dt>
+                  <dd className="mt-1 text-muted">Use the number on your booking confirmation.</dd>
                 </div>
               </dl>
             </div>

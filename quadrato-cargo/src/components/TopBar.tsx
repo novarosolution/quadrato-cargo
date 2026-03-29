@@ -74,9 +74,9 @@ function HeaderNavLink({
       prefetch={false}
       data-active={active ? "true" : "false"}
       onClick={onNavigate}
-      className={`nav-link shrink-0 rounded-full px-2 py-1.5 text-xs font-medium text-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal data-[active=true]:bg-pill data-[active=true]:text-ink lg:px-2 lg:py-2 lg:text-[13px] ${
+      className={`nav-link shrink-0 rounded-lg px-2.5 py-1.5 text-[13px] font-medium leading-snug text-muted transition-colors hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal data-[active=true]:font-semibold data-[active=true]:text-teal lg:px-3 lg:text-sm ${
         comfortableTouch
-          ? "flex min-h-12 items-center px-3.5 py-3 text-sm lg:min-h-0 lg:px-3.5 lg:py-2 lg:text-sm"
+          ? "flex min-h-11 items-center px-3 py-2.5 text-sm font-medium lg:min-h-0 lg:px-3 lg:py-2 lg:text-sm"
           : ""
       }`}
     >
@@ -298,19 +298,19 @@ export function Header() {
               priority
             />
           </motion.span>
-          <span className="font-display min-w-0 max-w-[7.5rem] truncate text-sm font-semibold leading-tight tracking-tight text-ink sm:max-w-[10rem] sm:text-base md:max-w-[12rem] lg:max-w-none">
+          <span className="font-display min-w-0 max-w-[7.5rem] truncate text-sm font-semibold leading-tight tracking-tight text-ink sm:max-w-[10rem] md:max-w-[12rem] lg:max-w-none">
             {siteName}
           </span>
         </Link>
 
         <motion.nav
-          className="glass-panel hidden min-h-0 min-w-0 justify-center justify-self-stretch overflow-x-auto overflow-y-hidden rounded-full border border-border px-0.5 py-1 [scrollbar-width:none] lg:flex lg:py-1 [&::-webkit-scrollbar]:hidden"
+          className="hidden min-h-0 min-w-0 justify-center justify-self-stretch overflow-x-auto overflow-y-hidden [scrollbar-width:none] lg:flex [&::-webkit-scrollbar]:hidden"
           aria-label="Main"
           initial={reduce ? false : { opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.14, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="mx-auto flex w-max max-w-full items-center gap-0 px-0.5">
+          <div className="mx-auto flex w-max max-w-full items-center gap-1 lg:gap-3 xl:gap-4">
             {mainNav.map((primaryNavEntry) => (
               <HeaderNavLink
                 key={primaryNavEntry.href}
@@ -358,7 +358,7 @@ export function Header() {
               href="/public/contact"
               prefetch={false}
               aria-label="Get a Quote"
-              className="btn-primary inline-flex h-12 shrink-0 items-center justify-center rounded-full bg-teal px-4 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25 transition hover:-translate-y-0.5 hover:bg-teal/90 lg:px-5"
+              className="btn-primary inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-teal px-3.5 text-xs font-semibold text-slate-950 shadow-md shadow-teal/20 transition hover:bg-teal/90 lg:h-10 lg:px-4 lg:text-sm"
             >
               <span className="hidden lg:inline">Get a Quote</span>
               <span className="lg:hidden" aria-hidden>

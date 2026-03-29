@@ -256,10 +256,10 @@ export function BookCourierForm() {
   const formRef = useRef<HTMLFormElement | null>(null);
   const e = state.fieldErrors;
   const stepMeta: Record<BookCourierStep, { title: string; note: string }> = {
-    1: { title: "Route and pickup mode", note: "Choose shipment type and collection preference." },
-    2: { title: "Sender details", note: "Add pickup person and address details." },
-    3: { title: "Recipient details", note: "Add delivery contact and destination address." },
-    4: { title: "Parcel details", note: "Add package details and submit your booking." },
+    1: { title: "Route & pickup", note: "Type and how we collect." },
+    2: { title: "Sender", note: "Pickup contact and address." },
+    3: { title: "Recipient", note: "Delivery contact and address." },
+    4: { title: "Parcel", note: "Size, contents, then submit." },
   };
 
   const canShow = (target: BookCourierStep) => step === target;
@@ -397,8 +397,8 @@ export function BookCourierForm() {
   }
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} className="rounded-3xl border border-border bg-canvas/10 p-4 shadow-sm backdrop-blur-md sm:p-6" noValidate>
-      <div className="rounded-2xl border border-teal/25 bg-linear-to-r from-teal/10 to-canvas/20 p-4 sm:p-5">
+    <form ref={formRef} onSubmit={onSubmit} className="rounded-2xl border border-border bg-canvas/10 p-4 shadow-sm backdrop-blur-md sm:p-5" noValidate>
+      <div className="rounded-xl border border-teal/25 bg-linear-to-r from-teal/10 to-canvas/20 p-3 sm:p-4">
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-soft">
             Booking steps
@@ -407,8 +407,10 @@ export function BookCourierForm() {
             Step {step} of 4
           </p>
         </div>
-        <h3 className="mt-2 font-display text-lg font-semibold text-ink">{stepMeta[step].title}</h3>
-        <p className="mt-1 text-sm text-muted">{stepMeta[step].note}</p>
+        <h3 className="mt-2 font-display text-base font-semibold text-ink sm:text-[17px]">
+          {stepMeta[step].title}
+        </h3>
+        <p className="mt-1 text-xs text-muted sm:text-sm">{stepMeta[step].note}</p>
         <div className="mt-3 grid grid-cols-4 gap-2">
           {[1, 2, 3, 4].map((s) => (
             <div
@@ -422,16 +424,14 @@ export function BookCourierForm() {
       </div>
 
       <fieldset
-        className={`space-y-4 rounded-2xl border border-border bg-surface-elevated/70 p-5 shadow-sm backdrop-blur-md sm:p-6 ${
+        className={`space-y-3 rounded-xl border border-border bg-surface-elevated/70 p-4 shadow-sm backdrop-blur-md sm:p-5 ${
           canShow(1) ? "" : "hidden"
         }`}
       >
-        <legend className="font-display text-lg font-semibold text-ink px-1">
+        <legend className="font-display text-base font-semibold text-ink px-1">
           Step 1: Shipment route
         </legend>
-        <p className="text-sm text-muted">
-          Select domestic or international shipment and pickup mode.
-        </p>
+        <p className="text-sm text-muted">Domestic or international; choose pickup mode next.</p>
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-strong bg-ghost-fill px-4 py-3 has-checked:border-teal/40 has-checked:bg-teal/5">
             <input
@@ -458,16 +458,15 @@ export function BookCourierForm() {
       </fieldset>
 
       <fieldset
-        className={`space-y-4 rounded-2xl border border-border bg-surface-elevated/70 p-5 shadow-sm backdrop-blur-md sm:p-6 ${
+        className={`space-y-3 rounded-xl border border-border bg-surface-elevated/70 p-4 shadow-sm backdrop-blur-md sm:p-5 ${
           canShow(1) ? "" : "hidden"
         }`}
       >
-        <legend className="font-display text-lg font-semibold text-ink px-1">
+        <legend className="font-display text-base font-semibold text-ink px-1">
           Collection at your Postal Code / ZIP / address
         </legend>
         <p className="text-sm text-muted">
-          Choose instant or scheduled pickup. Scheduled mode requires date and
-          time slot (24/7 available).
+          Instant uses your postal code; scheduled needs date and time.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-strong bg-ghost-fill px-4 py-3 has-checked:border-teal/40 has-checked:bg-teal/5">
@@ -572,11 +571,11 @@ export function BookCourierForm() {
       </fieldset>
 
       <fieldset
-        className={`space-y-4 rounded-2xl border border-border bg-surface-elevated/70 p-5 shadow-sm backdrop-blur-md sm:p-6 ${
+        className={`space-y-3 rounded-xl border border-border bg-surface-elevated/70 p-4 shadow-sm backdrop-blur-md sm:p-5 ${
           canShow(2) ? "" : "hidden"
         }`}
       >
-        <legend className="font-display text-lg font-semibold text-ink px-1">
+        <legend className="font-display text-base font-semibold text-ink px-1">
           Step 2: Sender &amp; pickup
         </legend>
         <div className="flex flex-wrap gap-2">
@@ -720,11 +719,11 @@ export function BookCourierForm() {
       </fieldset>
 
       <fieldset
-        className={`space-y-4 rounded-2xl border border-border bg-surface-elevated/70 p-5 shadow-sm backdrop-blur-md sm:p-6 ${
+        className={`space-y-3 rounded-xl border border-border bg-surface-elevated/70 p-4 shadow-sm backdrop-blur-md sm:p-5 ${
           canShow(3) ? "" : "hidden"
         }`}
       >
-        <legend className="font-display text-lg font-semibold text-ink px-1">
+        <legend className="font-display text-base font-semibold text-ink px-1">
           Step 3: Recipient &amp; delivery
         </legend>
         <div className="flex flex-wrap gap-2">
@@ -887,11 +886,11 @@ export function BookCourierForm() {
       </fieldset>
 
       <fieldset
-        className={`space-y-4 rounded-2xl border border-border bg-surface-elevated/70 p-5 shadow-sm backdrop-blur-md sm:p-6 ${
+        className={`space-y-3 rounded-xl border border-border bg-surface-elevated/70 p-4 shadow-sm backdrop-blur-md sm:p-5 ${
           canShow(4) ? "" : "hidden"
         }`}
       >
-        <legend className="font-display text-lg font-semibold text-ink px-1">
+        <legend className="font-display text-base font-semibold text-ink px-1">
           Step 4: Parcel details
         </legend>
         <div>
@@ -967,16 +966,14 @@ export function BookCourierForm() {
       </fieldset>
 
       <fieldset
-        className={`space-y-4 rounded-2xl border border-border bg-surface-elevated/70 p-5 shadow-sm backdrop-blur-md sm:p-6 ${
+        className={`space-y-3 rounded-xl border border-border bg-surface-elevated/70 p-4 shadow-sm backdrop-blur-md sm:p-5 ${
           canShow(4) ? "" : "hidden"
         }`}
       >
-        <legend className="font-display text-lg font-semibold text-ink px-1">
-          Pickup timing &amp; notes
+        <legend className="font-display text-base font-semibold text-ink px-1">
+          Pickup timing {"&"} notes
         </legend>
-        <p className="text-sm text-muted">
-          Add pickup preference and special instructions for handling.
-        </p>
+        <p className="text-sm text-muted">Window or notes for the courier.</p>
         <div>
           <label
             htmlFor="pickupPreference"
@@ -984,8 +981,7 @@ export function BookCourierForm() {
           >
             Pickup window or notes
             <span className="block text-xs font-normal text-muted">
-              Required if you chose scheduled pickup; optional for instant
-              (ASAP at your Postal Code / ZIP).
+              Required for scheduled; optional for instant (ASAP at your ZIP).
             </span>
           </label>
           <input

@@ -164,24 +164,18 @@ export function HomeView() {
               htmlFor="hero-postal-code"
               className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-soft sm:text-sm"
             >
-              Start tracking now
+              Track shipment
             </motion.label>
-            <motion.p
-              variants={heroItem}
-              className="mt-1 text-xs text-muted sm:text-sm"
-            >
-              Enter your Booking ID or Tracking ID
-            </motion.p>
             <motion.div
               variants={heroItem}
-              className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center"
+              className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center"
             >
               <input
                 id="hero-postal-code"
                 type="text"
                 value={trackingReference}
                 onChange={(ev) => setTrackingReference(ev.target.value)}
-                placeholder="Enter Booking ID / Tracking ID"
+                placeholder="Booking or tracking ID"
                 className="h-16 w-full rounded-2xl border border-border-strong bg-canvas/80 px-5 text-base text-ink placeholder:text-muted-soft focus:border-teal/45 focus:outline-none focus:ring-2 focus:ring-teal/20 sm:text-lg"
                 inputMode="text"
                 maxLength={40}
@@ -288,7 +282,7 @@ export function HomeView() {
           <SectionHeading
             eyebrow="Why us"
             title="Doorstep collection, global handoffs"
-            description="Fast pickup where serviceable, clear status updates, and dependable handoff handling from booking to delivery."
+            description="Fast pickup where we serve, clear updates, reliable handoff to delivery."
           />
           <motion.ul
             className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
@@ -336,7 +330,7 @@ export function HomeView() {
               className="max-w-xl"
               eyebrow="Process"
               title="How it works"
-              description="Three simple steps from booking to global delivery updates."
+              description="Book, pickup, track — in three steps."
             />
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -364,9 +358,9 @@ export function HomeView() {
             variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
           >
             {[
-              { title: "Book", body: "Enter shipment details and confirm pickup in seconds.", Icon: Boxes },
-              { title: "Fast Pickup", body: "A courier is dispatched quickly where your area is serviceable.", Icon: Truck },
-              { title: "Global Tracking", body: "Follow your Tracking ID with clear status updates end to end.", Icon: Globe2 },
+              { title: "Book", body: "Details in, pickup confirmed.", Icon: Boxes },
+              { title: "Pickup", body: "We dispatch fast where your area is serviceable.", Icon: Truck },
+              { title: "Track", body: "Use your Tracking ID for status updates.", Icon: Globe2 },
             ].map((s) => (
               <motion.li
                 key={s.title}
@@ -410,7 +404,7 @@ export function HomeView() {
                 viewport={{ once: true }}
                 transition={{ delay: 0.1, duration: 0.4, ease }}
               >
-                Next step
+                Quote
               </motion.p>
               <motion.h2
                 className="mt-4 font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl"
@@ -419,17 +413,16 @@ export function HomeView() {
                 viewport={{ once: true }}
                 transition={{ delay: 0.18, duration: 0.45, ease }}
               >
-                Ready for a quote?
+                Need a quote?
               </motion.h2>
               <motion.p
-                className="mx-auto mt-4 max-w-lg text-muted sm:text-lg"
+                className="mx-auto mt-4 max-w-md text-base text-muted"
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.26, duration: 0.45, ease }}
               >
-                Ask about serviceability, pickup options, and pricing. Our team
-                confirms your route and next steps quickly.
+                Tell us your route — we confirm serviceability and pricing quickly.
               </motion.p>
               <motion.div
                 className="mt-10"

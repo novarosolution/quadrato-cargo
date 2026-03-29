@@ -33,28 +33,13 @@ export default function BookCourierPage() {
           aria-hidden
         />
         <Container className="relative">
-          <p className="section-eyebrow">Book a shipment</p>
-          <h1 className="mt-3 max-w-4xl font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl lg:text-5xl">
-            Book courier pickup at your doorstep
+          <p className="section-eyebrow">Book</p>
+          <h1 className="mt-2 max-w-2xl font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+            Courier pickup at your door
           </h1>
-          <p className="mt-4 max-w-3xl text-lg leading-relaxed text-muted">
-            Choose domestic or international shipment, fill sender and recipient
-            details, and submit your parcel request in a few steps.
+          <p className="mt-2 max-w-2xl text-sm text-muted sm:text-base">
+            Domestic or international — instant or scheduled pickup in a few steps.
           </p>
-          <p className="mt-3 max-w-3xl text-sm text-muted-soft">
-            Instant and scheduled pickup options are available based on serviceability.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <span className="rounded-full border border-border-strong bg-surface-elevated/70 px-3 py-1.5 text-xs font-semibold text-ink">
-              Doorstep pickup
-            </span>
-            <span className="rounded-full border border-border-strong bg-surface-elevated/70 px-3 py-1.5 text-xs font-semibold text-ink">
-              Domestic & international
-            </span>
-            <span className="rounded-full border border-border-strong bg-surface-elevated/70 px-3 py-1.5 text-xs font-semibold text-ink">
-              Live tracking updates
-            </span>
-          </div>
         </Container>
       </section>
 
@@ -63,9 +48,8 @@ export default function BookCourierPage() {
           <Suspense fallback={<BookFormFallback />}>
             <BookCourierForm />
           </Suspense>
-          <p className="mt-10 text-center text-sm text-muted">
-            Questions first?{" "}
-            <Link href="/public/contact" className="font-semibold text-teal hover:underline">
+          <p className="mt-8 text-center text-sm text-muted">
+            <Link href="/public/contact" className="font-medium text-teal hover:underline">
               Contact dispatch
             </Link>
           </p>
