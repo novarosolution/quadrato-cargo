@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 
-/** Single root for Turbopack and output file tracing (must match; see Next.js warning). */
+/** App root (required when another lockfile exists higher in the tree, e.g. ~/package-lock.json). */
 const tracingRoot = path.resolve(__dirname);
 
 const isProd = process.env.NODE_ENV === "production";
@@ -14,6 +14,14 @@ const connectSrc = isProd
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  /**
+   * Turbopack’s on-disk cache (SST) can fail on some setups (paths with spaces,
+   * concurrent writers), leaving `.next/dev` half-written and causing 500s.
+   * Disabling dev FS cache avoids corrupt manifests; cold dev starts are slightly slower.
+   */
+  experimental: {
+    turbopackFileSystemCacheForDev: false,
+  },
   outputFileTracingRoot: tracingRoot,
   turbopack: {
     root: tracingRoot,
