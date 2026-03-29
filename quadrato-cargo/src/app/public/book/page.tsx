@@ -1,7 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Container } from "@/components/Wrap";
 import { BookCourierForm } from "./Courierftsx";
+
+function BookFormFallback() {
+  return (
+    <div
+      className="panel-card animate-pulse space-y-4 border border-border p-6"
+      aria-hidden
+    >
+      <div className="h-4 w-1/3 rounded bg-pill" />
+      <div className="h-10 w-full rounded-xl bg-pill" />
+      <div className="h-10 w-full rounded-xl bg-pill" />
+      <div className="h-12 w-40 rounded-full bg-pill" />
+    </div>
+  );
+}
 
 export const metadata: Metadata = {
   title: "Book Courier",
@@ -45,7 +60,9 @@ export default function BookCourierPage() {
 
       <section className="page-section-compact">
         <Container className="max-w-3xl">
-          <BookCourierForm />
+          <Suspense fallback={<BookFormFallback />}>
+            <BookCourierForm />
+          </Suspense>
           <p className="mt-10 text-center text-sm text-muted">
             Questions first?{" "}
             <Link href="/public/contact" className="font-semibold text-teal hover:underline">
