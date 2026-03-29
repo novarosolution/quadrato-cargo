@@ -143,13 +143,16 @@ export async function fetchPublicTracking(
     const data = (await res.json().catch(() => ({}))) as
       | PublicTrackingResponse
       | { message?: string; error?: string };
-    if (res.ok && data.ok) return data;
+    const hasOk =
+      typeof data === "object" && data !== null && "ok" in data && data.ok === true;
+    if (res.ok && hasOk) return data as PublicTrackingResponse;
+    const message =
+      typeof data === "object" && data !== null
+        ? ("message" in data && data.message) || ("error" in data && data.error)
+        : undefined;
     return {
       ok: false,
-      message:
-        ("message" in data && data.message) ||
-        ("error" in data && data.error) ||
-        "Tracking not found for this reference.",
+      message: message || "Tracking not found for this reference.",
     };
   } catch {
     return {
