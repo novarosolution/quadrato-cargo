@@ -12,8 +12,7 @@ import {
 import { AdminCollapsible } from "@/components/admin/AdminCollapsible";
 import { DeleteRowButton } from "@/components/admin/DeleteBtn";
 import { deleteCourierBooking } from "../../dashboard/actions";
-import { AdminBookingControls } from "../Controls";
-import { ManualTrackingQuickLinks } from "../ManualTrackingQuickLinks";
+import { AdminBookingDispatchSplit } from "../AdminBookingDispatchSplit";
 import { AdminBookingCustomerLink } from "../linkcustomer";
 import { AdminBookingDataForm } from "../booking";
 import { AdminBookingInvoiceForm } from "../AdminBookingInvoiceForm";
@@ -192,42 +191,27 @@ export default async function AdminBookingDetailPage({ params }: Props) {
       </section>
 
       <div className="space-y-4">
-        <AdminCollapsible
-          id="booking-manual-tracking"
-          title="Customer tracking & assignment"
-          description="Update status, customer-facing messages, agency, tracking number, activity log, private notes, and courier — in everyday language. One save button updates everything in this section."
-          defaultOpen
-        >
-          <div className="space-y-6">
-            <ManualTrackingQuickLinks bookingId={row.id} trackReference={trackReference} />
-            <AdminBookingControls
-              key={row.id}
-              bookingId={row.id}
-              routeType={row.routeType}
-              pickupPin={pickupPin}
-              assignedAgency={row.assignedAgency ?? null}
-              agencyOptions={agencyOptions}
-              currentStatus={row.status}
-              consignmentNumber={row.consignmentNumber}
-              publicTrackingNote={row.publicTrackingNote ?? row.customerTrackingNote ?? null}
-              operationalTrackingNotes={row.trackingNotes}
-              internalNotes={row.internalNotes}
-              couriers={couriers}
-              assignedCourierId={row.courierId}
-            />
-            <p className="text-xs leading-relaxed text-muted-soft">
-              <strong className="font-medium text-ink">Addresses and parcel details</strong> on the
-              Track page come from{" "}
-              <strong className="font-medium text-muted">Booking data (JSON)</strong> further down —
-              open that section if pickup or delivery addresses look wrong.
-            </p>
-          </div>
-        </AdminCollapsible>
+        <AdminBookingDispatchSplit
+          key={row.id}
+          bookingId={row.id}
+          trackReference={trackReference}
+          routeType={row.routeType}
+          pickupPin={pickupPin}
+          assignedAgency={row.assignedAgency ?? null}
+          agencyOptions={agencyOptions}
+          currentStatus={row.status}
+          consignmentNumber={row.consignmentNumber}
+          publicTrackingNote={row.publicTrackingNote ?? row.customerTrackingNote ?? null}
+          operationalTrackingNotes={row.trackingNotes}
+          internalNotes={row.internalNotes}
+          couriers={couriers}
+          assignedCourierId={row.courierId}
+        />
 
         <AdminCollapsible
           id="booking-customer-timeline"
           title="Customer shipment timeline (step by step)"
-          description="Edit the text on each timeline card on the public track page. Use Back / Next for one step at a time, then save once."
+          description="Optional overrides for each timeline card (title, location, description, time). Status and main messages are in Customer tracking above. Save once after editing steps."
         >
           <AdminCustomerTimelineForm
             bookingId={row.id}
