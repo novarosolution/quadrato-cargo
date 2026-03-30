@@ -281,13 +281,16 @@ export async function saveManualTrackingAdmin(
   if (!assignResult.ok) {
     return {
       ok: true,
-      message: "Status, agency, tracking IDs, and notes saved.",
+      message: "Your tracking form was saved (status, messages, agency, numbers, and notes).",
       warning:
         assignResult.message ||
-        "Courier assignment could not be updated. Check the courier is active, on duty, and not busy with another open job.",
+        "The courier on this job could not be changed. Check they are active, on duty, and not already on another open job — then try again.",
     };
   }
-  return { ok: true, message: "All tracking updates saved (including courier assignment)." };
+  return {
+    ok: true,
+    message: "Saved. Tracking details and courier assignment are all up to date.",
+  };
 }
 
 export async function updateCourierBookingDataAdmin(

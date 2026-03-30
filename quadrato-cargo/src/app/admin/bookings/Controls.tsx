@@ -136,7 +136,16 @@ export function AdminBookingControls({
   return (
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="bookingId" value={bookingId} />
-      <AdminFormField label="Status" htmlFor="admin-booking-status">
+      <p className="rounded-lg border border-border-strong/80 bg-canvas/40 px-3 py-2.5 text-sm leading-relaxed text-muted">
+        Use the fields below to control what appears on the public Track page (when those sections are
+        turned on in Site settings), PDFs, and courier tools.{" "}
+        <span className="font-medium text-ink">One button at the bottom saves everything on this form.</span>
+      </p>
+      <AdminFormField
+        label="Where is the shipment now?"
+        htmlFor="admin-booking-status"
+        hint="Pick the step that matches reality. Customers may see this label on Track if you show the status badge there."
+      >
         <select
           id="admin-booking-status"
           name="status"
@@ -151,6 +160,9 @@ export function AdminBookingControls({
           ))}
         </select>
         <div className="mt-2 flex flex-wrap gap-2">
+          <span className="w-full text-[11px] font-medium uppercase tracking-wide text-muted-soft">
+            Quick picks
+          </span>
           {quickStatuses.map((s) => (
             <button
               key={s}
@@ -165,13 +177,13 @@ export function AdminBookingControls({
       </AdminFormField>
 
       <AdminFormField
-        label="Assigned agency"
+        label="Which agency partner is handling this?"
         htmlFor="admin-assigned-agency"
         hint={
           <>
-            Use the agency account <strong className="font-medium text-muted">email</strong> for{" "}
-            <span className="font-mono text-[11px]">/agency</span>. Pick from the list or type a
-            custom value.
+            Enter the same <strong className="font-medium text-muted">email address</strong> the
+            partner uses to sign in. Customers see the <strong className="font-medium text-muted">name</strong>{" "}
+            from that staff account on Track, not the email. Choose from the list or type the email.
           </>
         }
       >
@@ -190,25 +202,33 @@ export function AdminBookingControls({
           type="text"
           defaultValue={assignedAgency ?? ""}
           className={inputClass}
-          placeholder="e.g. agency1@partner.local"
+          placeholder="Partner’s sign-in email, e.g. partner@company.com"
           autoComplete="off"
           list={agencyOptions.length > 0 ? agencyDatalistId : undefined}
         />
       </AdminFormField>
 
-      <AdminFormField label="Tracking ID (visible to customer)" htmlFor="admin-tracking-id">
+      <AdminFormField
+        label="Tracking number the customer types in"
+        htmlFor="admin-tracking-id"
+        hint="Shown on Track and labels. Leave blank to fall back to the booking ID or barcode."
+      >
         <input
           id="admin-tracking-id"
           name="consignmentNumber"
           type="text"
           defaultValue={consignmentNumber ?? ""}
           className={inputClass}
-          placeholder="e.g. QC-2025-001234"
+          placeholder="e.g. QC-2025-001234 or your own reference"
           autoComplete="off"
         />
       </AdminFormField>
 
-      <AdminFormField label="Customer update (shown on tracking + PDF)" htmlFor="admin-tracking">
+      <AdminFormField
+        label="Short message to the customer"
+        htmlFor="admin-tracking"
+        hint="Plain language update: pickup done, delay, customs, etc. Shown on Track and on PDFs that include customer notes."
+      >
         <textarea
           id="admin-tracking"
           name="publicTrackingNote"
@@ -216,11 +236,11 @@ export function AdminBookingControls({
           value={trackingValue}
           onChange={(e) => setTrackingValue(e.target.value)}
           className={`${inputClass} resize-y`}
-          placeholder="Example: Pickup done, handed to agency, expected delivery tomorrow."
+          placeholder="Example: Your parcel was picked up today. Expected delivery Thursday."
         />
         <div className="mt-3 rounded-xl border border-border bg-canvas/30 p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
-            Quick customer update templates
+            Ready-made sentences (saves typing)
           </p>
           <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
             <select
@@ -228,7 +248,7 @@ export function AdminBookingControls({
               onChange={(e) => setSelectedTemplate(e.target.value)}
               className="rounded-lg border border-border-strong bg-canvas/50 px-3 py-2 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
             >
-              <option value="">Select template</option>
+              <option value="">Choose a starter line…</option>
               <option value="serviceability">Serviceability verified</option>
               <option value="pickup_soon">Pickup team heading now</option>
               <option value="picked_up">Parcel picked up</option>
@@ -242,28 +262,27 @@ export function AdminBookingControls({
               onClick={() => applyTemplate("append")}
               className="rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
             >
-              Append
+              Add to note
             </button>
             <button
               type="button"
               onClick={() => applyTemplate("replace")}
               className="rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
             >
-              Replace
+              Replace note
             </button>
           </div>
         </div>
       </AdminFormField>
 
       <AdminFormField
-        label="Operational activity log"
+        label="Full activity timeline (technical log)"
         htmlFor="admin-operational-log"
         hint={
           <>
-            Full timeline text stored on the booking (system seed + courier/agency events). Editable
-            here by booking ID. Shipped to the public track page only when{" "}
-            <span className="font-medium text-muted">Operational activity log</span> is enabled in
-            site settings.
+            Longer running log: system lines plus courier and hub updates with dates. Customers only
+            see this block if you turn on <span className="font-medium text-muted">Operational activity log</span>{" "}
+            under Site settings → Public tracking page.
           </>
         }
       >
@@ -273,14 +292,14 @@ export function AdminBookingControls({
           rows={6}
           defaultValue={operationalTrackingNotes ?? ""}
           className={`${inputClass} resize-y font-mono text-xs`}
-          placeholder="Booking received… [timestamp] Courier event…"
+          placeholder="Each line can include a date. Edit or add entries as needed."
         />
       </AdminFormField>
 
       <AdminFormField
-        label="Internal notes (admin only)"
+        label="Private notes for your team only"
         htmlFor="admin-internal"
-        hint="Not shown on the customer profile."
+        hint="Never shown to the customer on Track or on their profile."
       >
         <textarea
           id="admin-internal"
@@ -288,23 +307,29 @@ export function AdminBookingControls({
           rows={3}
           defaultValue={internalNotes ?? ""}
           className={`${inputClass} resize-y`}
-          placeholder="Internal use only"
+          placeholder="Reminders, phone calls, billing flags — staff only"
         />
       </AdminFormField>
 
       <div className="border-t border-border-strong pt-4">
-        <p className="mb-3 text-sm text-muted-soft">
-          Couriers use <span className="font-mono text-[11px]">/courier</span> for jobs. Inactive or
-          off-duty couriers cannot be newly assigned (current assignment stays selectable).
+        <h3 className="text-sm font-semibold text-ink">Driver / pickup person</h3>
+        <p className="mb-3 mt-1 text-sm text-muted-soft">
+          Pick who handles pickup and delivery in the courier app. You cannot newly assign someone who
+          is inactive, off duty, or already busy on another open job — but you can keep the current
+          person selected.
         </p>
-        <AdminFormField label="Assigned courier" htmlFor="admin-booking-courier">
+        <AdminFormField
+          label="Courier on this job"
+          htmlFor="admin-booking-courier"
+          hint="They use the Courier area of the website to see this booking."
+        >
           <select
             id="admin-booking-courier"
             name="courierUserId"
             defaultValue={assignedCourierId ?? "__unassigned"}
             className={selectClass}
           >
-            <option value="__unassigned">— Unassigned —</option>
+            <option value="__unassigned">No courier yet</option>
             {couriers.map((c) => (
               <option
                 key={c.id}
@@ -349,7 +374,7 @@ export function AdminBookingControls({
         disabled={pending}
         className="inline-flex rounded-xl border border-teal/70 bg-teal px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-teal/90 disabled:opacity-50"
       >
-        {pending ? "Saving…" : "Save tracking updates"}
+        {pending ? "Saving…" : "Save all tracking changes"}
       </button>
     </form>
   );

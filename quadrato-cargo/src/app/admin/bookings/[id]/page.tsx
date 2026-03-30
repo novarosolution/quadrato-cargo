@@ -193,8 +193,8 @@ export default async function AdminBookingDetailPage({ params }: Props) {
       <div className="space-y-4">
         <AdminCollapsible
           id="booking-manual-tracking"
-          title="Manual tracking updates"
-          description="All fields below apply to this booking ID and affect /public/tsking (per site settings), PDFs, and courier tools where relevant."
+          title="Customer tracking & assignment"
+          description="Update status, customer-facing messages, agency, tracking number, activity log, private notes, and courier — in everyday language. One save button updates everything in this section."
           defaultOpen
         >
           <div className="space-y-6">
@@ -215,9 +215,10 @@ export default async function AdminBookingDetailPage({ params }: Props) {
               assignedCourierId={row.courierId}
             />
             <p className="text-xs leading-relaxed text-muted-soft">
-              Sender and recipient lines on the public tracking page come from{" "}
-              <strong className="font-medium text-muted">Booking data (JSON)</strong> below — edit
-              route type and payload there if addresses or shipment summary are wrong.
+              <strong className="font-medium text-ink">Addresses and parcel details</strong> on the
+              Track page come from{" "}
+              <strong className="font-medium text-muted">Booking data (JSON)</strong> further down —
+              open that section if pickup or delivery addresses look wrong.
             </p>
           </div>
         </AdminCollapsible>
