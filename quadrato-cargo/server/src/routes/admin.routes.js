@@ -9,6 +9,7 @@ import { toPublicBooking } from "../models/booking.model.js";
 import { toPublicContact } from "../models/contact.model.js";
 import { normalizeSiteSettings } from "../models/site-settings.model.js";
 import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
+import { findBookingByReference } from "../modules/bookings/booking-repo.js";
 
 const router = Router();
 const PAGE_SIZE = 25;
@@ -36,6 +37,7 @@ const bookingControlsSchema = z.object({
   consignmentNumber: z.string().trim().max(120).optional().default(""),
   publicTrackingNote: z.string().trim().max(4000).optional().default(""),
   trackingNotes: z.string().trim().max(4000).optional().default(""),
+  operationalTrackingNotes: z.string().trim().max(20000).optional().default(""),
   internalNotes: z.string().trim().max(4000).optional().default(""),
   assignedAgency: z.string().trim().max(320).optional().default("")
 });
@@ -561,6 +563,7 @@ router.get("/bookings", async (req, res, next) => {
     if (bookingQuery) {
       const bookingSearchClauses = [
         { consignmentNumber: { $regex: bookingQuery, $options: "i" } },
+        { publicBarcodeCode: { $regex: bookingQuery, $options: "i" } },
         { routeType: { $regex: bookingQuery, $options: "i" } }
       ];
       const queryObjectId = parseObjectId(bookingQuery);
@@ -597,6 +600,20 @@ router.get("/bookings", async (req, res, next) => {
     }));
 
     return res.json({ ok: true, total, page, pageSize: PAGE_SIZE, bookings });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/bookings/resolve", async (req, res, next) => {
+  try {
+    const reference = String(req.query.reference ?? "").trim();
+    if (reference.length < 6) {
+      return sendError(res, "Enter at least 6 characters (booking ID, Tracking ID, or barcode).", 400);
+    }
+    const booking = await findBookingByReference(reference);
+    if (!booking) return sendNotFound(res, "No booking matches this reference.");
+    return sendOk(res, { bookingId: booking.id });
   } catch (error) {
     next(error);
   }
@@ -814,6 +831,7 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
     const publicTrackingNote = normalizeText(
       parsed.data.publicTrackingNote || parsed.data.trackingNotes
     );
+    const operationalTrackingNotes = normalizeText(parsed.data.operationalTrackingNotes);
     const internalNotes = normalizeText(parsed.data.internalNotes);
     const assignedAgency = normalizeText(parsed.data.assignedAgency);
     if (!status) return sendError(res, "Status is required.");
@@ -827,6 +845,7 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
           status,
           consignmentNumber: consignmentNumber || null,
           publicTrackingNote: publicTrackingNote || null,
+          trackingNotes: operationalTrackingNotes || null,
           internalNotes: internalNotes || null,
           assignedAgency: assignedAgency || null,
           updatedAt: new Date()

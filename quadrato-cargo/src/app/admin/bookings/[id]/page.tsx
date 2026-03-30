@@ -189,7 +189,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
         <AdminCollapsible
           id="booking-dispatch"
           title="Dispatch & tracking"
-          description="Status, agency, Tracking ID, customer-facing updates, internal notes."
+          description="Status, agency, Tracking ID, customer update, operational log, and internal notes — all keyed to this booking ID."
           defaultOpen
         >
           <AdminBookingControls
@@ -202,6 +202,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
             currentStatus={row.status}
             consignmentNumber={row.consignmentNumber}
             publicTrackingNote={row.publicTrackingNote ?? row.customerTrackingNote ?? null}
+            operationalTrackingNotes={row.trackingNotes}
             internalNotes={row.internalNotes}
           />
         </AdminCollapsible>

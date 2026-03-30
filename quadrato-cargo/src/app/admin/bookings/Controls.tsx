@@ -29,6 +29,8 @@ type Props = {
   currentStatus: string;
   consignmentNumber: string | null;
   publicTrackingNote: string | null;
+  /** Operational activity log (DB `trackingNotes`); may be shown on public tracking when enabled. */
+  operationalTrackingNotes: string | null;
   internalNotes: string | null;
 };
 
@@ -43,6 +45,7 @@ export function AdminBookingControls({
   currentStatus,
   consignmentNumber,
   publicTrackingNote,
+  operationalTrackingNotes,
   internalNotes,
 }: Props) {
   const uid = useId().replace(/:/g, "");
@@ -235,6 +238,28 @@ export function AdminBookingControls({
             </button>
           </div>
         </div>
+      </AdminFormField>
+
+      <AdminFormField
+        label="Operational activity log"
+        htmlFor="admin-operational-log"
+        hint={
+          <>
+            Full timeline text stored on the booking (system seed + courier/agency events). Editable
+            here by booking ID. Shipped to the public track page only when{" "}
+            <span className="font-medium text-muted">Operational activity log</span> is enabled in
+            site settings.
+          </>
+        }
+      >
+        <textarea
+          id="admin-operational-log"
+          name="operationalTrackingNotes"
+          rows={6}
+          defaultValue={operationalTrackingNotes ?? ""}
+          className={`${inputClass} resize-y font-mono text-xs`}
+          placeholder="Booking received… [timestamp] Courier event…"
+        />
       </AdminFormField>
 
       <AdminFormField

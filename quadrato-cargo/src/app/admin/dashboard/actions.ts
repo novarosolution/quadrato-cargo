@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getApiBaseUrl } from "@/lib/api/base-url";
 import { ADMIN_API_SECRET } from "@/lib/admin-api-secret";
 
@@ -11,6 +12,8 @@ export type DataManageState =
 export type BookingAdminUpdateState =
   | { ok: true; message: string }
   | { ok: false; error: string };
+
+export type OpenBookingByRefState = { ok: false; error: string };
 
 async function adminMutation(
   path: string,
@@ -172,6 +175,45 @@ export async function unlinkBookingFromUserAdmin(
   return { ok: true, message: "Booking unlinked from user." };
 }
 
+export async function openAdminBookingByReference(
+  _prev: OpenBookingByRefState | undefined,
+  formData: FormData,
+): Promise<OpenBookingByRefState | undefined> {
+  const reference = String(formData.get("reference") ?? "").trim();
+  if (reference.length < 6) {
+    return {
+      ok: false,
+      error:
+        "Enter at least 6 characters (booking ID, Tracking ID, or QC barcode — letters, numbers, hyphens only).",
+    };
+  }
+  const params = new URLSearchParams({ reference });
+  let res: Response;
+  try {
+    res = await fetch(
+      `${getApiBaseUrl()}/api/admin/bookings/resolve?${params.toString()}`,
+      {
+        headers: { "x-admin-secret": ADMIN_API_SECRET },
+        cache: "no-store",
+      },
+    );
+  } catch {
+    return { ok: false, error: "Cannot connect to server. Start backend and try again." };
+  }
+  const data = (await res.json().catch(() => ({}))) as {
+    ok?: boolean;
+    bookingId?: string;
+    message?: string;
+  };
+  if (!res.ok || !data.ok || !data.bookingId) {
+    return {
+      ok: false,
+      error: data.message || "No booking found for that reference.",
+    };
+  }
+  redirect(`/admin/bookings/${data.bookingId}`);
+}
+
 export async function updateCourierBookingAdmin(
   _prev: BookingAdminUpdateState | undefined,
   formData: FormData,
@@ -185,6 +227,7 @@ export async function updateCourierBookingAdmin(
       publicTrackingNote: String(
         formData.get("publicTrackingNote") ?? formData.get("trackingNotes") ?? "",
       ),
+      operationalTrackingNotes: String(formData.get("operationalTrackingNotes") ?? ""),
       internalNotes: String(formData.get("internalNotes") ?? ""),
       assignedAgency: String(formData.get("assignedAgency") ?? ""),
     },

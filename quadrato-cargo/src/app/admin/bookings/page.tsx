@@ -11,6 +11,7 @@ import { AdminPagination } from "@/components/admin/Pager";
 import { fetchAdminBookings } from "@/lib/api/admin-server";
 import { DeleteRowButton } from "@/components/admin/DeleteBtn";
 import { deleteCourierBooking } from "../dashboard/actions";
+import { OpenBookingByReferenceForm } from "./OpenBookingByReferenceForm";
 
 const PAGE_SIZE = 25;
 
@@ -77,6 +78,10 @@ export default async function AdminBookingsPage({ searchParams }: Props) {
           {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
         </p>
       </div>
+
+      <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-4 sm:p-5">
+        <OpenBookingByReferenceForm />
+      </section>
 
       <AdminListFilters
         basePath="/admin/bookings"
