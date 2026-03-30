@@ -455,7 +455,6 @@ export async function updateSiteSettingsAdmin(
     trackShowAssignmentSection: String(formData.get("trackShowAssignmentSection") ?? "").trim() === "on",
     trackShowShipmentCard: String(formData.get("trackShowShipmentCard") ?? "").trim() === "on",
     trackShowTimeline: String(formData.get("trackShowTimeline") ?? "").trim() === "on",
-    trackShowPdfButton: String(formData.get("trackShowPdfButton") ?? "").trim() === "on",
     trackShowInternationalHelp: String(formData.get("trackShowInternationalHelp") ?? "").trim() === "on",
     trackShowOnHoldBanner: String(formData.get("trackShowOnHoldBanner") ?? "").trim() === "on",
   });

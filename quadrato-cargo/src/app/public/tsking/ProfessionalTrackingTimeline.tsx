@@ -1,13 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import Link from "next/link";
 import {
   AlertTriangle,
   Building2,
   Check,
   Clock,
-  FileText,
   MapPin,
   Package,
   Plane,
@@ -110,25 +108,21 @@ function stageIcon(
 }
 
 export type ProfessionalTrackingTimelineProps = {
-  bookingId: string;
   status: BookingStatusId;
   routeType: "domestic" | "international";
   updatedAt: string;
   ctx: TrackingShipmentContext;
   latestNote?: string | null;
-  showPdfLink?: boolean;
   /** When set, overrides default stage title, location line, hint, and optional per-card time. */
   timelineOverrides?: PublicTimelineOverrides | null;
 };
 
 export function ProfessionalTrackingTimeline({
-  bookingId,
   status,
   routeType,
   updatedAt,
   ctx,
   latestNote = null,
-  showPdfLink = true,
   timelineOverrides = null,
 }: ProfessionalTrackingTimelineProps) {
   const isInternational = routeType === "international";
@@ -141,8 +135,6 @@ export function ProfessionalTrackingTimeline({
   const isCancelled = status === "cancelled";
   const isOnHold = status === "on_hold";
   const segments = buildProfessionalTimelineSegments(currentIdx, isInternational ? "international" : "domestic");
-
-  const pdfHref = `/public/profile/booksdetels/${bookingId}`;
 
   return (
     <div className="space-y-4">
@@ -188,7 +180,6 @@ export function ProfessionalTrackingTimeline({
                 : updatedAt;
 
             const completed = !actuallyLatest && !isCancelled;
-            const showPdf = showPdfLink && actuallyLatest && !isCancelled;
             const showStageTime = actuallyLatest || completed;
 
             return (
@@ -259,15 +250,6 @@ export function ProfessionalTrackingTimeline({
                         <p className="rounded-lg border border-border-strong bg-surface-highlight px-3 py-2 text-xs text-ink">
                           {latestNote.trim()}
                         </p>
-                      ) : null}
-                      {showPdf ? (
-                        <Link
-                          href={pdfHref}
-                          className="inline-flex items-center gap-2 rounded-2xl border border-teal/70 bg-teal px-4 py-2.5 text-sm font-semibold text-[#0f172a] shadow-md transition hover:border-teal hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
-                        >
-                          <FileText className="size-4" aria-hidden />
-                          Download PDF
-                        </Link>
                       ) : null}
                       <p className="flex items-center gap-1.5 font-sans text-xs text-muted-soft">
                         <Clock className="size-3.5 shrink-0 text-muted" aria-hidden />

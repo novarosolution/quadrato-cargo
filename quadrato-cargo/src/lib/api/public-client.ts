@@ -140,7 +140,6 @@ export type PublicTrackUiSettings = {
   showAssignmentSection: boolean;
   showShipmentCard: boolean;
   showTimeline: boolean;
-  showPdfButton: boolean;
   showInternationalHelp: boolean;
   showOnHoldBanner: boolean;
 };
@@ -152,7 +151,6 @@ export const DEFAULT_PUBLIC_TRACK_UI: PublicTrackUiSettings = {
   showAssignmentSection: true,
   showShipmentCard: true,
   showTimeline: true,
-  showPdfButton: true,
   showInternationalHelp: true,
   showOnHoldBanner: true,
 };
@@ -244,7 +242,6 @@ export type SiteSettings = {
   trackShowAssignmentSection: boolean;
   trackShowShipmentCard: boolean;
   trackShowTimeline: boolean;
-  trackShowPdfButton: boolean;
   trackShowInternationalHelp: boolean;
   trackShowOnHoldBanner: boolean;
 };
@@ -272,7 +269,6 @@ const SITE_SETTINGS_FALLBACK: SiteSettings = {
   trackShowAssignmentSection: true,
   trackShowShipmentCard: true,
   trackShowTimeline: true,
-  trackShowPdfButton: true,
   trackShowInternationalHelp: true,
   trackShowOnHoldBanner: true,
 };

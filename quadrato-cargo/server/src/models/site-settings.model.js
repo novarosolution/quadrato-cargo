@@ -27,7 +27,6 @@ export function normalizeSiteSettings(row) {
     trackShowAssignmentSection: trackShowFlag(row?.trackShowAssignmentSection),
     trackShowShipmentCard: trackShowFlag(row?.trackShowShipmentCard),
     trackShowTimeline: trackShowFlag(row?.trackShowTimeline),
-    trackShowPdfButton: trackShowFlag(row?.trackShowPdfButton),
     trackShowInternationalHelp: trackShowFlag(row?.trackShowInternationalHelp),
     trackShowOnHoldBanner: trackShowFlag(row?.trackShowOnHoldBanner)
   };
@@ -42,7 +41,6 @@ export function publicTrackUiFromSettings(normalized) {
     showAssignmentSection: normalized.trackShowAssignmentSection,
     showShipmentCard: normalized.trackShowShipmentCard,
     showTimeline: normalized.trackShowTimeline,
-    showPdfButton: normalized.trackShowPdfButton,
     showInternationalHelp: normalized.trackShowInternationalHelp,
     showOnHoldBanner: normalized.trackShowOnHoldBanner
   };
@@ -79,7 +77,6 @@ export const siteSettingsModelSchema = {
         trackShowAssignmentSection: { bsonType: ["bool", "null"] },
         trackShowShipmentCard: { bsonType: ["bool", "null"] },
         trackShowTimeline: { bsonType: ["bool", "null"] },
-        trackShowPdfButton: { bsonType: ["bool", "null"] },
         trackShowInternationalHelp: { bsonType: ["bool", "null"] },
         trackShowOnHoldBanner: { bsonType: ["bool", "null"] },
         updatedAt: { bsonType: ["date", "null"] }

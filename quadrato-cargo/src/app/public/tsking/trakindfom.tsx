@@ -385,7 +385,6 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
               if (isInternational) {
                 return (
                   <ProfessionalTrackingTimeline
-                    bookingId={data.id}
                     status={normalized}
                     routeType="international"
                     updatedAt={data.updatedAt ?? data.createdAt}
@@ -395,7 +394,6 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                       recipientAddress: data.recipientAddress,
                       agencyName: data.agencyName,
                     }}
-                    showPdfLink={ui.showPdfButton}
                     timelineOverrides={data.publicTimelineOverrides ?? null}
                   />
                 );
@@ -403,7 +401,6 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
 
               return (
                 <ProfessionalTrackingTimeline
-                  bookingId={data.id}
                   status={normalized}
                   routeType="domestic"
                   updatedAt={data.updatedAt ?? data.createdAt}
@@ -413,7 +410,6 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                     recipientAddress: data.recipientAddress,
                     agencyName: data.agencyName,
                   }}
-                  showPdfLink={ui.showPdfButton}
                   timelineOverrides={data.publicTimelineOverrides ?? null}
                 />
               );

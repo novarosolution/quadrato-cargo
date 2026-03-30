@@ -102,7 +102,6 @@ export type AdminSiteSettings = {
   trackShowAssignmentSection: boolean;
   trackShowShipmentCard: boolean;
   trackShowTimeline: boolean;
-  trackShowPdfButton: boolean;
   trackShowInternationalHelp: boolean;
   trackShowOnHoldBanner: boolean;
 };
