@@ -495,6 +495,55 @@ export async function updateBookingContactAdmin(
   return { ok: true, message: "Sender and recipient contact details saved." };
 }
 
+export async function updateBookingPickupAdmin(
+  _prev: DataManageState | undefined,
+  formData: FormData,
+): Promise<DataManageState> {
+  const bookingId = String(formData.get("bookingId") ?? "").trim();
+  const routeTypeRaw = String(formData.get("routeType") ?? "domestic").trim();
+  const routeType = routeTypeRaw === "international" ? "international" : "domestic";
+  const pick = (name: string) => String(formData.get(name) ?? "").trim();
+  if (!bookingId) return { ok: false, error: "Missing booking." };
+
+  const collectionMode = pick("collectionMode");
+  const payload: Record<string, unknown> = {
+    sender: {
+      street: pick("senderStreet"),
+      city: pick("senderCity"),
+      postal: pick("senderPostal"),
+      country: pick("senderCountry"),
+    },
+    pickupDate: pick("pickupDate"),
+    pickupTimeSlot: pick("pickupTimeSlot"),
+    pickupTimeSlotCustom: pick("pickupTimeSlotCustom"),
+    pickupPreference: pick("pickupPreference"),
+    instructions: pick("instructions"),
+  };
+  if (collectionMode === "instant" || collectionMode === "scheduled") {
+    payload.collectionMode = collectionMode;
+  } else if (collectionMode === "") {
+    payload.collectionMode = "";
+  }
+
+  const result = await adminMutation(
+    `/api/admin/bookings/${encodeURIComponent(bookingId)}/data`,
+    {
+      merge: true,
+      routeType,
+      payload,
+    },
+  );
+  if (!result.ok) {
+    return { ok: false, error: result.message || "Failed to update pickup details." };
+  }
+  revalidatePath("/admin/bookings");
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/public/tsking");
+  revalidatePath("/courier/bookings");
+  revalidatePath(`/courier/bookings/${bookingId}`);
+  return { ok: true, message: "Pickup and sender address saved." };
+}
+
 export async function updateBookingInvoiceAdmin(
   _prev: DataManageState | undefined,
   formData: FormData,
@@ -607,6 +656,8 @@ export async function updateSiteSettingsAdmin(
   revalidatePath("/admin/settings");
   revalidatePath("/");
   revalidatePath("/public/tsking");
+  revalidatePath("/public/contact");
+  revalidatePath("/public", "layout");
   return { ok: true, message: "Website settings updated." };
 }
 

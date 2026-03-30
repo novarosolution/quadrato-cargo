@@ -50,12 +50,9 @@ export function ManualTrackingQuickLinks({ bookingId, trackReference }: Props) {
           Preview customer Track page
         </Link>
       </div>
-      <p className="text-xs leading-relaxed text-muted-soft">
-        What customers see on Track is controlled in{" "}
-        <span className="font-medium text-muted">Admin → Site settings → Public tracking page</span>.
-        If you enter an agency as an email, customers see that partner&apos;s{" "}
-        <span className="font-medium text-muted">display name</span> from their user profile — not the
-        email.
+      <p className="text-xs text-muted-soft">
+        Track layout: <span className="font-medium text-muted">Admin → Data &amp; site</span>. Agency field:
+        partner&apos;s login email; customers see their profile name.
       </p>
     </div>
   );

@@ -21,7 +21,7 @@ export default async function SiteLayout({
       <div className="app-shell flex min-h-full flex-col">
         {showAnnouncement ? (
           <div className="border-b border-teal/20 bg-teal/10 px-4 py-2 text-center text-sm text-ink">
-            <span className="inline-block max-w-full break-words">{siteSettings.announcementText}</span>
+            <span className="inline-block max-w-full wrap-break-word">{siteSettings.announcementText}</span>
             {siteSettings.announcementCtaLabel && siteSettings.announcementCtaHref ? (
               <Link
                 href={siteSettings.announcementCtaHref}
@@ -38,7 +38,7 @@ export default async function SiteLayout({
         </main>
         <PublicSpeedButtons />
         <PublicBottomNav />
-        <Footer />
+        <Footer initialSiteSettings={siteSettings} />
       </div>
     </AppSessionProvider>
   );

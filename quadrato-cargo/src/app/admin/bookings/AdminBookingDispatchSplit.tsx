@@ -163,23 +163,12 @@ export function AdminBookingDispatchSplit({
   return (
     <div className="space-y-4">
       <AdminCollapsible
-        id="booking-customer-tracking"
-        title="Dispatch & customer updates"
-        description="Status, tracking number, customer-visible message, activity log, and staff-only notes."
+        id="booking-dispatch-panel"
+        title="Status & messages"
         defaultOpen
       >
         <div className="space-y-6">
           <ManualTrackingQuickLinks bookingId={bookingId} trackReference={trackReference} />
-
-          <div className="rounded-xl border border-teal/20 bg-teal-dim/20 px-4 py-3 text-xs leading-relaxed text-muted-soft">
-            <p className="font-semibold text-ink">What saves here</p>
-            <p className="mt-1">
-              One save updates status, tracking ID, public message, operational log, and internal notes on this
-              booking. Your agency and courier choices stay as they are unless you change them under{" "}
-              <strong className="font-medium text-ink">Assignment</strong> below (that save uses the same button
-              data).
-            </p>
-          </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="space-y-6 lg:col-span-2">
@@ -188,11 +177,7 @@ export function AdminBookingDispatchSplit({
                   Status &amp; tracking ID
                 </h3>
                 <div className="mt-4 grid gap-5 sm:grid-cols-2">
-                  <AdminFormField
-                    label="Shipment status"
-                    htmlFor={`${uid}-status`}
-                    hint="Drives the professional timeline and customer-facing status when enabled in Site settings."
-                  >
+                  <AdminFormField label="Shipment status" htmlFor={`${uid}-status`}>
                     <select
                       id={`${uid}-status`}
                       className={inputClass}
@@ -225,7 +210,6 @@ export function AdminBookingDispatchSplit({
                   <AdminFormField
                     label="Tracking / consignment number"
                     htmlFor={`${uid}-consignment`}
-                    hint="What the customer can type on the Track page. Falls back to barcode or booking ID if empty."
                   >
                     <input
                       id={`${uid}-consignment`}
@@ -248,7 +232,6 @@ export function AdminBookingDispatchSplit({
                   <AdminFormField
                     label="Public note"
                     htmlFor={`${uid}-public`}
-                    hint="Shown on Track and customer PDFs that include notes. Plain language."
                   >
                     <textarea
                       id={`${uid}-public`}
@@ -302,16 +285,7 @@ export function AdminBookingDispatchSplit({
                   Logs &amp; internal notes
                 </h3>
                 <div className="mt-4 space-y-5">
-                  <AdminFormField
-                    label="Operational activity log"
-                    htmlFor={`${uid}-ops`}
-                    hint={
-                      <>
-                        Stored as <span className="font-medium text-muted">trackingNotes</span>. Shown on
-                        Track only if enabled under Site settings.
-                      </>
-                    }
-                  >
+                  <AdminFormField label="Operational activity log" htmlFor={`${uid}-ops`}>
                     <textarea
                       id={`${uid}-ops`}
                       rows={6}
@@ -321,11 +295,7 @@ export function AdminBookingDispatchSplit({
                       placeholder="Timestamped lines, hub updates, courier notes…"
                     />
                   </AdminFormField>
-                  <AdminFormField
-                    label="Internal notes (staff only)"
-                    htmlFor={`${uid}-internal`}
-                    hint="Never shown on the public Track page."
-                  >
+                  <AdminFormField label="Internal notes (staff only)" htmlFor={`${uid}-internal`}>
                     <textarea
                       id={`${uid}-internal`}
                       rows={3}
@@ -339,23 +309,6 @@ export function AdminBookingDispatchSplit({
               </div>
             </div>
           </div>
-
-          <p className="text-xs leading-relaxed text-muted-soft">
-            <strong className="font-medium text-ink">Addresses and parcel details</strong> on the public track
-            page come from <strong className="font-medium text-ink">Booking data (JSON)</strong> in Account
-            &amp; advanced.
-          </p>
-
-          <details className="rounded-lg border border-border-strong bg-canvas/30 px-3 py-2 text-xs text-muted-soft">
-            <summary className="cursor-pointer font-medium text-ink">Database field names</summary>
-            <ul className="mt-2 space-y-1 font-mono text-[10px] text-muted">
-              <li>Shipment status → status</li>
-              <li>Tracking / consignment number → consignmentNumber</li>
-              <li>Public note → publicTrackingNote</li>
-              <li>Operational activity log → trackingNotes</li>
-              <li>Internal notes → internalNotes</li>
-            </ul>
-          </details>
 
           {state?.ok === false && state.error ? (
             <p className="text-sm text-rose-400" role="alert">
@@ -382,27 +335,9 @@ export function AdminBookingDispatchSplit({
         </div>
       </AdminCollapsible>
 
-      <AdminCollapsible
-        id="booking-assignment"
-        title="Assignment"
-        description="Agency partner and courier. Saving keeps your dispatch fields above — nothing is cleared."
-      >
+      <AdminCollapsible id="booking-assignment" title="Agency & courier">
         <div className="space-y-5">
-          <p className="rounded-lg border border-border-strong/80 bg-canvas/40 px-3 py-2.5 text-sm leading-relaxed text-muted">
-            Use the agency email they log in with. Customers see that partner&apos;s display name on tracking
-            when applicable. Courier must be active and available unless they are already assigned to this job.
-          </p>
-
-          <AdminFormField
-            label="Agency partner"
-            htmlFor={`${uid}-agency`}
-            hint={
-              <>
-                Partner&apos;s <strong className="font-medium text-muted">login email</strong>. Customers
-                see the name from that user account on Track.
-              </>
-            }
-          >
+          <AdminFormField label="Agency (login email)" htmlFor={`${uid}-agency`}>
             {agencyOptions.length > 0 ? (
               <datalist id={agencyDatalistId}>
                 {agencyOptions.map((a) => (
@@ -426,10 +361,6 @@ export function AdminBookingDispatchSplit({
 
           <div className="rounded-xl border border-border-strong bg-canvas/25 p-4">
             <h3 className="text-sm font-semibold text-ink">Courier</h3>
-            <p className="mt-1 text-xs text-muted-soft">
-              Pickup / delivery in the courier app. Cannot newly assign someone inactive, off duty, or
-              already on another open job — current assignee stays selectable.
-            </p>
             <div className="mt-4">
               <AdminFormField label="Courier on this job" htmlFor={`${uid}-courier`}>
                 <select
@@ -462,14 +393,6 @@ export function AdminBookingDispatchSplit({
               </AdminFormField>
             </div>
           </div>
-
-          <details className="rounded-lg border border-border-strong bg-canvas/30 px-3 py-2 text-xs text-muted-soft">
-            <summary className="cursor-pointer font-medium text-ink">Database field names</summary>
-            <ul className="mt-2 space-y-1 font-mono text-[10px] text-muted">
-              <li>Agency partner → assignedAgency</li>
-              <li>Courier on this job → courierId</li>
-            </ul>
-          </details>
 
           {state?.ok === false && state.error ? (
             <p className="text-sm text-rose-400" role="alert">

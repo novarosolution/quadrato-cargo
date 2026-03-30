@@ -93,6 +93,8 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
 
   const routeLabel = row.routeType === "international" ? "International" : "Domestic";
 
+  const inv = row.invoice && typeof row.invoice === "object" ? row.invoice : null;
+
   return (
     <div className="stack-page content-full">
       <section className="border-b border-border py-8 sm:py-10">
@@ -250,9 +252,11 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
 
           <PublicCard className="sm:p-8">
             <h2 className="font-display text-lg font-semibold text-ink">
-              Delivery receipt — A6 (105×148 mm, QR)
+              PDFs — A6 (105×148 mm)
             </h2>
-            <p className="mt-2 text-sm text-muted">Scan to open your tracking page.</p>
+            <p className="mt-2 text-sm text-muted">
+              Tracking slip and invoice use the same small page size. Scan the QR to open tracking.
+            </p>
             <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
               {qrDataUrl ? (
                 <Image
@@ -285,8 +289,24 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                     {canDownloadInvoicePdf ? (
                     <DownloadBookingPdfButton
                       template="invoice"
-                      buttonLabel="Download Invoice PDF"
+                      buttonLabel="Download invoice (A6)"
                       bookingId={row.id}
+                      invoiceDetails={
+                        inv
+                          ? {
+                              number: inv.number ?? null,
+                              currency: inv.currency ?? null,
+                              subtotal: inv.subtotal ?? null,
+                              tax: inv.tax ?? null,
+                              insurance: inv.insurance ?? null,
+                              customsDuties: inv.customsDuties ?? null,
+                              discount: inv.discount ?? null,
+                              total: inv.total ?? null,
+                              lineDescription: inv.lineDescription ?? null,
+                              notes: inv.notes ?? null,
+                            }
+                          : null
+                      }
                       bookingDateLabel={dateFmt.format(row.createdAt)}
                       updatedAtLabel={dateFmt.format(row.updatedAt)}
                       reference={reference}

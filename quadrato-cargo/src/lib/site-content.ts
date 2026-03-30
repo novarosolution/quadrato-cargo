@@ -6,6 +6,7 @@ import {
   Clock,
   Globe2,
   Headphones,
+  Mail,
   MapPin,
   Package,
   PackageSearch,
@@ -182,14 +183,65 @@ export const howItWorksSteps: Array<{
   },
 ];
 
-/** Contact sidebar — dispatch info */
-export const contactDispatchChannels: Array<{
+/** Contact sidebar row — values come from admin site settings (phone / email). */
+export type ContactDispatchSidebarItem = {
   id: string;
   label: string;
-  value: string;
+  body: string;
   Icon: LucideIcon;
-}> = [
-  { id: "phone", label: "Phone", value: "+1 (555) 010-0199", Icon: Phone },
-  { id: "hours", label: "Hours", value: "Mon–Fri 7:00–19:00", Icon: Clock },
-  { id: "after", label: "After hours", value: "Use the number on your booking confirmation.", Icon: Headphones },
-];
+  /** tel: or mailto: for clickable dispatch lines */
+  href?: string;
+};
+
+/**
+ * Build contact-page dispatch cards from admin-managed support phone & emails
+ * (same source as footer and PDF receipts).
+ */
+export function buildContactDispatchSidebarItems(params: {
+  supportPhone: string;
+  supportEmail: string;
+  publicInfoEmail?: string;
+}): ContactDispatchSidebarItem[] {
+  const phone = String(params.supportPhone ?? "").trim() || "+1 (555) 010-0199";
+  const email = String(params.supportEmail ?? "").trim() || "support@quadratocargo.com";
+  const extra = String(params.publicInfoEmail ?? "").trim();
+
+  const items: ContactDispatchSidebarItem[] = [
+    {
+      id: "phone",
+      label: "Phone",
+      body: phone,
+      href: `tel:${phone.replace(/\s/g, "")}`,
+      Icon: Phone,
+    },
+    {
+      id: "email-primary",
+      label: "Email",
+      body: email,
+      href: `mailto:${email}`,
+      Icon: Mail,
+    },
+  ];
+
+  if (extra) {
+    items.push({
+      id: "email-extra",
+      label: "Additional email",
+      body: extra,
+      href: `mailto:${extra}`,
+      Icon: Mail,
+    });
+  }
+
+  items.push(
+    { id: "hours", label: "Hours", body: "Mon–Fri 7:00–19:00 local", Icon: Clock },
+    {
+      id: "after",
+      label: "After hours",
+      body: "Use the number on your booking confirmation.",
+      Icon: Headphones,
+    },
+  );
+
+  return items;
+}

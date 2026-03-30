@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { getApiBaseUrl } from "@/lib/api/base-url";
 import { csrfHeaderRecord } from "@/lib/api/csrf-headers";
-import { drawBrandedPdfHeader } from "@/lib/pdf-brand-logo";
-import { fetchInvoiceLogoAsPng } from "@/lib/pdf-invoice-logo";
 import {
   sanitizeHttpUrlForQr,
   sanitizePdfFileStem,
@@ -27,10 +25,26 @@ type PdfSettings = {
   footerNote: string;
 };
 
+/** Admin invoice fields for A6 invoice PDF (ISO 105×148 mm). */
+export type InvoicePdfDetails = {
+  number?: string | null;
+  currency?: string | null;
+  subtotal?: string | null;
+  tax?: string | null;
+  insurance?: string | null;
+  customsDuties?: string | null;
+  discount?: string | null;
+  total?: string | null;
+  lineDescription?: string | null;
+  notes?: string | null;
+};
+
 type Props = {
   template?: "invoice" | "tracking";
   buttonLabel?: string;
   bookingId: string;
+  /** When template is invoice, used for line items and totals on the A6 PDF. */
+  invoiceDetails?: InvoicePdfDetails | null;
   bookingDateLabel: string;
   updatedAtLabel: string;
   reference: string;
@@ -87,16 +101,13 @@ export function DownloadBookingPdfButton({
   courierNameLabel,
   trackUrl,
   settings,
+  invoiceDetails = null,
 }: Props) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const runFallbackPdf = async () => {
-    const [{ jsPDF }, QRCodeModule, invoiceLogo] = await Promise.all([
-      import("jspdf"),
-      import("qrcode"),
-      fetchInvoiceLogoAsPng(),
-    ]);
+    const [{ jsPDF }, QRCodeModule] = await Promise.all([import("jspdf"), import("qrcode")]);
     const QRCode = QRCodeModule.default;
     const trackFallback = `${window.location.origin}/public/tsking`;
     const trackUrlSafe = sanitizeHttpUrlForQr(trackUrl, trackFallback);
@@ -176,101 +187,125 @@ export function DownloadBookingPdfButton({
       return;
     }
 
-    const doc = new jsPDF({ unit: "mm", format: "a4" });
-    const wrapped = (value: string, width: number) =>
-      doc.splitTextToSize(safe(value), width);
-
-    const qrDataUrl = await QRCode.toDataURL(trackUrlSafe, {
-      width: 240,
+    /** Invoice: compact A6 (105×148 mm) with admin invoice lines + track QR. */
+    const doc = new jsPDF({ unit: "mm", format: "a6" });
+    const qrDataUrlInv = await QRCode.toDataURL(trackUrlSafe, {
+      width: 160,
       margin: 1,
     }).catch(() => null);
 
-    drawBrandedPdfHeader(
-      doc,
-      {
-        companyName: settings.companyName,
-        headerSubtitle: settings.headerSubtitle,
-        reference: safe(reference),
-        primaryColorHex: settings.primaryColor,
-        accentColorHex: settings.accentColor,
-      },
-      qrDataUrl,
-      invoiceLogo
-        ? {
-            logoPngDataUrl: invoiceLogo.dataUrl,
-            logoAspect: invoiceLogo.aspect,
-          }
-        : null,
-    );
-
-    let y = 40;
-    if (template === "invoice") {
-      doc.setTextColor(55, 65, 81);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text("Invoice", 14, 38);
-      y = 46;
+    doc.setTextColor(17, 24, 39);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.text(safe(settings.companyName).slice(0, 42), 5, 6);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6);
+    let y = 9;
+    const addrLines = doc.splitTextToSize(safe(settings.companyAddress), 62);
+    addrLines.slice(0, 2).forEach((line: string) => {
+      doc.text(line, 5, y);
+      y += 3;
+    });
+    if (qrDataUrlInv) {
+      doc.addImage(qrDataUrlInv, "PNG", 72, 2, 28, 28);
     }
-    const drawPair = (label: string, value: string, x: number, yy: number) => {
-      doc.setTextColor(55, 65, 81);
+
+    y = Math.max(y, 14) + 2;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("Invoice", 5, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    const inv = invoiceDetails ?? {};
+    const invNum = inv.number != null && String(inv.number).trim() ? String(inv.number).trim() : "—";
+    const cur =
+      inv.currency != null && String(inv.currency).trim()
+        ? String(inv.currency).trim().toUpperCase().slice(0, 12)
+        : "INR";
+    doc.text(`No. ${invNum.slice(0, 24)}`, 5, y);
+    doc.text(`Date ${safe(bookingDateLabel).slice(0, 22)}`, 52, y);
+    y += 3.8;
+    doc.text(`Track ${safe(consignmentNumber || reference).slice(0, 30)}`, 5, y);
+    y += 4.5;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.text("Bill to", 5, y);
+    y += 3.2;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6);
+    const billBlock = doc.splitTextToSize(
+      `${safe(senderName)} · ${safe(senderAddress)}`.slice(0, 220),
+      95,
+    );
+    billBlock.slice(0, 3).forEach((line: string) => {
+      doc.text(line, 5, y);
+      y += 3.1;
+    });
+    y += 1;
+
+    const lineDesc =
+      inv.lineDescription != null && String(inv.lineDescription).trim()
+        ? String(inv.lineDescription).trim()
+        : contentsLabel;
+    if (safe(lineDesc) !== "-") {
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.text(label, x, yy);
-      doc.setTextColor(17, 24, 39);
+      doc.setFontSize(6);
+      doc.text("Description", 5, y);
+      y += 3;
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.text(wrapped(value, 60), x + 28, yy);
+      doc.splitTextToSize(safe(lineDesc), 95)
+        .slice(0, 2)
+        .forEach((line: string) => {
+          doc.text(line, 5, y);
+          y += 3;
+        });
+      y += 0.5;
+    }
+
+    const money = (k: keyof InvoicePdfDetails) => {
+      const raw = inv[k];
+      return raw != null && String(raw).trim() ? String(raw).trim() : "";
     };
 
-    drawPair("Booked:", bookingDateLabel, 14, y);
-    drawPair("Update:", updatedAtLabel, 106, y);
-    y += 10;
-    drawPair("Route:", routeTypeLabel, 14, y);
-    drawPair("Ref:", reference, 106, y);
-    y += 10;
-    drawPair("From:", fromCity, 14, y);
-    drawPair("To:", toCity, 106, y);
-    y += 10;
-    drawPair("Sender:", senderName, 14, y);
-    drawPair("Recipient:", recipientName, 106, y);
-    y += 10;
-    drawPair("Sender Addr:", senderAddress, 14, y);
-    drawPair("Recipient Addr:", recipientAddress, 106, y);
-    y += 10;
-    drawPair("Sender Phone:", senderPhone, 14, y);
-    drawPair("Recipient Phone:", recipientPhone, 106, y);
-    y += 10;
-    drawPair("Amount:", amountLabel, 14, y);
-    drawPair("Agency:", agencyLabel, 106, y);
-    y += 14;
-    drawPair("Booking ID:", bookingId, 14, y);
-    drawPair("Tracking ID:", consignmentNumber, 106, y);
-    y += 10;
-    drawPair("Weight:", weightLabel, 14, y);
-    drawPair("Dimensions:", dimensionsLabel, 106, y);
-    y += 10;
-    drawPair("Sender Email:", senderEmail, 14, y);
-    drawPair("Recipient Email:", recipientEmail, 106, y);
-    y += 10;
-    drawPair("Track URL:", trackUrlSafe, 14, y);
+    const drawMoney = (label: string, value: string, bold = false) => {
+      if (!value) return;
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setFontSize(6.5);
+      doc.text(label, 5, y);
+      doc.text(`${cur} ${value}`.slice(0, 28), 100, y, { align: "right" });
+      y += 3.3;
+    };
 
-    y += 20;
-    drawPair("Contents:", contentsLabel, 14, y);
-    y += 10;
-    drawPair("Instructions:", instructionsLabel, 14, y);
-    y += 10;
-    drawPair("Tracking Update:", trackingNotesLabel, 14, y);
-    y += 10;
-    drawPair("Pickup Courier:", courierNameLabel, 14, y);
-    drawPair("Agency:", agencyLabel, 106, y);
+    drawMoney("Subtotal", money("subtotal"));
+    drawMoney("Tax", money("tax"));
+    drawMoney("Insurance", money("insurance"));
+    drawMoney("Customs", money("customsDuties"));
+    drawMoney("Discount", money("discount"));
+    drawMoney("Total", money("total"), true);
+
+    if (y < 128 && money("notes")) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(5.5);
+      doc.setTextColor(80, 88, 102);
+      doc.splitTextToSize(`Note: ${money("notes")}`, 95)
+        .slice(0, 2)
+        .forEach((line: string) => {
+          if (y < 136) {
+            doc.text(line, 5, y);
+            y += 2.8;
+          }
+        });
+    }
 
     doc.setTextColor(100, 116, 139);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(safe(settings.footerNote), 105, 286, { align: "center" });
+    doc.setFontSize(5.5);
+    doc.text(safe(settings.footerNote).slice(0, 76), 52.5, 143, { align: "center" });
+
     const fileStem = sanitizePdfFileStem(reference || bookingId);
-    const prefix = template === "invoice" ? "invoice" : "tracking";
-    doc.save(`${prefix}-${fileStem}.pdf`);
+    doc.save(`invoice-${fileStem}.pdf`);
   };
 
   const onDownload = async () => {

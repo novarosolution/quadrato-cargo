@@ -4,7 +4,8 @@ import { PublicCardIcon } from "@/components/public/PublicCardIcon";
 import { PublicPageSection } from "@/components/public/PublicPageSection";
 import { Container } from "@/components/Wrap";
 import { PageHero } from "@/components/Hero";
-import { contactDispatchChannels } from "@/lib/site-content";
+import { fetchSiteSettings } from "@/lib/api/public-client";
+import { buildContactDispatchSidebarItems } from "@/lib/site-content";
 import { ContactForm } from "./Contact";
 
 export const metadata: Metadata = {
@@ -13,7 +14,17 @@ export const metadata: Metadata = {
     "Contact Quadrato Cargo for pickup support, shipment queries, and pricing quotes.",
 };
 
-export default function ContactPage() {
+const linkClass =
+  "text-teal underline-offset-2 transition hover:text-teal hover:underline";
+
+export default async function ContactPage() {
+  const siteSettings = await fetchSiteSettings();
+  const dispatchItems = buildContactDispatchSidebarItems({
+    supportPhone: siteSettings.pdfSupportPhone,
+    supportEmail: siteSettings.pdfSupportEmail,
+    publicInfoEmail: siteSettings.publicInfoEmail,
+  });
+
   return (
     <div className="stack-page content-full">
       <PageHero
@@ -28,16 +39,25 @@ export default function ContactPage() {
             <div className="lg:col-span-2">
               <h2 className="font-display text-lg font-semibold text-ink">Dispatch</h2>
               <p className="mt-2 text-sm text-muted">
-                Form is fastest — route, service, and contact in one go.
+                Phone and email below match the site footer and your admin “Data” settings. Form is
+                fastest for detailed requests.
               </p>
               <dl className="mt-6 space-y-3 text-sm">
-                {contactDispatchChannels.map((ch) => (
+                {dispatchItems.map((ch) => (
                   <PublicCard key={ch.id}>
                     <div className="flex gap-3">
                       <PublicCardIcon Icon={ch.Icon} className="mb-0 shrink-0" size="sm" />
                       <div className="min-w-0">
                         <dt className="font-medium text-ink">{ch.label}</dt>
-                        <dd className="mt-1 text-muted">{ch.value}</dd>
+                        <dd className="mt-1 wrap-break-word text-muted">
+                          {ch.href ? (
+                            <a href={ch.href} className={linkClass}>
+                              {ch.body}
+                            </a>
+                          ) : (
+                            ch.body
+                          )}
+                        </dd>
                       </div>
                     </div>
                   </PublicCard>

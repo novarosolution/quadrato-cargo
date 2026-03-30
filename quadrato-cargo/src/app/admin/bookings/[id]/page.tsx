@@ -20,6 +20,7 @@ import { AdminBookingInvoiceForm } from "../AdminBookingInvoiceForm";
 import { AdminCustomerTimelineForm } from "../AdminCustomerTimelineForm";
 import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminTimelineQuickCardForm } from "../AdminTimelineQuickCardForm";
+import { AdminBookingPickupForm } from "../AdminBookingPickupForm";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -71,11 +72,21 @@ export default async function AdminBookingDetailPage({ params }: Props) {
     recipientEmail: str(recipient.email),
     recipientPhone: str(recipient.phone),
   };
-  const collectionMode =
-    typeof payload.collectionMode === "string" ? payload.collectionMode : "";
-  const pickupPreference =
-    typeof payload.pickupPreference === "string" ? payload.pickupPreference : "";
   const pickupPin = typeof sender.postal === "string" ? sender.postal : "";
+  const pickupInitial = {
+    collectionMode:
+      typeof payload.collectionMode === "string" ? payload.collectionMode : "",
+    pickupDate: str(payload.pickupDate),
+    pickupTimeSlot: str(payload.pickupTimeSlot),
+    pickupTimeSlotCustom: str(payload.pickupTimeSlotCustom),
+    pickupPreference:
+      typeof payload.pickupPreference === "string" ? payload.pickupPreference : "",
+    instructions: str(payload.instructions),
+    senderStreet: str(sender.street),
+    senderCity: str(sender.city),
+    senderPostal: str(sender.postal),
+    senderCountry: str(sender.country),
+  };
   const inv =
     row.invoice && typeof row.invoice === "object"
       ? (row.invoice as Record<string, string | null | undefined>)
@@ -112,12 +123,6 @@ export default async function AdminBookingDetailPage({ params }: Props) {
         description={
           <>
             {row.createdAt.toLocaleString()} · ID <span className="font-mono text-xs">{row.id}</span>
-            <span className="mt-3 block max-w-2xl leading-relaxed">
-              Edit this booking in three areas: <strong className="font-medium text-ink">operations</strong>{" "}
-              (status, assignment, notes), <strong className="font-medium text-ink">what customers see</strong> on
-              the public track page, and <strong className="font-medium text-ink">account &amp; advanced</strong>{" "}
-              (linking the customer and raw data). Use the links below to jump.
-            </span>
           </>
         }
         actions={
@@ -141,48 +146,23 @@ export default async function AdminBookingDetailPage({ params }: Props) {
             </a>
           </li>
           <li>
-            <a href="#booking-section-ops" className={jumpLinkClass}>
-              Operations &amp; dispatch
+            <a href="#booking-tracking" className={jumpLinkClass}>
+              Tracking &amp; dispatch
             </a>
           </li>
           <li>
-            <a href="#booking-customer-tracking" className={jumpLinkClass}>
-              Dispatch &amp; updates
-            </a>
-          </li>
-          <li>
-            <a href="#booking-assignment" className={jumpLinkClass}>
-              Assignment
-            </a>
-          </li>
-          <li>
-            <a href="#booking-section-public" className={jumpLinkClass}>
-              What customers see
-            </a>
-          </li>
-          <li>
-            <a href="#booking-contacts" className={jumpLinkClass}>
-              Contacts
-            </a>
-          </li>
-          <li>
-            <a href="#booking-quick-card" className={jumpLinkClass}>
-              Current tracking card
-            </a>
-          </li>
-          <li>
-            <a href="#booking-customer-timeline" className={jumpLinkClass}>
-              Full timeline
+            <a href="#booking-customer-view" className={jumpLinkClass}>
+              Customer view
             </a>
           </li>
           <li>
             <a href="#booking-invoice" className={jumpLinkClass}>
-              Invoice PDF
+              Invoice
             </a>
           </li>
           <li>
-            <a href="#booking-section-advanced" className={jumpLinkClass}>
-              Account &amp; advanced
+            <a href="#booking-pickup-details" className={jumpLinkClass}>
+              Pickup &amp; details
             </a>
           </li>
         </ul>
@@ -193,9 +173,6 @@ export default async function AdminBookingDetailPage({ params }: Props) {
         className="scroll-mt-24 rounded-2xl border border-border-strong bg-surface-elevated/50 p-5"
       >
         <h2 className="font-display text-lg font-semibold">Shipment summary</h2>
-        <p className="mt-1 text-xs text-muted-soft">
-          Read-only snapshot of this booking. Everything below is editable.
-        </p>
         <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
           <div className="min-w-0">
             <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
@@ -215,7 +192,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
             <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
               Assigned agency
             </dt>
-            <dd className="mt-1 break-words text-ink">{row.assignedAgency || "—"}</dd>
+            <dd className="mt-1 wrap-break-word text-ink">{row.assignedAgency || "—"}</dd>
           </div>
           <div className="min-w-0">
             <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
@@ -275,13 +252,10 @@ export default async function AdminBookingDetailPage({ params }: Props) {
         </dl>
       </section>
 
-      <section id="booking-section-ops" className="scroll-mt-24 space-y-4">
+      <section id="booking-tracking" className="scroll-mt-24 space-y-4">
         <div className="rounded-xl border border-border-strong/80 bg-canvas/20 px-4 py-3">
-          <h2 className="font-display text-lg font-semibold text-ink">Operations &amp; dispatch</h2>
-          <p className="mt-1 text-sm text-muted">
-            Status, tracking ID, messages customers see, agency partner, and courier. Saving applies everything
-            in the open panels below to this booking.
-          </p>
+          <h2 className="font-display text-lg font-semibold text-ink">Tracking &amp; dispatch</h2>
+          <p className="mt-1 text-sm text-muted">Status, notes, agency, courier, and the public timeline.</p>
         </div>
         <AdminBookingDispatchSplit
           key={row.id}
@@ -299,39 +273,12 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           couriers={couriers}
           assignedCourierId={row.courierId}
         />
-      </section>
-
-      <section id="booking-section-public" className="scroll-mt-24 space-y-4">
-        <div className="rounded-xl border border-border-strong/80 bg-canvas/20 px-4 py-3">
-          <h2 className="font-display text-lg font-semibold text-ink">What customers see</h2>
-          <p className="mt-1 text-sm text-muted">
-            Public track page: contact names and phones, the highlighted timeline card, optional overrides for
-            every step, and invoice PDF settings.
-          </p>
-        </div>
-
-        <AdminCollapsible
-          id="booking-contacts"
-          title="Sender & recipient contact"
-          description="Name, email, and phone only. Full addresses are edited in Booking data (JSON) at the bottom."
-          defaultOpen
-        >
-          <AdminBookingContactForm
-            bookingId={row.id}
-            routeType={row.routeType === "international" ? "international" : "domestic"}
-            initial={contactInitial}
-          />
-        </AdminCollapsible>
 
         <section
           id="booking-quick-card"
-          className="scroll-mt-24 rounded-2xl border border-teal/25 bg-teal/[0.04] p-5 dark:bg-teal/10"
+          className="scroll-mt-24 rounded-2xl border border-teal/25 bg-teal/4 p-5 dark:bg-teal/10"
         >
-          <h2 className="font-display text-lg font-semibold text-ink">Current public tracking card</h2>
-          <p className="mt-1 text-xs text-muted-soft">
-            Matches this booking&apos;s status on the <span className="capitalize">{row.routeType}</span>{" "}
-            timeline. Only this step changes; use Full timeline below to edit other steps at once.
-          </p>
+          <h2 className="font-display text-lg font-semibold text-ink">Current timeline step</h2>
           <div className="mt-4">
             <AdminTimelineQuickCardForm
               bookingId={row.id}
@@ -342,23 +289,32 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           </div>
         </section>
 
-        <AdminCollapsible
-          id="booking-customer-timeline"
-          title="Full timeline (all steps)"
-          description="Override any timeline card, bulk-edit location lines, or replace the whole saved snapshot."
-        >
+        <AdminCollapsible id="booking-customer-timeline" title="All timeline steps">
           <AdminCustomerTimelineForm
             bookingId={row.id}
             routeType={row.routeType}
             initial={row.publicTimelineOverrides ?? null}
           />
         </AdminCollapsible>
+      </section>
 
-        <AdminCollapsible
-          id="booking-invoice"
-          title="Customer invoice PDF"
-          description="Invoice lines and whether the customer can download the PDF after pickup."
-        >
+      <section id="booking-customer-view" className="scroll-mt-24 space-y-4">
+        <div className="rounded-xl border border-border-strong/80 bg-canvas/20 px-4 py-3">
+          <h2 className="font-display text-lg font-semibold text-ink">Customer view</h2>
+          <p className="mt-1 text-sm text-muted">Names and phones on Track; invoice download for the customer.</p>
+        </div>
+
+        <AdminCollapsible id="booking-contacts" title="Sender &amp; recipient contact" defaultOpen>
+          <AdminBookingContactForm
+            bookingId={row.id}
+            routeType={row.routeType === "international" ? "international" : "domestic"}
+            initial={contactInitial}
+          />
+        </AdminCollapsible>
+      </section>
+
+      <section id="booking-invoice" className="scroll-mt-24 space-y-4">
+        <AdminCollapsible id="booking-invoice-panel" title="Invoice PDF" defaultOpen>
           <AdminBookingInvoiceForm
             bookingId={row.id}
             allowCustomerInvoicePdf={row.invoicePdfReady !== false}
@@ -367,20 +323,21 @@ export default async function AdminBookingDetailPage({ params }: Props) {
         </AdminCollapsible>
       </section>
 
-      <section id="booking-section-advanced" className="scroll-mt-24 space-y-4">
+      <section id="booking-pickup-details" className="scroll-mt-24 space-y-4">
         <div className="rounded-xl border border-border-strong/80 bg-canvas/20 px-4 py-3">
-          <h2 className="font-display text-lg font-semibold text-ink">Account &amp; advanced</h2>
-          <p className="mt-1 text-sm text-muted">
-            Link this booking to a customer profile, view pickup settings from the original booking, or edit the
-            full JSON payload when you need full control.
-          </p>
+          <h2 className="font-display text-lg font-semibold text-ink">Pickup &amp; details</h2>
+          <p className="mt-1 text-sm text-muted">Pickup schedule, sender address, account link, full JSON.</p>
         </div>
 
-        <AdminCollapsible
-          id="booking-customer"
-          title="Customer account"
-          description="Link or unlink a registered customer to this booking."
-        >
+        <AdminCollapsible id="booking-pickup-form" title="Pickup &amp; sender address" defaultOpen>
+          <AdminBookingPickupForm
+            bookingId={row.id}
+            routeType={row.routeType === "international" ? "international" : "domestic"}
+            initial={pickupInitial}
+          />
+        </AdminCollapsible>
+
+        <AdminCollapsible id="booking-customer" title="Customer account">
           <AdminBookingCustomerLink
             bookingId={row.id}
             linkedUserEmail={row.user?.email ?? null}
@@ -388,38 +345,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           />
         </AdminCollapsible>
 
-        <AdminCollapsible
-          id="booking-ops"
-          title="Operations snapshot"
-          description="Pickup mode and window from the booking (read-only). Change these in Booking data (JSON)."
-        >
-          <dl className="grid gap-3 text-sm sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-canvas/30 p-3">
-              <dt className="text-xs uppercase tracking-wide text-muted-soft">Collection mode</dt>
-              <dd className="mt-1 font-medium capitalize text-ink">
-                {collectionMode || "Not set"}
-              </dd>
-            </div>
-            <div className="rounded-xl border border-border bg-canvas/30 p-3">
-              <dt className="text-xs uppercase tracking-wide text-muted-soft">
-                Pickup Postal Code / ZIP
-              </dt>
-              <dd className="mt-1 font-medium text-ink">{pickupPin || "Not set"}</dd>
-            </div>
-            <div className="rounded-xl border border-border bg-canvas/30 p-3 sm:col-span-1">
-              <dt className="text-xs uppercase tracking-wide text-muted-soft">
-                Pickup window / note
-              </dt>
-              <dd className="mt-1 font-medium text-ink">{pickupPreference || "Not set"}</dd>
-            </div>
-          </dl>
-        </AdminCollapsible>
-
-        <AdminCollapsible
-          id="booking-data"
-          title="Booking data (JSON)"
-          description="Route type and full payload (addresses, shipment). Replaces the whole payload unless you use Contacts above for phone/email only."
-        >
+        <AdminCollapsible id="booking-data" title="Booking data (JSON)">
           <AdminBookingDataForm
             bookingId={row.id}
             routeType={row.routeType}

@@ -63,14 +63,24 @@ const bookingContactPartyPatchSchema = z
   .object({
     name: z.string().trim().max(200).optional(),
     email: z.string().trim().max(320).optional(),
-    phone: z.string().trim().max(40).optional()
+    phone: z.string().trim().max(40).optional(),
+    street: z.string().trim().max(500).optional(),
+    city: z.string().trim().max(200).optional(),
+    postal: z.string().trim().max(32).optional(),
+    country: z.string().trim().max(120).optional()
   })
   .strict();
 
 const bookingMergePayloadSchema = z
   .object({
     sender: bookingContactPartyPatchSchema.optional(),
-    recipient: bookingContactPartyPatchSchema.optional()
+    recipient: bookingContactPartyPatchSchema.optional(),
+    collectionMode: z.union([z.enum(["instant", "scheduled"]), z.literal("")]).optional(),
+    pickupDate: z.string().trim().max(32).optional(),
+    pickupTimeSlot: z.string().trim().max(64).optional(),
+    pickupTimeSlotCustom: z.string().trim().max(64).optional(),
+    pickupPreference: z.string().trim().max(2000).optional(),
+    instructions: z.string().trim().max(4000).optional()
   })
   .strict();
 
@@ -80,13 +90,15 @@ const bookingDataBodySchema = z.object({
   payload: z.unknown()
 });
 
+const MERGE_PARTY_KEYS = ["name", "email", "phone", "street", "city", "postal", "country"];
+
 function applyBookingContactPartyPatch(existingParty, patch) {
   const out =
     existingParty && typeof existingParty === "object" && !Array.isArray(existingParty)
       ? { ...existingParty }
       : {};
   if (!patch || typeof patch !== "object") return out;
-  for (const key of ["name", "email", "phone"]) {
+  for (const key of MERGE_PARTY_KEYS) {
     if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
     const raw = patch[key];
     if (raw === undefined) continue;
@@ -97,6 +109,33 @@ function applyBookingContactPartyPatch(existingParty, patch) {
   return out;
 }
 
+const MERGE_PICKUP_TOP_KEYS = [
+  "collectionMode",
+  "pickupDate",
+  "pickupTimeSlot",
+  "pickupTimeSlotCustom",
+  "pickupPreference",
+  "instructions"
+];
+
+function mergePickupTopLevelIntoPayload(base, patch) {
+  if (!patch || typeof patch !== "object") return;
+  if (Object.prototype.hasOwnProperty.call(patch, "collectionMode")) {
+    const cm = patch.collectionMode;
+    if (cm === "" || cm === undefined) delete base.collectionMode;
+    else if (cm === "instant" || cm === "scheduled") base.collectionMode = cm;
+  }
+  for (const key of MERGE_PICKUP_TOP_KEYS) {
+    if (key === "collectionMode") continue;
+    if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
+    const raw = patch[key];
+    if (raw === undefined) continue;
+    const s = String(raw).trim();
+    if (s === "") delete base[key];
+    else base[key] = s;
+  }
+}
+
 function mergeBookingContactPayloadIntoExisting(existingRaw, patch) {
   const base =
     existingRaw && typeof existingRaw === "object" && !Array.isArray(existingRaw)
@@ -104,6 +143,7 @@ function mergeBookingContactPayloadIntoExisting(existingRaw, patch) {
       : {};
   if (patch.sender) base.sender = applyBookingContactPartyPatch(base.sender, patch.sender);
   if (patch.recipient) base.recipient = applyBookingContactPartyPatch(base.recipient, patch.recipient);
+  mergePickupTopLevelIntoPayload(base, patch);
   return base;
 }
 
@@ -975,7 +1015,7 @@ router.patch("/bookings/:id/data", async (req, res, next) => {
     const now = new Date();
     if (mergeMode) {
       const sub = bookingMergePayloadSchema.safeParse(parsed.data.payload ?? {});
-      if (!sub.success) return sendError(res, "Invalid contact merge payload.");
+      if (!sub.success) return sendError(res, "Invalid merge payload.");
       const booking = await db.collection("bookings").findOne(
         { _id },
         { projection: { payload: 1, routeType: 1 } }

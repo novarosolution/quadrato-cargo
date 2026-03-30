@@ -26,7 +26,12 @@ const colVariants = {
   },
 };
 
-export function Footer() {
+type FooterProps = {
+  /** From server layout so phone/email match admin settings on first paint */
+  initialSiteSettings?: SiteSettings | null;
+};
+
+export function Footer({ initialSiteSettings = null }: FooterProps) {
   const year = new Date().getFullYear();
   const router = useRouter();
   const reduce = useReducedMotion();
@@ -36,7 +41,13 @@ export function Footer() {
     "loading" | "authenticated" | "unauthenticated"
   >("loading");
   const [user, setUser] = useState<ApiUser | null>(null);
-  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(
+    initialSiteSettings,
+  );
+
+  useEffect(() => {
+    setSiteSettings(initialSiteSettings);
+  }, [initialSiteSettings]);
 
   useEffect(() => {
     let cancelled = false;

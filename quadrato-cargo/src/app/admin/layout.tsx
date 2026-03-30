@@ -6,7 +6,7 @@ import { AdminNav } from "./dashboard/Nav";
 const adminMenu = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/reports", label: "Reports" },
-  { href: "/admin/settings", label: "Data" },
+  { href: "/admin/settings", label: "Data & site" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/contacts", label: "Contacts" },
   { href: "/admin/bookings", label: "Bookings" }
