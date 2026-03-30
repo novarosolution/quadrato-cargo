@@ -21,9 +21,7 @@ export default async function CourierLayout({
     <AppSessionProvider>
       <div className="app-shell admin-app-shell min-h-screen bg-canvas text-ink">
         <CourierNav email={courier.email} />
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-          {children}
-        </div>
+        <main className="role-dashboard-main">{children}</main>
       </div>
     </AppSessionProvider>
   );
