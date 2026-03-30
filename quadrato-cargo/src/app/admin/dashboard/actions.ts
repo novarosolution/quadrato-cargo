@@ -370,6 +370,62 @@ export async function saveCustomerTimelineStepAdmin(
   };
 }
 
+type LocationStagePatch = Record<string, { location: string }>;
+
+/** Merges location lines for every timeline step in one request (current route only). Empty string clears an override. */
+export async function saveCustomerTimelineLocationsAdmin(
+  _prev: BookingAdminUpdateState | undefined,
+  formData: FormData,
+): Promise<BookingAdminUpdateState> {
+  const bookingId = String(formData.get("bookingId") ?? "").trim();
+  const modeKey = String(formData.get("modeKey") ?? "").trim();
+  const raw = String(formData.get("locationsJson") ?? "").trim();
+  if (!bookingId) return { ok: false, error: "Missing booking." };
+  if (modeKey !== "domestic" && modeKey !== "international") {
+    return { ok: false, error: "Invalid timeline route." };
+  }
+  let parsed: unknown;
+  try {
+    parsed = raw ? JSON.parse(raw) : {};
+  } catch {
+    return { ok: false, error: "Location data is not valid JSON." };
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return { ok: false, error: "Invalid location payload." };
+  }
+  const inner: LocationStagePatch = {};
+  for (const [idx, val] of Object.entries(parsed as Record<string, unknown>)) {
+    if (!/^\d+$/.test(idx)) continue;
+    if (!val || typeof val !== "object" || Array.isArray(val)) continue;
+    const loc = (val as { location?: unknown }).location;
+    inner[idx] = { location: typeof loc === "string" ? loc : "" };
+  }
+  if (Object.keys(inner).length === 0) {
+    return {
+      ok: false,
+      error: "Select at least one step to update (use the Update checkboxes above).",
+    };
+  }
+  const body: Record<string, unknown> = {
+    merge: true,
+    [modeKey]: inner,
+  };
+  const result = await adminMutation(
+    `/api/admin/bookings/${encodeURIComponent(bookingId)}/timeline-overrides`,
+    body,
+  );
+  if (!result.ok) {
+    return { ok: false, error: result.message || "Failed to save timeline locations." };
+  }
+  revalidatePath("/admin/bookings");
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/public/tsking");
+  return {
+    ok: true,
+    message: "Location lines for the selected steps were saved on public tracking.",
+  };
+}
+
 export async function updateCourierBookingDataAdmin(
   _prev: DataManageState | undefined,
   formData: FormData,

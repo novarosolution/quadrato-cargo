@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useCallback, useMemo, useState } from "react";
+import { useActionState, useCallback, useEffect, useMemo, useState } from "react";
 import {
   DOMESTIC_PROFESSIONAL_STAGES,
   INTERNATIONAL_PROFESSIONAL_STAGES,
@@ -9,6 +9,7 @@ import type { PublicTimelineOverrides } from "@/lib/api/public-client";
 import { AdminFormField, adminInputClassName } from "@/components/admin/AdminFormField";
 import {
   saveCustomerTimelineAdmin,
+  saveCustomerTimelineLocationsAdmin,
   saveCustomerTimelineStepAdmin,
   type BookingAdminUpdateState,
 } from "@/app/admin/dashboard/actions";
@@ -76,6 +77,14 @@ type Props = {
 
 const inputClass = adminInputClassName();
 
+function defaultLocationSaveMask(stepCount: number): Record<string, boolean> {
+  const m: Record<string, boolean> = {};
+  for (let i = 0; i < stepCount; i++) {
+    m[String(i)] = true;
+  }
+  return m;
+}
+
 export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Props) {
   const isInternational = String(routeType).toLowerCase() === "international";
   const stages = isInternational ? INTERNATIONAL_PROFESSIONAL_STAGES : DOMESTIC_PROFESSIONAL_STAGES;
@@ -97,6 +106,19 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
     BookingAdminUpdateState | undefined,
     FormData
   >(saveCustomerTimelineStepAdmin, undefined);
+
+  const [locState, locFormAction, locPending] = useActionState<
+    BookingAdminUpdateState | undefined,
+    FormData
+  >(saveCustomerTimelineLocationsAdmin, undefined);
+
+  const [locSaveMask, setLocSaveMask] = useState<Record<string, boolean>>(() =>
+    defaultLocationSaveMask(stages.length),
+  );
+
+  useEffect(() => {
+    setLocSaveMask(defaultLocationSaveMask(stages.length));
+  }, [bookingId, stages.length]);
 
   const updateField = useCallback(
     (idx: number, field: keyof StageFields, value: string) => {
@@ -134,6 +156,24 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
     [row.title, row.location, row.hint, row.shownAt],
   );
 
+  const locationsPayloadJson = useMemo(() => {
+    const inner: Record<string, { location: string }> = {};
+    for (let i = 0; i <= last; i++) {
+      const k = String(i);
+      if (!locSaveMask[k]) continue;
+      inner[k] = { location: (modeState[k]?.location ?? "").trim() };
+    }
+    return JSON.stringify(inner);
+  }, [modeState, last, locSaveMask]);
+
+  const selectedLocationStepCount = useMemo(() => {
+    let n = 0;
+    for (let i = 0; i <= last; i++) {
+      if (locSaveMask[String(i)]) n += 1;
+    }
+    return n;
+  }, [locSaveMask, last]);
+
   return (
     <div className="space-y-5">
       <p className="text-xs leading-relaxed text-muted-soft">
@@ -147,6 +187,102 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
         <strong className="font-medium text-ink">Save full timeline (replace snapshot)</strong> replaces the
         entire saved snapshot for both domestic and international (built from the form state below).
       </p>
+
+      <div className="space-y-3 rounded-xl border border-border-strong bg-surface-elevated/30 p-4">
+        <div>
+          <h3 className="text-sm font-semibold text-ink">Stage location lines (pick steps to update)</h3>
+          <p className="mt-1 text-xs text-muted-soft">
+            Check <strong className="font-medium text-ink">Update</strong> only for steps you want to write to
+            public tracking. Unchecked steps are left unchanged in the database. Text is the map-pin line on each
+            card; leave empty to clear your override and use the automatic default. Applies to this booking&apos;s{" "}
+            <span className="font-medium text-ink capitalize">{routeType}</span> timeline only.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="rounded-lg border border-border-strong bg-canvas px-3 py-1.5 text-xs font-medium text-ink hover:border-teal/40"
+            onClick={() => {
+              setLocSaveMask(() => {
+                const next: Record<string, boolean> = {};
+                for (let i = 0; i <= last; i++) next[String(i)] = true;
+                return next;
+              });
+            }}
+          >
+            Select all steps
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border border-border-strong bg-canvas px-3 py-1.5 text-xs font-medium text-ink hover:border-teal/40"
+            onClick={() => {
+              setLocSaveMask(() => {
+                const next: Record<string, boolean> = {};
+                for (let i = 0; i <= last; i++) next[String(i)] = false;
+                return next;
+              });
+            }}
+          >
+            Clear selection
+          </button>
+          <span className="self-center text-xs text-muted-soft">
+            {selectedLocationStepCount} of {last + 1} steps selected
+          </span>
+        </div>
+        <ul className="space-y-4">
+          {stages.map((stageDef, idx) => {
+            const k = String(idx);
+            const loc = modeState[k]?.location ?? "";
+            const checked = locSaveMask[k] !== false;
+            return (
+              <li
+                key={`all-loc-${k}`}
+                className="flex flex-col gap-2 rounded-lg border border-border-strong/60 bg-canvas/20 p-3 sm:flex-row sm:items-start sm:gap-4"
+              >
+                <label className="flex shrink-0 cursor-pointer items-center gap-2 text-xs font-medium text-ink sm:pt-2.5">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(e) =>
+                      setLocSaveMask((prev) => ({ ...prev, [k]: e.target.checked }))
+                    }
+                    className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
+                  />
+                  Update
+                </label>
+                <div className="min-w-0 flex-1">
+                  <AdminFormField
+                    label={`Step ${idx + 1}: ${stageDef.title}`}
+                    htmlFor={`tl-all-loc-${modeKey}-${k}`}
+                    hint="Shown on the customer timeline card as the location line."
+                  >
+                    <input
+                      id={`tl-all-loc-${modeKey}-${k}`}
+                      className={inputClass}
+                      value={loc}
+                      onChange={(e) => updateField(idx, "location", e.target.value)}
+                      placeholder="e.g. hub name or address (optional)"
+                      maxLength={500}
+                    />
+                  </AdminFormField>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        <form action={locFormAction} className="pt-1">
+          <input type="hidden" name="bookingId" value={bookingId} />
+          <input type="hidden" name="modeKey" value={modeKey} />
+          <input type="hidden" name="locationsJson" value={locationsPayloadJson} />
+          <button
+            type="submit"
+            disabled={locPending || pending || stepPending || selectedLocationStepCount === 0}
+            className="rounded-xl border border-teal/50 bg-teal-dim/80 px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-teal disabled:opacity-60 dark:bg-teal-dim/40"
+          >
+            {locPending ? "Saving…" : "Save selected location lines"}
+          </button>
+        </form>
+      </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border-strong bg-canvas/30 px-3 py-2 text-xs text-muted-soft">
         <span>
@@ -235,7 +371,7 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
             <input type="hidden" name="stepPayloadJson" value={stepPayloadJson} />
             <button
               type="submit"
-              disabled={stepPending || pending}
+              disabled={stepPending || pending || locPending}
               className="rounded-xl border border-border-strong bg-canvas px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-teal/40 disabled:opacity-60"
             >
               {stepPending ? "Saving step…" : "Save this step only"}
@@ -250,14 +386,14 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
         <div className="flex flex-wrap gap-2">
           <button
             type="submit"
-            disabled={pending}
+            disabled={pending || locPending}
             className="rounded-xl border border-teal/70 bg-teal px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-60"
           >
             {pending ? "Saving…" : "Save full timeline (replace snapshot)"}
           </button>
           <button
             type="button"
-            disabled={pending}
+            disabled={pending || locPending}
             className="rounded-xl border border-border-strong bg-canvas px-4 py-2.5 text-sm font-medium text-ink disabled:opacity-60"
             onClick={() => {
               setDomestic(initMode(4, undefined));
@@ -269,6 +405,20 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
           </button>
         </div>
       </form>
+
+      {locState?.ok === false ? (
+        <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-200">
+          {locState.error}
+        </p>
+      ) : null}
+      {locState?.ok === true ? (
+        <p className="rounded-lg border border-teal/30 bg-teal-dim/50 px-3 py-2 text-sm text-ink">
+          {locState.message}
+          {locState.warning ? (
+            <span className="mt-1 block text-xs text-amber-800 dark:text-amber-200">{locState.warning}</span>
+          ) : null}
+        </p>
+      ) : null}
 
       {stepState?.ok === false ? (
         <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-200">
