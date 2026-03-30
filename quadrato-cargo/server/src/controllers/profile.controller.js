@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
+import { getDb } from "../db/mongo.js";
 import { toPublicUser } from "../models/user.model.js";
 import {
   findBookingByUserAndId,
@@ -12,6 +13,10 @@ import {
   updateUserName,
   updateUserPasswordHash
 } from "../modules/users/user-repo.js";
+import {
+  mapBookingsAssignedAgencyForCustomer,
+  resolveAssignedAgencyDisplayName
+} from "../shared/agency-display-name.js";
 import { MIN_PASSWORD_LENGTH } from "../shared/constants.js";
 
 const updateProfileSchema = z.object({
@@ -47,7 +52,9 @@ export async function updateMyProfile(req, res, next) {
 export async function listMyBookings(req, res, next) {
   try {
     const rows = await listBookingsByUserId(req.auth.user.id, req.auth.user.email);
-    return sendOk(res, { bookings: rows });
+    const db = await getDb();
+    const bookings = await mapBookingsAssignedAgencyForCustomer(db, rows);
+    return sendOk(res, { bookings });
   } catch (error) {
     return next(error);
   }
@@ -63,7 +70,11 @@ export async function getMyBookingById(req, res, next) {
     if (!row) {
       return sendNotFound(res, "Booking not found.");
     }
-    return sendOk(res, { booking: row });
+    const db = await getDb();
+    const agencyDisplay = await resolveAssignedAgencyDisplayName(db, row.assignedAgency);
+    return sendOk(res, {
+      booking: { ...row, assignedAgency: agencyDisplay || null }
+    });
   } catch (error) {
     return next(error);
   }

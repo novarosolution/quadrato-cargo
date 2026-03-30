@@ -6,6 +6,7 @@ import {
   sendOk,
   sendValidationError
 } from "../components/api-response.js";
+import { getDb } from "../db/mongo.js";
 import { toPublicUser } from "../models/user.model.js";
 import {
   findBookingByUserAndId,
@@ -19,6 +20,10 @@ import {
   updateUserName,
   updateUserPasswordHash
 } from "../modules/users/user-repo.js";
+import {
+  mapBookingsAssignedAgencyForCustomer,
+  resolveAssignedAgencyDisplayName
+} from "../shared/agency-display-name.js";
 import { MIN_PASSWORD_LENGTH } from "../shared/constants.js";
 import { passwordComplexitySchema } from "../shared/password-rules.js";
 import { objectIdStringSchema } from "../shared/zod-helpers.js";
@@ -133,7 +138,9 @@ export async function listMyBookings(req, res, next) {
       ...row,
       courierName: row?.courierId ? courierMap.get(String(row.courierId)) || null : null
     }));
-    return sendOk(res, { bookings });
+    const db = await getDb();
+    const bookingsForCustomer = await mapBookingsAssignedAgencyForCustomer(db, bookings);
+    return sendOk(res, { bookings: bookingsForCustomer });
   } catch (error) {
     return next(error);
   }
@@ -158,7 +165,11 @@ export async function getMyBookingById(req, res, next) {
       const courier = await findUserById(row.courierId);
       courierName = String(courier?.name || courier?.email || "").trim() || null;
     }
-    return sendOk(res, { booking: { ...row, courierName } });
+    const db = await getDb();
+    const agencyDisplay = await resolveAssignedAgencyDisplayName(db, row.assignedAgency);
+    return sendOk(res, {
+      booking: { ...row, courierName, assignedAgency: agencyDisplay || null }
+    });
   } catch (error) {
     return next(error);
   }

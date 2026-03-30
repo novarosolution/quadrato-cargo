@@ -17,6 +17,9 @@ import {
 import { createContactSubmission } from "../modules/contacts/contact-repo.js";
 import { verifyAuthToken } from "../modules/auth/token.js";
 import { findUserById } from "../modules/users/user-repo.js";
+import {
+  resolveAssignedAgencyDisplayName
+} from "../shared/agency-display-name.js";
 import { computePublicBarcodeCode } from "../shared/public-barcode-code.js";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -529,7 +532,9 @@ async function buildPdfDataFromBooking(req, parsedData) {
       [booking.publicTrackingNote, booking.customerTrackingNote].find((n) => String(n || "").trim()) ||
         "-"
     ),
-    agencyLabel: String(booking.assignedAgency || "-"),
+    agencyLabel:
+      (await resolveAssignedAgencyDisplayName(db, booking.assignedAgency)) ||
+      "Pending assignment",
     courierNameLabel: courierName,
     trackUrl,
     settings: {
@@ -1363,25 +1368,6 @@ export async function createPublicBooking(req, res, next) {
   }
 }
 
-function assignedAgencyLooksLikeEmail(value) {
-  const s = String(value ?? "").trim();
-  if (!s) return false;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
-}
-
-/** Public tracking: never expose raw agency account email — use partner name when known. */
-async function agencyDisplayNameForPublicTrack(db, assignedAgencyRaw) {
-  const raw = String(assignedAgencyRaw ?? "").trim();
-  if (!raw) return null;
-  if (!assignedAgencyLooksLikeEmail(raw)) return raw;
-  const agencyUser = await db.collection("users").findOne({
-    role: "agency",
-    email: raw.toLowerCase()
-  });
-  const name = String(agencyUser?.name ?? "").trim();
-  return name || "Agency partner";
-}
-
 export async function trackBooking(req, res, next) {
   try {
     const normalizedReference = normalizeTrackingReference(req.params.reference ?? "");
@@ -1406,7 +1392,7 @@ export async function trackBooking(req, res, next) {
       const courier = await findUserById(row.courierId);
       courierName = String(courier?.name || courier?.email || "").trim() || null;
     }
-    const agencyName = await agencyDisplayNameForPublicTrack(db, row.assignedAgency);
+    const agencyName = await resolveAssignedAgencyDisplayName(db, row.assignedAgency);
     return sendOk(res, {
       trackUi,
       tracking: {

@@ -13,6 +13,7 @@ import {
 import { createContactSubmission } from "../modules/contacts/contact-repo.js";
 import { verifyAuthToken } from "../modules/auth/token.js";
 import { findUserById } from "../modules/users/user-repo.js";
+import { resolveAssignedAgencyDisplayName } from "../shared/agency-display-name.js";
 import { computePublicBarcodeCode } from "../shared/public-barcode-code.js";
 
 const trackingReferenceSchema = z
@@ -138,24 +139,6 @@ export async function createPublicBooking(req, res, next) {
   }
 }
 
-function assignedAgencyLooksLikeEmail(value) {
-  const s = String(value ?? "").trim();
-  if (!s) return false;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
-}
-
-async function agencyDisplayNameForPublicTrack(db, assignedAgencyRaw) {
-  const raw = String(assignedAgencyRaw ?? "").trim();
-  if (!raw) return null;
-  if (!assignedAgencyLooksLikeEmail(raw)) return raw;
-  const agencyUser = await db.collection("users").findOne({
-    role: "agency",
-    email: raw.toLowerCase()
-  });
-  const name = String(agencyUser?.name ?? "").trim();
-  return name || "Agency partner";
-}
-
 export async function trackBooking(req, res, next) {
   try {
     const normalizedReference = normalizeTrackingReference(req.params.reference ?? "");
@@ -180,7 +163,7 @@ export async function trackBooking(req, res, next) {
       const courier = await findUserById(row.courierId);
       courierName = String(courier?.name || courier?.email || "").trim() || null;
     }
-    const agencyName = await agencyDisplayNameForPublicTrack(db, row.assignedAgency);
+    const agencyName = await resolveAssignedAgencyDisplayName(db, row.assignedAgency);
     return sendOk(res, {
       trackUi,
       tracking: {
