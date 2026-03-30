@@ -247,7 +247,7 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
 
           <PublicCard className="sm:p-8">
             <h2 className="font-display text-lg font-semibold text-ink">
-              Delivery receipt (QR)
+              Delivery receipt — A6 (105×148 mm, QR)
             </h2>
             <p className="mt-2 text-sm text-muted">Scan to open your tracking page.</p>
             <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">

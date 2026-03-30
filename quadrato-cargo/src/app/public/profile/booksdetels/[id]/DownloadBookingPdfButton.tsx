@@ -91,11 +91,82 @@ export function DownloadBookingPdfButton({
       fetchInvoiceLogoAsPng(),
     ]);
     const QRCode = QRCodeModule.default;
-    const doc = new jsPDF({ unit: "mm", format: "a4" });
     const safe = (value: string) => {
       const v = String(value ?? "").trim();
       return v.length ? v : "-";
     };
+
+    /** Offline fallback: delivery receipt matches server A6 (105×148 mm). */
+    if (template === "tracking") {
+      const doc = new jsPDF({ unit: "mm", format: "a6" });
+      const qrDataUrl = await QRCode.toDataURL(trackUrl, { width: 180, margin: 1 }).catch(
+        () => null,
+      );
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(safe(settings.companyName).slice(0, 44), 5, 7);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6.5);
+      const sub = safe(settings.headerSubtitle);
+      if (sub !== "-") {
+        doc.text(sub.slice(0, 52), 5, 11);
+      }
+      if (qrDataUrl) {
+        doc.addImage(qrDataUrl, "PNG", 72, 2, 28, 28);
+      }
+      let y = 18;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.text("Track / scan ID", 5, y);
+      y += 4;
+      doc.setFont("courier", "normal");
+      doc.setFontSize(10);
+      doc.text(safe(consignmentNumber || reference).slice(0, 32), 5, y);
+      y += 6;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.text(`Booking: ${safe(bookingId).slice(0, 36)}`, 5, y);
+      y += 4;
+      doc.text(`Booked: ${safe(bookingDateLabel)}`, 5, y);
+      y += 4;
+      doc.text(`${safe(routeTypeLabel)} · ${safe(fromCity)} → ${safe(toCity)}`, 5, y);
+      y += 5;
+      doc.setFont("helvetica", "bold");
+      doc.text("Sender", 5, y);
+      y += 3.5;
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(safe(senderName), 95)[0] || "—", 5, y);
+      y += 4;
+      doc.setFont("helvetica", "bold");
+      doc.text("Recipient", 5, y);
+      y += 3.5;
+      doc.setFont("helvetica", "normal");
+      const recBlock = doc.splitTextToSize(
+        `${safe(recipientName)} — ${safe(recipientAddress)}`.slice(0, 200),
+        95,
+      );
+      recBlock.slice(0, 4).forEach((line: string, i: number) => {
+        doc.text(line, 5, y + i * 3.4);
+      });
+      y += Math.min(recBlock.length, 4) * 3.4 + 2;
+      if (y < 132) {
+        doc.setFontSize(6);
+        doc.setTextColor(100, 116, 139);
+        const note = safe(trackingNotesLabel);
+        if (note !== "-") {
+          doc.text(doc.splitTextToSize(`Update: ${note}`, 95)[0] || "", 5, y);
+        }
+      }
+      doc.setTextColor(100, 116, 139);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6);
+      doc.text(safe(settings.footerNote).slice(0, 72), 52.5, 143, { align: "center" });
+      const fileStem = safe(reference || bookingId).replace(/[^a-zA-Z0-9-_]/g, "-");
+      doc.save(`tracking-${fileStem || "booking"}.pdf`);
+      return;
+    }
+
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
     const wrapped = (value: string, width: number) =>
       doc.splitTextToSize(safe(value), width);
 

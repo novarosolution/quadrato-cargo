@@ -986,6 +986,7 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
   <head>
     <meta charset="utf-8" />
     <style>
+      /* Compact layout for ISO A6 receipt (105mm × 148mm); may paginate if content is long */
       * { box-sizing: border-box; }
       body {
         margin: 0;
@@ -995,17 +996,17 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
       }
       .page {
         width: 100%;
-        padding: 18px 20px 20px;
+        padding: 6px 8px 8px;
       }
       .track-doc-header {
-        padding-bottom: 12px;
-        margin-bottom: 12px;
-        border-bottom: 3px solid ${primary};
+        padding-bottom: 6px;
+        margin-bottom: 6px;
+        border-bottom: 2px solid ${primary};
       }
       .top {
         display: grid;
         grid-template-columns: 1fr auto;
-        column-gap: 14px;
+        column-gap: 8px;
         align-items: start;
       }
       .brand-lockup {
@@ -1013,11 +1014,11 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
         align-items: center;
         background: transparent;
         padding: 0;
-        min-height: 44px;
+        min-height: 26px;
       }
       .brand-lockup img {
         display: block;
-        height: 42px;
+        height: 24px;
         width: auto;
         max-width: 100%;
         object-fit: contain;
@@ -1026,172 +1027,174 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
       .brand {
         color: ${primary};
         font-weight: 700;
-        font-size: 30px;
+        font-size: 16px;
         font-family: "Times New Roman", serif;
         line-height: 1;
       }
       .meta {
         text-align: right;
-        font-size: 11px;
-        line-height: 1.4;
+        font-size: 7.5px;
+        line-height: 1.35;
         color: #374151;
+        max-width: 52mm;
       }
       .meta .co {
         font-weight: 700;
         color: #0f172a;
-        font-size: 12px;
+        font-size: 8.5px;
       }
       .barcode-wrap {
-        margin-top: 12px;
+        margin-top: 6px;
         text-align: center;
         border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 10px 10px 8px;
+        border-radius: 8px;
+        padding: 4px 6px;
         background: #fafafa;
       }
       .barcode-wrap img {
         width: 100%;
-        max-width: 710px;
-        height: 72px;
+        max-width: 100%;
+        height: 36px;
         object-fit: contain;
       }
       .barcode-id {
         font-family: "Courier New", monospace;
-        font-size: 18px;
-        letter-spacing: .6px;
-        margin-top: 4px;
+        font-size: 10px;
+        letter-spacing: .35px;
+        margin-top: 2px;
       }
       .code-big {
-        margin-top: 10px;
+        margin-top: 4px;
         text-align: center;
-        font-size: 42px;
-        line-height: 1.05;
+        font-size: 15px;
+        line-height: 1.1;
         font-weight: 800;
-        letter-spacing: 1px;
+        letter-spacing: .5px;
         color: #111827;
       }
       .package-ref {
-        margin-top: 14px;
-        font-size: 14px;
+        margin-top: 6px;
+        font-size: 10px;
         font-weight: 700;
         color: #374151;
+        text-align: center;
       }
       .line {
-        margin-top: 8px;
-        font-size: 14px;
+        margin-top: 3px;
+        font-size: 8.5px;
         text-align: center;
         color: #374151;
       }
       .service {
-        margin-top: 12px;
+        margin-top: 6px;
         text-align: center;
-        font-size: 15px;
+        font-size: 9.5px;
         color: #111827;
       }
       .service strong {
-        letter-spacing: .4px;
+        letter-spacing: .3px;
       }
       .pay-wrap {
-        margin-top: 14px;
+        margin-top: 8px;
         text-align: center;
       }
       .pay-title {
-        font-size: 20px;
+        font-size: 12px;
         font-weight: 500;
       }
       .badge {
         display: inline-block;
-        margin-top: 6px;
+        margin-top: 4px;
         background: #16a34a;
         color: #fff;
-        padding: 4px 12px;
-        border-radius: 8px;
+        padding: 2px 8px;
+        border-radius: 6px;
         font-weight: 700;
-        font-size: 14px;
+        font-size: 9px;
       }
       .route {
-        margin-top: 18px;
+        margin-top: 6px;
         text-align: center;
-        font-size: 36px;
+        font-size: 14px;
         font-weight: 700;
         line-height: 1.15;
         color: #111827;
       }
       .ops {
-        margin-top: 12px;
+        margin-top: 6px;
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 10px;
+        gap: 4px;
       }
       .ops .cell {
         border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 8px 10px;
+        border-radius: 6px;
+        padding: 4px 6px;
         background: #f8fafc;
       }
       .ops .label {
-        font-size: 11px;
+        font-size: 7px;
         text-transform: uppercase;
-        letter-spacing: .4px;
+        letter-spacing: .35px;
         color: #6b7280;
       }
       .ops .value {
-        margin-top: 2px;
-        font-size: 13px;
+        margin-top: 1px;
+        font-size: 8.5px;
         font-weight: 600;
         color: #111827;
         word-break: break-word;
       }
       .people {
-        margin-top: 14px;
+        margin-top: 6px;
         display: grid;
         grid-template-columns: 1fr 1fr;
-        column-gap: 12px;
+        column-gap: 5px;
       }
       .person {
         border: 1px solid #e5e7eb;
-        border-radius: 12px;
+        border-radius: 8px;
         background: #fff;
-        padding: 10px 10px 12px;
+        padding: 5px 5px 6px;
       }
       .person h4 {
-        margin: 0 0 4px;
+        margin: 0 0 2px;
         text-align: center;
-        font-size: 13px;
+        font-size: 8px;
         text-transform: uppercase;
-        letter-spacing: .45px;
+        letter-spacing: .35px;
         color: #6b7280;
       }
       .person .name {
         text-align: center;
         font-weight: 700;
-        font-size: 24px;
-        line-height: 1.2;
-        margin-bottom: 5px;
+        font-size: 10px;
+        line-height: 1.15;
+        margin-bottom: 3px;
       }
       .person .block {
         text-align: center;
-        font-size: 14px;
-        line-height: 1.35;
+        font-size: 7.5px;
+        line-height: 1.3;
         color: #1f2937;
         word-break: break-word;
       }
       .qr-row {
-        margin-top: 12px;
+        margin-top: 6px;
         display: flex;
         justify-content: flex-end;
       }
       .qr-row img {
-        width: 110px;
-        height: 110px;
+        width: 52px;
+        height: 52px;
         border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 4px;
+        border-radius: 6px;
+        padding: 2px;
       }
       .footer {
-        margin-top: 8px;
+        margin-top: 4px;
         text-align: center;
-        font-size: 11px;
+        font-size: 7px;
         color: #6b7280;
       }
     </style>
@@ -1226,7 +1229,7 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
       <div class="code-big">${esc(scanCode)}</div>
       ${
         showAltRef
-          ? `<div class="line" style="font-size:13px;font-weight:600;margin-top:6px;">Consignment / booking ref: ${esc(safeReference)}</div>`
+          ? `<div class="line" style="font-size:8px;font-weight:600;margin-top:3px;">Consignment / booking ref: ${esc(safeReference)}</div>`
           : ""
       }
 
@@ -1243,7 +1246,7 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
       </div>
       ${
         input.trackingNotesLabel && String(input.trackingNotesLabel).trim() !== "-"
-          ? `<div class="line" style="margin-top:10px;text-align:left;max-width:640px;margin-left:auto;margin-right:auto;padding:8px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;font-size:12px;">
+          ? `<div class="line" style="margin-top:6px;text-align:left;max-width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px;background:#f8fafc;font-size:8px;">
         <strong>Customer update:</strong> ${esc(input.trackingNotesLabel)}
       </div>`
           : ""
@@ -1460,7 +1463,7 @@ export async function generateBookingPdf(req, res, next) {
       isTrackingTemplate
         ? QRCode.toDataURL(String(input.trackUrl || "").trim() || "https://quadratocargo.com", {
             margin: 1,
-            width: 220,
+            width: 160,
             color: {
               dark: normalizeHex(input.settings.primaryColor, "#0f766e"),
               light: "#ffffff"
@@ -1470,8 +1473,8 @@ export async function generateBookingPdf(req, res, next) {
       bwipjs.toBuffer({
         bcid: "code128",
         text: String(input.publicBarcodeCode || input.reference || input.bookingId || "QC-INVOICE"),
-        scale: 3,
-        height: 16,
+        scale: isTrackingTemplate ? 2 : 3,
+        height: isTrackingTemplate ? 12 : 16,
         includetext: false,
         backgroundcolor: "FFFFFF"
       })
@@ -1483,7 +1486,12 @@ export async function generateBookingPdf(req, res, next) {
 
     const browser = await getPdfBrowser();
     page = await browser.newPage();
-    await page.setViewport({ width: 1240, height: 1754, deviceScaleFactor: 2 });
+    /** A6 receipt (105×148 mm) vs A4 invoice — viewport matches page aspect for sharper render. */
+    await page.setViewport(
+      isTrackingTemplate
+        ? { width: 794, height: 1123, deviceScaleFactor: 2 }
+        : { width: 1240, height: 1754, deviceScaleFactor: 2 }
+    );
     await page.setContent(html, { waitUntil: "load", timeout: 45_000 });
     await page
       .evaluate(async () => {
@@ -1502,11 +1510,19 @@ export async function generateBookingPdf(req, res, next) {
         );
       })
       .catch(() => {});
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" }
-    });
+    const pdfBuffer = await page.pdf(
+      isTrackingTemplate
+        ? {
+            format: "A6",
+            printBackground: true,
+            margin: { top: "3mm", right: "3mm", bottom: "3mm", left: "3mm" }
+          }
+        : {
+            format: "A4",
+            printBackground: true,
+            margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" }
+          }
+    );
 
     const filenameSafeRef = String(input.reference || input.bookingId)
       .replace(/[^a-zA-Z0-9-_]/g, "-")
