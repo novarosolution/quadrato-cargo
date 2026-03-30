@@ -3,6 +3,22 @@ function trackShowFlag(value) {
   return value !== false;
 }
 
+/** Only allow official Google Maps embed iframes (admin pastes src from Share → Embed). */
+function sanitizeGoogleMapsEmbedSrc(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  try {
+    const u = new URL(s);
+    if (u.protocol !== "https:") return "";
+    const host = u.hostname.toLowerCase();
+    if (host !== "www.google.com" && host !== "maps.google.com") return "";
+    if (!u.pathname.startsWith("/maps/embed")) return "";
+    return s.length > 2048 ? s.slice(0, 2048) : s;
+  } catch {
+    return "";
+  }
+}
+
 export function normalizeSiteSettings(row) {
   return {
     announcementEnabled: Boolean(row?.announcementEnabled),
@@ -11,6 +27,8 @@ export function normalizeSiteSettings(row) {
     announcementCtaHref: String(row?.announcementCtaHref ?? "").trim(),
     pdfCompanyName: String(row?.pdfCompanyName ?? "Quadrato Cargo").trim(),
     pdfCompanyAddress: String(row?.pdfCompanyAddress ?? "").trim(),
+    /** Optional Google Maps embed iframe src (https://www.google.com/maps/embed?...). */
+    googleMapsEmbedSrc: sanitizeGoogleMapsEmbedSrc(row?.googleMapsEmbedSrc),
     pdfLogoText: String(row?.pdfLogoText ?? "QR").trim(),
     pdfPrimaryColor: String(row?.pdfPrimaryColor ?? "#0f766e").trim(),
     pdfAccentColor: String(row?.pdfAccentColor ?? "#f97316").trim(),
@@ -63,6 +81,7 @@ export const siteSettingsModelSchema = {
         announcementCtaHref: { bsonType: ["string", "null"] },
         pdfCompanyName: { bsonType: ["string", "null"] },
         pdfCompanyAddress: { bsonType: ["string", "null"] },
+        googleMapsEmbedSrc: { bsonType: ["string", "null"] },
         pdfLogoText: { bsonType: ["string", "null"] },
         pdfPrimaryColor: { bsonType: ["string", "null"] },
         pdfAccentColor: { bsonType: ["string", "null"] },

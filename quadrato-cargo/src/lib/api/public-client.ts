@@ -201,6 +201,8 @@ export type SiteSettings = {
   announcementCtaHref: string;
   pdfCompanyName: string;
   pdfCompanyAddress: string;
+  /** Optional embed src from Google Maps Share → Embed (https://www.google.com/maps/embed?…). */
+  googleMapsEmbedSrc: string;
   pdfLogoText: string;
   pdfPrimaryColor: string;
   pdfAccentColor: string;
@@ -230,6 +232,7 @@ const SITE_SETTINGS_FALLBACK: SiteSettings = {
   announcementCtaHref: "",
   pdfCompanyName: "Quadrato Cargo",
   pdfCompanyAddress: "",
+  googleMapsEmbedSrc: "",
   pdfLogoText: "QR",
   pdfPrimaryColor: "#0f766e",
   pdfAccentColor: "#f97316",

@@ -685,6 +685,7 @@ export async function updateSiteSettingsAdmin(
     announcementCtaHref: String(formData.get("announcementCtaHref") ?? "").trim(),
     pdfCompanyName: String(formData.get("pdfCompanyName") ?? "").trim(),
     pdfCompanyAddress: String(formData.get("pdfCompanyAddress") ?? "").trim(),
+    googleMapsEmbedSrc: String(formData.get("googleMapsEmbedSrc") ?? "").trim(),
     pdfLogoText: String(formData.get("pdfLogoText") ?? "").trim(),
     pdfPrimaryColor: String(formData.get("pdfPrimaryColor") ?? "").trim(),
     pdfAccentColor: String(formData.get("pdfAccentColor") ?? "").trim(),

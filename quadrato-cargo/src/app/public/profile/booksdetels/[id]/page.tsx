@@ -253,7 +253,7 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
           <PublicCard className="sm:p-8">
             <h2 className="font-display text-lg font-semibold text-ink">Downloads</h2>
             <p className="mt-2 text-sm text-muted">
-              Tracking slip and invoice are the same PDF size. Scan the QR to open tracking.
+              A6 · 105 × 148 mm for both PDFs. Scan the QR to open tracking.
             </p>
             <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-8">
               {qrDataUrl ? (

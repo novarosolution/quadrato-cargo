@@ -10,6 +10,15 @@ import {
   stripPdfControlChars,
 } from "@/lib/sanitize-url";
 
+/** ISO 216 A6 — fixed page for tracking slip and invoice (jsPDF uses mm). */
+const PDF_A6_MM: [number, number] = [105, 148];
+const PDF_W_MM = PDF_A6_MM[0];
+const PDF_H_MM = PDF_A6_MM[1];
+const PDF_MARGIN = 5;
+const PDF_TEXT_W = PDF_W_MM - PDF_MARGIN * 2;
+const PDF_FOOTER_Y = PDF_H_MM - 4.5;
+const PDF_SIZE_LINE_Y = PDF_H_MM - 8;
+
 type PdfSettings = {
   companyName: string;
   companyAddress: string;
@@ -25,7 +34,7 @@ type PdfSettings = {
   footerNote: string;
 };
 
-/** Admin invoice line items (same compact PDF format as tracking slip). */
+/** Admin invoice line items (ISO A6 105×148 mm, same page as tracking slip). */
 export type InvoicePdfDetails = {
   number?: string | null;
   currency?: string | null;
@@ -116,134 +125,146 @@ export function DownloadBookingPdfButton({
       return v.length ? v : "-";
     };
 
-    /** Offline fallback: same page size as invoice (jsPDF a6). */
+    /** Offline fallback: ISO A6 105×148 mm (explicit mm format). */
     if (template === "tracking") {
-      const doc = new jsPDF({ unit: "mm", format: "a6" });
+      const doc = new jsPDF({ unit: "mm", format: PDF_A6_MM, compress: true });
       const qrDataUrl = await QRCode.toDataURL(trackUrlSafe, {
-        width: 180,
+        width: 160,
         margin: 1,
       }).catch(() => null);
+      const x = PDF_MARGIN;
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.text(safe(settings.companyName).slice(0, 44), 5, 7);
+      doc.setFontSize(7.5);
+      doc.text(safe(settings.companyName).slice(0, 48), x, 6.5);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(6.5);
+      doc.setFontSize(6);
       const sub = safe(settings.headerSubtitle);
       if (sub !== "-") {
-        doc.text(sub.slice(0, 52), 5, 11);
+        doc.text(sub.slice(0, 56), x, 10);
       }
       if (qrDataUrl) {
-        doc.addImage(qrDataUrl, "PNG", 72, 2, 28, 28);
+        doc.addImage(qrDataUrl, "PNG", PDF_W_MM - PDF_MARGIN - 26, 2, 26, 26);
       }
-      let y = 18;
+      let y = 17;
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(7);
-      doc.text("Track / scan ID", 5, y);
-      y += 4;
+      doc.setFontSize(6.5);
+      doc.text("Track / scan ID", x, y);
+      y += 3.5;
       doc.setFont("courier", "normal");
-      doc.setFontSize(10);
-      doc.text(safe(consignmentNumber || reference).slice(0, 32), 5, y);
-      y += 6;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(7);
-      doc.text(`Booking: ${safe(bookingId).slice(0, 36)}`, 5, y);
-      y += 4;
-      doc.text(`Booked: ${safe(bookingDateLabel)}`, 5, y);
-      y += 4;
-      doc.text(`${safe(routeTypeLabel)} · ${safe(fromCity)} → ${safe(toCity)}`, 5, y);
+      doc.setFontSize(8.5);
+      doc.text(safe(consignmentNumber || reference).slice(0, 34), x, y);
       y += 5;
-      doc.setFont("helvetica", "bold");
-      doc.text("Sender", 5, y);
-      y += 3.5;
       doc.setFont("helvetica", "normal");
-      doc.text(doc.splitTextToSize(safe(senderName), 95)[0] || "—", 5, y);
-      y += 4;
-      doc.setFont("helvetica", "bold");
-      doc.text("Recipient", 5, y);
+      doc.setFontSize(6);
+      doc.text(`Booking: ${safe(bookingId).slice(0, 38)}`, x, y);
       y += 3.5;
+      doc.text(`Booked: ${safe(bookingDateLabel)}`, x, y);
+      y += 3.5;
+      doc.text(`${safe(routeTypeLabel)} · ${safe(fromCity)} → ${safe(toCity)}`, x, y);
+      y += 4.5;
+      doc.setFont("helvetica", "bold");
+      doc.text("Sender", x, y);
+      y += 3.2;
+      doc.setFont("helvetica", "normal");
+      doc.text(doc.splitTextToSize(safe(senderName), PDF_TEXT_W)[0] || "—", x, y);
+      y += 3.5;
+      doc.setFont("helvetica", "bold");
+      doc.text("Recipient", x, y);
+      y += 3.2;
       doc.setFont("helvetica", "normal");
       const recBlock = doc.splitTextToSize(
         `${safe(recipientName)} — ${safe(recipientAddress)}`.slice(0, 200),
-        95,
+        PDF_TEXT_W,
       );
       recBlock.slice(0, 4).forEach((line: string, i: number) => {
-        doc.text(line, 5, y + i * 3.4);
+        doc.text(line, x, y + i * 3);
       });
-      y += Math.min(recBlock.length, 4) * 3.4 + 2;
-      if (y < 132) {
-        doc.setFontSize(6);
+      y += Math.min(recBlock.length, 4) * 3 + 1.5;
+      if (y < PDF_SIZE_LINE_Y - 6) {
+        doc.setFontSize(5.5);
         doc.setTextColor(100, 116, 139);
         const note = safe(trackingNotesLabel);
         if (note !== "-") {
-          doc.text(doc.splitTextToSize(`Update: ${note}`, 95)[0] || "", 5, y);
+          const lines = doc.splitTextToSize(`Update: ${note}`, PDF_TEXT_W);
+          lines.slice(0, 2).forEach((line: string, i: number) => {
+            doc.text(line, x, y + i * 2.8);
+          });
         }
       }
-      doc.setTextColor(100, 116, 139);
+      doc.setTextColor(130, 140, 155);
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(6);
-      doc.text(safe(settings.footerNote).slice(0, 72), 52.5, 143, { align: "center" });
+      doc.setFontSize(4);
+      doc.text("ISO A6 · 105 × 148 mm", PDF_W_MM / 2, PDF_SIZE_LINE_Y, { align: "center" });
+      doc.setTextColor(100, 116, 139);
+      doc.setFontSize(5);
+      doc.text(safe(settings.footerNote).slice(0, 68), PDF_W_MM / 2, PDF_FOOTER_Y, {
+        align: "center",
+      });
       const fileStem = sanitizePdfFileStem(reference || bookingId);
       doc.save(`tracking-${fileStem}.pdf`);
       return;
     }
 
-    /** Invoice: same dimensions as tracking slip + admin lines + track QR. */
-    const doc = new jsPDF({ unit: "mm", format: "a6" });
+    /** Invoice: ISO A6 105×148 mm (same as tracking slip). */
+    const doc = new jsPDF({ unit: "mm", format: PDF_A6_MM, compress: true });
     const qrDataUrlInv = await QRCode.toDataURL(trackUrlSafe, {
-      width: 160,
+      width: 150,
       margin: 1,
     }).catch(() => null);
 
+    const x = PDF_MARGIN;
+    const rightX = PDF_W_MM - PDF_MARGIN;
+
     doc.setTextColor(17, 24, 39);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.5);
-    doc.text(safe(settings.companyName).slice(0, 42), 5, 6);
+    doc.setFontSize(8);
+    doc.text(safe(settings.companyName).slice(0, 44), x, 5.5);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(6);
-    let y = 9;
-    const addrLines = doc.splitTextToSize(safe(settings.companyAddress), 62);
+    doc.setFontSize(5.5);
+    let y = 8.5;
+    const addrLines = doc.splitTextToSize(safe(settings.companyAddress), 58);
     addrLines.slice(0, 2).forEach((line: string) => {
-      doc.text(line, 5, y);
-      y += 3;
+      doc.text(line, x, y);
+      y += 2.7;
     });
     if (qrDataUrlInv) {
-      doc.addImage(qrDataUrlInv, "PNG", 72, 2, 28, 28);
+      doc.addImage(qrDataUrlInv, "PNG", PDF_W_MM - PDF_MARGIN - 26, 2, 26, 26);
     }
 
-    y = Math.max(y, 14) + 2;
+    y = Math.max(y, 13) + 1.5;
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.text("Invoice", 5, y);
-    y += 5;
+    doc.setFontSize(8);
+    doc.text("Invoice", x, y);
+    y += 4.2;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(6.5);
+    doc.setFontSize(6);
     const inv = invoiceDetails ?? {};
     const invNum = inv.number != null && String(inv.number).trim() ? String(inv.number).trim() : "—";
     const cur =
       inv.currency != null && String(inv.currency).trim()
         ? String(inv.currency).trim().toUpperCase().slice(0, 12)
         : "INR";
-    doc.text(`No. ${invNum.slice(0, 24)}`, 5, y);
-    doc.text(`Date ${safe(bookingDateLabel).slice(0, 22)}`, 52, y);
-    y += 3.8;
-    doc.text(`Track ${safe(consignmentNumber || reference).slice(0, 30)}`, 5, y);
-    y += 4.5;
+    doc.text(`No. ${invNum.slice(0, 22)}`, x, y);
+    doc.text(`Date ${safe(bookingDateLabel).slice(0, 20)}`, 50, y);
+    y += 3.4;
+    doc.text(`Track ${safe(consignmentNumber || reference).slice(0, 28)}`, x, y);
+    y += 4;
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(6.5);
-    doc.text("Bill to", 5, y);
-    y += 3.2;
-    doc.setFont("helvetica", "normal");
     doc.setFontSize(6);
+    doc.text("Bill to", x, y);
+    y += 3;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(5.5);
     const billBlock = doc.splitTextToSize(
       `${safe(senderName)} · ${safe(senderAddress)}`.slice(0, 220),
-      95,
+      PDF_TEXT_W,
     );
     billBlock.slice(0, 3).forEach((line: string) => {
-      doc.text(line, 5, y);
-      y += 3.1;
+      doc.text(line, x, y);
+      y += 2.8;
     });
-    y += 1;
+    y += 0.5;
 
     const lineDesc =
       inv.lineDescription != null && String(inv.lineDescription).trim()
@@ -251,15 +272,15 @@ export function DownloadBookingPdfButton({
         : contentsLabel;
     if (safe(lineDesc) !== "-") {
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(6);
-      doc.text("Description", 5, y);
-      y += 3;
+      doc.setFontSize(5.5);
+      doc.text("Description", x, y);
+      y += 2.8;
       doc.setFont("helvetica", "normal");
-      doc.splitTextToSize(safe(lineDesc), 95)
+      doc.splitTextToSize(safe(lineDesc), PDF_TEXT_W)
         .slice(0, 2)
         .forEach((line: string) => {
-          doc.text(line, 5, y);
-          y += 3;
+          doc.text(line, x, y);
+          y += 2.8;
         });
       y += 0.5;
     }
@@ -272,10 +293,10 @@ export function DownloadBookingPdfButton({
     const drawMoney = (label: string, value: string, bold = false) => {
       if (!value) return;
       doc.setFont("helvetica", bold ? "bold" : "normal");
-      doc.setFontSize(6.5);
-      doc.text(label, 5, y);
-      doc.text(`${cur} ${value}`.slice(0, 28), 100, y, { align: "right" });
-      y += 3.3;
+      doc.setFontSize(6);
+      doc.text(label, x, y);
+      doc.text(`${cur} ${value}`.slice(0, 26), rightX, y, { align: "right" });
+      y += 3;
     };
 
     drawMoney("Subtotal", money("subtotal"));
@@ -285,24 +306,29 @@ export function DownloadBookingPdfButton({
     drawMoney("Discount", money("discount"));
     drawMoney("Total", money("total"), true);
 
-    if (y < 128 && money("notes")) {
+    if (y < PDF_SIZE_LINE_Y - 8 && money("notes")) {
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(5.5);
+      doc.setFontSize(5);
       doc.setTextColor(80, 88, 102);
-      doc.splitTextToSize(`Note: ${money("notes")}`, 95)
+      doc.splitTextToSize(`Note: ${money("notes")}`, PDF_TEXT_W)
         .slice(0, 2)
         .forEach((line: string) => {
-          if (y < 136) {
-            doc.text(line, 5, y);
-            y += 2.8;
+          if (y < PDF_SIZE_LINE_Y - 2) {
+            doc.text(line, x, y);
+            y += 2.6;
           }
         });
     }
 
-    doc.setTextColor(100, 116, 139);
+    doc.setTextColor(130, 140, 155);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(5.5);
-    doc.text(safe(settings.footerNote).slice(0, 76), 52.5, 143, { align: "center" });
+    doc.setFontSize(4);
+    doc.text("ISO A6 · 105 × 148 mm", PDF_W_MM / 2, PDF_SIZE_LINE_Y, { align: "center" });
+    doc.setTextColor(100, 116, 139);
+    doc.setFontSize(5);
+    doc.text(safe(settings.footerNote).slice(0, 68), PDF_W_MM / 2, PDF_FOOTER_Y, {
+      align: "center",
+    });
 
     const fileStem = sanitizePdfFileStem(reference || bookingId);
     doc.save(`invoice-${fileStem}.pdf`);

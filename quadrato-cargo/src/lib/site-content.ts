@@ -201,10 +201,13 @@ export function buildContactDispatchSidebarItems(params: {
   supportPhone: string;
   supportEmail: string;
   publicInfoEmail?: string;
+  /** Company / office address (contact page + optional map). */
+  officeAddress?: string;
 }): ContactDispatchSidebarItem[] {
   const phone = String(params.supportPhone ?? "").trim() || "+1 (555) 010-0199";
   const email = String(params.supportEmail ?? "").trim() || "support@quadratocargo.com";
   const extra = String(params.publicInfoEmail ?? "").trim();
+  const office = String(params.officeAddress ?? "").trim();
 
   const items: ContactDispatchSidebarItem[] = [
     {
@@ -230,6 +233,15 @@ export function buildContactDispatchSidebarItems(params: {
       body: extra,
       href: `mailto:${extra}`,
       Icon: Mail,
+    });
+  }
+
+  if (office) {
+    items.push({
+      id: "address",
+      label: "Address",
+      body: office,
+      Icon: MapPin,
     });
   }
 

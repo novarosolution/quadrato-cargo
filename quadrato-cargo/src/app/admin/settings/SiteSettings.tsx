@@ -33,8 +33,7 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
         >
           <h3 className="font-display text-base font-semibold text-ink">Public phone &amp; email</h3>
           <p className="mt-1 text-xs text-muted-soft">
-            Shown on the contact page, site footer, and booking PDFs. Optional second email adds another
-            line in the footer and contact sidebar only.
+            Shown on Contact, footer, and PDFs. Optional second email adds a footer / contact line.
           </p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <div>
@@ -86,6 +85,25 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
                 placeholder="info@example.com (leave empty to hide)"
                 className={field}
               />
+            </div>
+            <div className="md:col-span-2">
+              <label
+                htmlFor="google-maps-embed-src"
+                className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+              >
+                Google Maps embed URL (optional)
+              </label>
+              <textarea
+                id="google-maps-embed-src"
+                name="googleMapsEmbedSrc"
+                rows={2}
+                defaultValue={initialSettings.googleMapsEmbedSrc ?? ""}
+                placeholder="Paste only the src URL from Google Maps → Share → Embed a map (https://www.google.com/maps/embed?…)"
+                className={`${field} resize-y font-mono text-xs`}
+              />
+              <p className="mt-1 text-xs text-muted-soft">
+                If empty, Contact uses your company address below to show a Google map automatically.
+              </p>
             </div>
           </div>
         </div>
@@ -163,7 +181,7 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
         <AdminCollapsible
           id="settings-pdf"
           title="PDF receipt branding"
-          description="Company block, colors, website line, watermark, and footer note on customer PDFs"
+          description="Company name, address (also on Contact), colors, site line, watermark, footer on PDFs"
         >
           <div className="grid gap-4 md:grid-cols-2">
             <div>
@@ -205,15 +223,15 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
                 htmlFor="pdf-company-address"
                 className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
               >
-                Company address
+                Company / office address
               </label>
-              <input
+              <textarea
                 id="pdf-company-address"
                 name="pdfCompanyAddress"
-                type="text"
+                rows={3}
                 defaultValue={initialSettings.pdfCompanyAddress}
-                placeholder="Company address line"
-                className={field}
+                placeholder="Street, city, postal code, country — shown on Contact and PDFs"
+                className={`${field} resize-y`}
               />
             </div>
 

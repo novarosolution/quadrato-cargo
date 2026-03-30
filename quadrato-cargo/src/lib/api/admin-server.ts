@@ -86,6 +86,7 @@ export type AdminSiteSettings = {
   announcementCtaHref: string;
   pdfCompanyName: string;
   pdfCompanyAddress: string;
+  googleMapsEmbedSrc: string;
   pdfLogoText: string;
   pdfPrimaryColor: string;
   pdfAccentColor: string;

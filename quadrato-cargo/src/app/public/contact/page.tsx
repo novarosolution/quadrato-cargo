@@ -7,6 +7,7 @@ import { PageHero } from "@/components/Hero";
 import { fetchSiteSettings } from "@/lib/api/public-client";
 import { buildContactDispatchSidebarItems } from "@/lib/site-content";
 import { ContactForm } from "./Contact";
+import { ContactLocationMap } from "./ContactLocationMap";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -23,6 +24,7 @@ export default async function ContactPage() {
     supportPhone: siteSettings.pdfSupportPhone,
     supportEmail: siteSettings.pdfSupportEmail,
     publicInfoEmail: siteSettings.publicInfoEmail,
+    officeAddress: siteSettings.pdfCompanyAddress,
   });
 
   return (
@@ -39,8 +41,7 @@ export default async function ContactPage() {
             <div className="lg:col-span-2">
               <h2 className="font-display text-lg font-semibold text-ink">Dispatch</h2>
               <p className="mt-2 text-sm text-muted">
-                Phone and email below match the site footer and your admin “Data” settings. Form is
-                fastest for detailed requests.
+                Phone, email, and address come from admin Data &amp; site settings (same as footer).
               </p>
               <dl className="mt-6 space-y-3 text-sm">
                 {dispatchItems.map((ch) => (
@@ -68,6 +69,10 @@ export default async function ContactPage() {
               <ContactForm />
             </PublicCard>
           </div>
+          <ContactLocationMap
+            officeAddress={siteSettings.pdfCompanyAddress}
+            googleMapsEmbedSrc={siteSettings.googleMapsEmbedSrc}
+          />
         </Container>
       </PublicPageSection>
     </div>
