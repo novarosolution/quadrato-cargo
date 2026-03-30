@@ -1356,8 +1356,12 @@ export async function trackBooking(req, res, next) {
         status: row.status,
         consignmentNumber: row.consignmentNumber,
         publicBarcodeCode: row.publicBarcodeCode || computePublicBarcodeCode(row.id),
-        trackingNotes: row.customerTrackingNote || null,
-        customerTrackingNote: row.customerTrackingNote || null,
+        /** Internal / operational log (seed + courier lines); safe for customer context. */
+        trackingNotes: row.trackingNotes ?? null,
+        /** Admin-edited message shown on track + profile. */
+        publicTrackingNote: row.publicTrackingNote ?? null,
+        /** Same as public note for customer surfaces (see booking model). */
+        customerTrackingNote: row.customerTrackingNote ?? null,
         courierName,
         agencyName: row.assignedAgency || null,
         senderName: row.senderName || null,
@@ -1365,6 +1369,7 @@ export async function trackBooking(req, res, next) {
         recipientName: row.recipientName || null,
         recipientAddress: row.recipientAddress || null,
         createdAt: row.createdAt,
+        updatedAt: row.updatedAt ?? row.createdAt,
         shipment: buildShipmentSummaryForPublicTrack(row.payload)
       }
     });

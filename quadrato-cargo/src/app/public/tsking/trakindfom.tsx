@@ -53,6 +53,8 @@ type State =
         recipientName: string | null;
         recipientAddress: string | null;
         createdAt: string;
+        /** From DB `updatedAt`; falls back to `createdAt` in UI if omitted (older API). */
+        updatedAt?: string;
         shipment: PublicTrackingShipment | null;
       };
     };
@@ -219,44 +221,77 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
       {state.kind === "success" ? (
         <div className="space-y-4">
           <PublicCard>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-soft">
-                  Tracking ID
-                </p>
-                <p className="font-mono text-base font-semibold text-ink">
-                  {state.data.consignmentNumber || state.data.id}
-                </p>
-              </div>
-              <span className="inline-flex items-center rounded-full border border-teal/30 bg-teal/10 px-3 py-1 text-xs font-semibold text-teal">
-                {BOOKING_STATUS_LABELS[normalizeBookingStatus(state.data.status)]}
-              </span>
-            </div>
-            <p className="mt-3 text-sm text-muted">
-              Route:{" "}
-              <span className="font-medium capitalize text-ink">{state.data.routeType}</span>
-            </p>
-            <p className="mt-1 text-sm text-muted">
-              Created: <span className="text-ink">{prettyDate(state.data.createdAt)}</span>
-            </p>
-            {String(state.data.routeType).toLowerCase() === "international" ? (
-              <p className="mt-1 text-sm text-muted">
-                Est. delivery (EDD):{" "}
-                <span className="font-medium text-ink">
-                  {(() => {
-                    const edd = estimateInternationalEdd(state.data.createdAt);
-                    return edd
-                      ? new Intl.DateTimeFormat("en-IN", {
-                          dateStyle: "medium",
-                        }).format(edd)
-                      : "—";
-                  })()}
-                </span>
-                <span className="ml-1 text-xs text-muted-soft">
-                  (indicative; updates as the shipment moves)
-                </span>
-              </p>
-            ) : null}
+            {(() => {
+              const lastTouch = state.data.updatedAt ?? state.data.createdAt;
+              const routeLabel = String(state.data.routeType || "").toLowerCase();
+              const isIntl = routeLabel === "international";
+              const edd = isIntl ? estimateInternationalEdd(state.data.createdAt) : null;
+              const tn = String(state.data.trackingNotes ?? "").trim();
+              const pub = String(state.data.publicTrackingNote ?? "").trim();
+              const showActivityLog = Boolean(tn && tn !== pub);
+              return (
+                <>
+                  <div className="rounded-xl border border-teal/25 bg-linear-to-br from-teal-dim/80 to-canvas p-4 ring-1 ring-teal/15 sm:p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-soft">
+                          Parcel tracking no.
+                        </p>
+                        <p className="mt-1 break-all font-mono text-lg font-bold tracking-tight text-ink sm:text-xl">
+                          {state.data.consignmentNumber || state.data.id}
+                        </p>
+                      </div>
+                      <span className="inline-flex shrink-0 items-center rounded-full border border-teal/35 bg-teal-dim px-3 py-1 text-xs font-semibold text-ink dark:text-teal">
+                        {BOOKING_STATUS_LABELS[normalizeBookingStatus(state.data.status)]}
+                      </span>
+                    </div>
+                    <dl className="mt-4 grid gap-3 border-t border-border-strong/60 pt-4 text-sm sm:grid-cols-2">
+                      <div>
+                        <dt className="text-xs font-medium text-muted-soft">Route</dt>
+                        <dd className="mt-0.5 font-medium capitalize text-ink">
+                          {state.data.routeType}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium text-muted-soft">Created</dt>
+                        <dd className="mt-0.5 text-ink">{prettyDate(state.data.createdAt)}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs font-medium text-muted-soft">Last updated</dt>
+                        <dd className="mt-0.5 text-ink">{prettyDate(lastTouch)}</dd>
+                      </div>
+                      {isIntl ? (
+                        <div className="sm:col-span-2">
+                          <dt className="text-xs font-medium text-muted-soft">
+                            Est. delivery (EDD)
+                          </dt>
+                          <dd className="mt-0.5 font-medium text-ink">
+                            {edd
+                              ? new Intl.DateTimeFormat("en-IN", {
+                                  dateStyle: "medium",
+                                }).format(edd)
+                              : "—"}
+                            <span className="ml-1 text-xs font-normal text-muted-soft">
+                              (indicative; updates as the shipment moves)
+                            </span>
+                          </dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                  </div>
+                  {showActivityLog ? (
+                    <details className="mt-4 rounded-lg border border-border-strong bg-surface-highlight/40 px-3 py-2">
+                      <summary className="cursor-pointer text-xs font-medium text-ink hover:text-teal">
+                        Operational activity log
+                      </summary>
+                      <p className="mt-2 whitespace-pre-wrap text-xs text-muted-soft">
+                        {state.data.trackingNotes}
+                      </p>
+                    </details>
+                  ) : null}
+                </>
+              );
+            })()}
             <details className="mt-4 border-t border-border pt-4">
               <summary className="cursor-pointer text-sm font-medium text-teal hover:underline">
                 Assignment, barcode &amp; addresses
@@ -334,13 +369,20 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
           ) : null}
 
           <PublicCard>
-            <div className="mb-4 flex items-center gap-2">
-              <PackageSearch className="h-4 w-4 text-accent" aria-hidden />
-              <h3 className="text-sm font-semibold text-ink">Shipment timeline</h3>
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <PackageSearch className="h-4 w-4 text-teal" aria-hidden />
+                <div>
+                  <h3 className="font-display text-base font-semibold text-ink">Shipment timeline</h3>
+                  <p className="text-xs text-muted-soft">
+                    Stages follow your booking status from our operations database.
+                  </p>
+                </div>
+              </div>
             </div>
             {normalizeBookingStatus(state.data.status) === "on_hold" &&
             String(state.data.routeType).toLowerCase() === "international" ? (
-              <p className="mb-4 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+              <p className="mb-4 rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-100">
                 Shipment on hold — check updates below. Common reasons include customs review or
                 address clarification.{" "}
                 {state.data.publicTrackingNote || state.data.customerTrackingNote || ""}
@@ -430,7 +472,7 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
                       bookingId={state.data.id}
                       status={normalized}
                       routeType="international"
-                      updatedAt={state.data.createdAt}
+                      updatedAt={state.data.updatedAt ?? state.data.createdAt}
                       latestNote={
                         state.data.publicTrackingNote || state.data.customerTrackingNote
                       }
@@ -462,7 +504,7 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
                   bookingId={state.data.id}
                   status={normalized}
                   routeType="domestic"
-                  updatedAt={state.data.createdAt}
+                  updatedAt={state.data.updatedAt ?? state.data.createdAt}
                   latestNote={
                     state.data.publicTrackingNote || state.data.customerTrackingNote
                   }

@@ -137,6 +137,8 @@ export type PublicTrackingResponse =
         recipientName: string | null;
         recipientAddress: string | null;
         createdAt: string;
+        /** Last booking row change (status, notes, assignment, etc.). Present when API returns it. */
+        updatedAt?: string;
         shipment: PublicTrackingShipment | null;
       };
     }
