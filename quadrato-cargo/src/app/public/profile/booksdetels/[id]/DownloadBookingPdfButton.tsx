@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { getApiBaseUrl } from "@/lib/api/base-url";
 import { drawBrandedPdfHeader } from "@/lib/pdf-brand-logo";
+import { fetchInvoiceLogoAsPng } from "@/lib/pdf-invoice-logo";
 
 type PdfSettings = {
   companyName: string;
@@ -86,9 +87,10 @@ export function DownloadBookingPdfButton({
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const runFallbackPdf = async () => {
-    const [{ jsPDF }, QRCodeModule] = await Promise.all([
+    const [{ jsPDF }, QRCodeModule, invoiceLogo] = await Promise.all([
       import("jspdf"),
       import("qrcode"),
+      fetchInvoiceLogoAsPng(),
     ]);
     const QRCode = QRCodeModule.default;
     const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -113,6 +115,12 @@ export function DownloadBookingPdfButton({
         accentColorHex: settings.accentColor,
       },
       qrDataUrl,
+      invoiceLogo
+        ? {
+            logoPngDataUrl: invoiceLogo.dataUrl,
+            logoAspect: invoiceLogo.aspect,
+          }
+        : null,
     );
 
     let y = 40;

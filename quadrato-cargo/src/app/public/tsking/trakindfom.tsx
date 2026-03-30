@@ -5,12 +5,10 @@ import {
   BadgeCheck,
   CircleDot,
   Clock3,
-  Globe2,
   Home,
   MapPin,
   PackageCheck,
   PackageSearch,
-  Plane,
   ScanSearch,
   ShieldCheck,
   Truck,
@@ -28,13 +26,10 @@ import {
 } from "@/lib/api/public-client";
 import {
   INTERNATIONAL_EXCEPTION_STATUSES,
-  INTERNATIONAL_TRACKING_STEPS,
-  bookingStatusToInternationalStepIndex,
   estimateInternationalEdd,
-  internationalStepLocationLabel,
-  type InternationalTrackingStep,
 } from "@/lib/international-tracking-flow";
 import { PublicCard } from "@/components/public/PublicCard";
+import { ProfessionalTrackingTimeline } from "@/app/public/tsking/ProfessionalTrackingTimeline";
 
 type State =
   | { kind: "idle" }
@@ -61,25 +56,6 @@ type State =
         shipment: PublicTrackingShipment | null;
       };
     };
-
-const TRACKING_FLOW: Array<{
-  id: BookingStatusId;
-  hint: string;
-}> = [
-  { id: "submitted", hint: "Parcel created and submitted successfully." },
-  { id: "confirmed", hint: "Shipment details confirmed by dispatch." },
-  { id: "serviceability_check", hint: "Serviceability check in progress." },
-  { id: "serviceable", hint: "Route is serviceable for pickup." },
-  { id: "pickup_scheduled", hint: "Pickup slot assigned." },
-  { id: "out_for_pickup", hint: "Pickup agent is on the way." },
-  { id: "picked_up", hint: "Parcel has been picked up from sender." },
-  { id: "agency_processing", hint: "Processing at regional hub." },
-  { id: "in_transit", hint: "Shipment is moving to destination region." },
-  { id: "out_for_delivery", hint: "Out for delivery to recipient." },
-  { id: "delivery_attempted", hint: "Delivery attempt recorded." },
-  { id: "on_hold", hint: "Shipment is temporarily on hold." },
-  { id: "delivered", hint: "Shipment delivered successfully." },
-];
 
 const CANCELLED_FLOW: Array<{
   id: BookingStatusId;
@@ -149,33 +125,6 @@ function stepIcon(stepId: BookingStatusId) {
     default:
       return CircleDot;
   }
-}
-
-function internationalStepIcon(step: InternationalTrackingStep) {
-  const id = step.id;
-  if (id.includes("customs")) return ShieldCheck;
-  if (
-    id === "intl_handed_airline" ||
-    id === "intl_departed_india" ||
-    id === "intl_in_transit_air" ||
-    id === "intl_arrived_usa"
-  )
-    return Plane;
-  if (id === "intl_out_for_delivery") return MapPin;
-  if (
-    id.includes("facility") ||
-    id.includes("gateway") ||
-    id.includes("hub") ||
-    id === "intl_processed_origin_rajkot" ||
-    id === "intl_processed_ahmedabad" ||
-    id === "intl_processed_dest"
-  )
-    return Warehouse;
-  if (id === "intl_delivered" || id === "intl_delivery_attempted") return PackageCheck;
-  if (id.includes("picked_up") || id === "intl_shipment_picked_up") return PackageCheck;
-  if (id.includes("transit") || id.includes("departed")) return Truck;
-  if (id.includes("created") || id.includes("scheduled")) return Clock3;
-  return Globe2;
 }
 
 export function TrackOrderForm({ initialReference = "" }: { initialReference?: string }) {
@@ -475,81 +424,22 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
               }
 
               if (isInternational) {
-                const flow = INTERNATIONAL_TRACKING_STEPS;
-                const currentIdx = Math.min(
-                  bookingStatusToInternationalStepIndex(normalized),
-                  flow.length - 1,
-                );
-                const visible = flow.slice(0, currentIdx + 1).reverse();
                 return (
                   <>
-                    <ol className="relative space-y-3 pl-6">
-                      <div
-                        className="pointer-events-none absolute bottom-2 left-2.5 top-2 w-px bg-border-strong"
-                        aria-hidden
-                      />
-                      {visible.map((step, idx) => {
-                        const isCurrent = idx === 0;
-                        const stepIndex = currentIdx - idx;
-                        const noteText = isCurrent
-                          ? state.data.publicTrackingNote ||
-                            state.data.customerTrackingNote ||
-                            step.hint
-                          : step.hint;
-                        const StepIcon = internationalStepIcon(step);
-                        return (
-                          <li key={step.id} className="relative">
-                            <span
-                              className={`absolute -left-[1.35rem] top-3 inline-flex h-4 w-4 items-center justify-center rounded-full border ${
-                                isCurrent
-                                  ? "border-accent bg-accent/15 text-accent"
-                                  : "border-teal/35 bg-teal/10 text-teal"
-                              }`}
-                            >
-                              {isCurrent ? (
-                                <CircleDot className="h-3 w-3" strokeWidth={2.2} />
-                              ) : (
-                                <BadgeCheck className="h-3 w-3" strokeWidth={2.4} />
-                              )}
-                            </span>
-                            <div
-                              className={`rounded-xl border px-3 py-3 shadow-sm ${
-                                isCurrent
-                                  ? "border-accent/40 bg-linear-to-br from-accent/10 to-canvas/30 shadow-accent/10"
-                                  : "border-border-strong bg-canvas/30"
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border-strong bg-surface-elevated/70 text-muted">
-                                  <StepIcon className="h-3.5 w-3.5" />
-                                </span>
-                                <p className="text-sm font-semibold text-ink">{step.label}</p>
-                              </div>
-                              <p className="mt-1 whitespace-pre-wrap text-xs text-muted">
-                                {noteText}
-                              </p>
-                              <p className="mt-2 flex max-w-full min-w-0 items-start gap-1 rounded-md border border-border-strong bg-canvas/50 px-2 py-1 text-[11px] text-muted-soft">
-                                <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
-                                <span className="min-w-0 break-words">
-                                  {internationalStepLocationLabel(stepIndex, {
-                                    senderAddress: state.data.senderAddress,
-                                    recipientAddress: state.data.recipientAddress,
-                                    agencyName: state.data.agencyName,
-                                  })}
-                                </span>
-                              </p>
-                              <p className="mt-2 text-[11px] text-muted-soft">
-                                {stepIndex === 0
-                                  ? `Recorded: ${prettyDate(state.data.createdAt)}`
-                                  : isCurrent
-                                    ? `Last update on file: ${prettyDate(state.data.createdAt)}`
-                                    : "Completed milestone"}
-                              </p>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ol>
+                    <ProfessionalTrackingTimeline
+                      bookingId={state.data.id}
+                      status={normalized}
+                      routeType="international"
+                      updatedAt={state.data.createdAt}
+                      latestNote={
+                        state.data.publicTrackingNote || state.data.customerTrackingNote
+                      }
+                      ctx={{
+                        senderAddress: state.data.senderAddress,
+                        recipientAddress: state.data.recipientAddress,
+                        agencyName: state.data.agencyName,
+                      }}
+                    />
                     <details className="mt-4 rounded-lg border border-border-strong bg-canvas/20 px-3 py-2">
                       <summary className="cursor-pointer text-[11px] font-medium text-muted-soft hover:text-ink">
                         Common delays &amp; customs holds
@@ -567,73 +457,21 @@ export function TrackOrderForm({ initialReference = "" }: { initialReference?: s
                 );
               }
 
-              const flow = TRACKING_FLOW;
-              const currentIdx = statusIndex(normalized, flow);
-              const visible = flow.slice(0, currentIdx + 1).reverse();
-
               return (
-                <ol className="relative space-y-3 pl-6">
-                  <div
-                    className="pointer-events-none absolute bottom-2 left-2.5 top-2 w-px bg-border-strong"
-                    aria-hidden
-                  />
-                  {visible.map((step, idx) => {
-                    const isCurrent = idx === 0;
-                    const noteText = isCurrent
-                      ? state.data.publicTrackingNote ||
-                        state.data.customerTrackingNote ||
-                        step.hint
-                      : step.hint;
-                    const StepIcon = stepIcon(step.id);
-                    return (
-                      <li key={step.id} className="relative">
-                        <span
-                          className={`absolute -left-[1.35rem] top-3 inline-flex h-4 w-4 items-center justify-center rounded-full border ${
-                            isCurrent
-                              ? "border-accent bg-accent/15 text-accent"
-                              : "border-teal/35 bg-teal/10 text-teal"
-                          }`}
-                        >
-                          {isCurrent ? (
-                            <CircleDot className="h-3 w-3" strokeWidth={2.2} />
-                          ) : (
-                            <BadgeCheck className="h-3 w-3" strokeWidth={2.4} />
-                          )}
-                        </span>
-                        <div
-                          className={`rounded-xl border px-3 py-3 shadow-sm ${
-                            isCurrent
-                              ? "border-accent/40 bg-linear-to-br from-accent/10 to-canvas/30 shadow-accent/10"
-                              : "border-border-strong bg-canvas/30"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border-strong bg-surface-elevated/70 text-muted">
-                              <StepIcon className="h-3.5 w-3.5" />
-                            </span>
-                            <p className="text-sm font-semibold text-ink">
-                              {BOOKING_STATUS_LABELS[step.id]}
-                            </p>
-                          </div>
-                          <p className="mt-1 whitespace-pre-wrap text-xs text-muted">{noteText}</p>
-                          <p className="mt-2 flex max-w-full min-w-0 items-start gap-1 rounded-md border border-border-strong bg-canvas/50 px-2 py-1 text-[11px] text-muted-soft">
-                            <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
-                            <span className="min-w-0 break-words">
-                              {stepLocationLabel(step.id, state.data)}
-                            </span>
-                          </p>
-                          <p className="mt-2 text-[11px] text-muted-soft">
-                            {step.id === "submitted"
-                              ? `Created: ${prettyDate(state.data.createdAt)}`
-                              : isCurrent
-                                ? "Latest update"
-                                : "Completed status"}
-                          </p>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ol>
+                <ProfessionalTrackingTimeline
+                  bookingId={state.data.id}
+                  status={normalized}
+                  routeType="domestic"
+                  updatedAt={state.data.createdAt}
+                  latestNote={
+                    state.data.publicTrackingNote || state.data.customerTrackingNote
+                  }
+                  ctx={{
+                    senderAddress: state.data.senderAddress,
+                    recipientAddress: state.data.recipientAddress,
+                    agencyName: state.data.agencyName,
+                  }}
+                />
               );
             })()}
           </PublicCard>

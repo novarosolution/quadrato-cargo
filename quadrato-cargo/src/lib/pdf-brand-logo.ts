@@ -43,6 +43,12 @@ export type PdfHeaderBrandingInput = {
   accentColorHex: string;
 };
 
+export type PdfHeaderLogoOptions = {
+  /** Rasterized PNG data URL of `invoice-brand-logo.svg` */
+  logoPngDataUrl: string | null;
+  logoAspect?: number;
+};
+
 /**
  * Header band with brand mark, company lines, tagline, and optional QR (invoice / tracking PDFs).
  */
@@ -50,6 +56,7 @@ export function drawBrandedPdfHeader(
   doc: jsPDF,
   branding: PdfHeaderBrandingInput,
   qrPngDataUrl: string | null,
+  logo?: PdfHeaderLogoOptions | null,
 ) {
   const primary = parseHexRgb(branding.primaryColorHex, [15, 118, 110]);
   const accent = parseHexRgb(branding.accentColorHex, [249, 115, 22]);
@@ -58,30 +65,47 @@ export function drawBrandedPdfHeader(
   doc.setFillColor(...primary);
   doc.rect(0, 0, 210, headerH, "F");
 
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(10, 5, 15.5, 24, 2, 2, "F");
-
-  const cell = 4.85;
-  drawQuadratoMark(doc, 11.15, 7.1, cell, 0.3);
-
   const name = String(branding.companyName || "").trim() || "Quadrato Cargo";
   const sub = String(branding.headerSubtitle || "").trim();
   const refLine = `Ref: ${String(branding.reference || "").trim() || "-"}`;
 
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text(name, 28, 12);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  if (sub) doc.text(sub, 28, 17);
-  doc.setFontSize(8);
-  doc.text(refLine, 28, 22);
+  const logoPng = logo?.logoPngDataUrl?.trim() || "";
+  const aspect = logo?.logoAspect && logo.logoAspect > 0 ? logo.logoAspect : 378 / 96;
 
-  doc.setTextColor(...accent);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.text("Fast Forward Rapid Reach", 28, 27);
+  if (logoPng) {
+    const logoW = 78;
+    const logoH = logoW / aspect;
+    const yLogo = Math.max(4, (headerH - logoH) / 2);
+    doc.addImage(logoPng, "PNG", 10, yLogo, logoW, logoH);
+    const textX = 10 + logoW + 5;
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    if (sub) doc.text(sub, textX, 13);
+    doc.setFontSize(8);
+    doc.text(refLine, textX, 20);
+  } else {
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(10, 5, 15.5, 24, 2, 2, "F");
+
+    const cell = 4.85;
+    drawQuadratoMark(doc, 11.15, 7.1, cell, 0.3);
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text(name, 28, 12);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    if (sub) doc.text(sub, 28, 17);
+    doc.setFontSize(8);
+    doc.text(refLine, 28, 22);
+
+    doc.setTextColor(...accent);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text("Fast Forward Rapid Reach", 28, 27);
+  }
 
   if (qrPngDataUrl) {
     doc.setFillColor(255, 255, 255);

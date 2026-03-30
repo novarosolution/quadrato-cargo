@@ -15,6 +15,24 @@ import { createContactSubmission } from "../modules/contacts/contact-repo.js";
 import { verifyAuthToken } from "../modules/auth/token.js";
 import { findUserById } from "../modules/users/user-repo.js";
 import { computePublicBarcodeCode } from "../shared/public-barcode-code.js";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const _publicControllerDir = dirname(fileURLToPath(import.meta.url));
+
+/** SVG lockup (grid + Quadrato Cargo + tagline) for invoice & tracking PDFs — same artwork as `quadrato-cargo/public/invoice-brand-logo.svg`. */
+function loadInvoiceBrandLogoDataUrl() {
+  try {
+    const svgPath = join(_publicControllerDir, "..", "assets", "invoice-brand-logo.svg");
+    const buf = readFileSync(svgPath);
+    return `data:image/svg+xml;base64,${buf.toString("base64")}`;
+  } catch {
+    return "";
+  }
+}
+
+const INVOICE_BRAND_LOGO_DATA_URL = loadInvoiceBrandLogoDataUrl();
 
 const contactSchema = z.object({
   name: z.string().trim().min(2),
@@ -653,6 +671,22 @@ function buildPdfHtml(input, barcodeDataUrl) {
         align-items: center;
         column-gap: 14px;
       }
+      .brand-row {
+        display: flex;
+        align-items: center;
+        background: ${data.settings.primary};
+        border-radius: 12px;
+        padding: 8px 12px;
+        min-height: 52px;
+      }
+      .brand-row img {
+        display: block;
+        height: 44px;
+        width: auto;
+        max-width: 100%;
+        object-fit: contain;
+        object-position: left center;
+      }
       .brand {
         color: ${data.settings.primary};
         font-size: 38px;
@@ -813,7 +847,11 @@ function buildPdfHtml(input, barcodeDataUrl) {
     <div class="page">
       <section class="top">
         <div>
-          <div class="brand">${esc(data.settings.companyName)}</div>
+          ${
+            INVOICE_BRAND_LOGO_DATA_URL
+              ? `<div class="brand-row"><img src="${INVOICE_BRAND_LOGO_DATA_URL}" alt="${esc(data.settings.companyName)}" /></div>`
+              : `<div class="brand">${esc(data.settings.companyName)}</div>`
+          }
         </div>
         <div class="company-meta">
           <div>TIN: ${esc(data.bookingId)}</div>
@@ -963,6 +1001,22 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
         align-items: center;
         border-bottom: 1px solid #e5e7eb;
         padding-bottom: 10px;
+      }
+      .brand-row {
+        display: flex;
+        align-items: center;
+        background: ${primary};
+        border-radius: 12px;
+        padding: 8px 12px;
+        min-height: 48px;
+      }
+      .brand-row img {
+        display: block;
+        height: 40px;
+        width: auto;
+        max-width: 100%;
+        object-fit: contain;
+        object-position: left center;
       }
       .brand {
         color: ${primary};
@@ -1135,7 +1189,11 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
   <body>
     <div class="page">
       <section class="top">
-        <div class="brand">${esc(input.settings.companyName)}</div>
+        ${
+          INVOICE_BRAND_LOGO_DATA_URL
+            ? `<div class="brand-row"><img src="${INVOICE_BRAND_LOGO_DATA_URL}" alt="${esc(input.settings.companyName)}" /></div>`
+            : `<div class="brand">${esc(input.settings.companyName)}</div>`
+        }
         <div class="meta">
           <div>${esc(input.settings.headerSubtitle)}</div>
           <div>${esc(input.settings.companyAddress)}</div>
