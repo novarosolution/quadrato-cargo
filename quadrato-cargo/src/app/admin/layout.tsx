@@ -3,15 +3,6 @@ import { ThemeToggle } from "@/components/ThemeBtn";
 import { AdminLogoutButton } from "./dashboard/LogoutB";
 import { AdminNav } from "./dashboard/Nav";
 
-const adminMenu = [
-  { href: "/admin/dashboard", label: "Dashboard" },
-  { href: "/admin/reports", label: "Reports" },
-  { href: "/admin/settings", label: "Data & site" },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/contacts", label: "Contacts" },
-  { href: "/admin/bookings", label: "Bookings" }
-];
-
 export default async function AdminLayout({
   children
 }: {
@@ -19,24 +10,33 @@ export default async function AdminLayout({
 }) {
   return (
     <div className="app-shell min-h-screen bg-canvas text-ink">
-      <div className="sticky top-0 z-30 border-b border-border bg-surface-elevated/85 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <div>
-            <Link href="/admin/dashboard" className="font-display text-lg font-semibold tracking-tight">
-              Admin Control Center
-            </Link>
-            <p className="text-xs text-muted-soft">Quadrato Cargo operations & reports</p>
+      <div className="sticky top-0 z-30 border-b border-border bg-surface-elevated/90 backdrop-blur-md">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <Link
+                href="/admin/dashboard"
+                className="font-display text-lg font-semibold tracking-tight text-ink sm:text-xl"
+              >
+                Admin Control Center
+              </Link>
+              <p className="mt-0.5 text-sm text-muted">
+                Pick a tab below — hover any item for a short description.
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <ThemeToggle className="h-10 w-10 rounded-xl border border-border-strong bg-canvas/40" />
+              <AdminLogoutButton />
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <AdminNav nav={adminMenu} />
-            <ThemeToggle className="h-9 w-9 rounded-lg" />
-            <AdminLogoutButton />
+          <div className="mt-4 border-t border-border pt-4">
+            <AdminNav />
           </div>
         </div>
       </div>
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         {children}
-      </div>
+      </main>
     </div>
   );
 }

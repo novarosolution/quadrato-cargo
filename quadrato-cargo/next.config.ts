@@ -43,7 +43,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              `default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https:; ${scriptSrc} font-src 'self' data: https:; ${connectSrc} frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests`
+              `default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https:; ${scriptSrc} font-src 'self' data: https:; ${connectSrc} frame-src 'self' https://www.google.com https://maps.google.com https://www.openstreetmap.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests`
           }
         ]
       }

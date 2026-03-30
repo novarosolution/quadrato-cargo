@@ -38,8 +38,7 @@ export function OpenBookingByReferenceForm() {
           disabled={pending}
         />
         <p className="mt-1 text-xs text-muted-soft">
-          Uses the same search as your customers’ Track page — opens the full admin page for that
-          shipment.
+          Same as customer Track — opens the full booking editor.
         </p>
       </div>
       <button

@@ -30,7 +30,7 @@ export function AdminLogoutButton() {
       type="button"
       onClick={onLogout}
       disabled={isLoggingOut}
-      className="rounded-lg border border-ghost-border px-3 py-2 text-sm font-medium text-muted transition hover:border-rose-500/40 hover:text-rose-300 disabled:opacity-60"
+      className="h-10 rounded-xl border border-border-strong bg-canvas/40 px-4 text-sm font-medium text-muted transition hover:border-rose-500/40 hover:text-rose-300 disabled:opacity-60"
     >
       {isLoggingOut ? "Logging out..." : "Log out"}
     </button>

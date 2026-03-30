@@ -15,13 +15,12 @@ export const metadata: Metadata = {
 const OFFICE_ADDRESS_LINE =
   "Iconic Shyamal, Nr Shyamal Cross Roads, Satellite, Ahmedabad – 380015";
 
-/** Google Maps search embed (no API key); opens correct area for our office address. */
-const MAPS_EMBED_SRC =
-  "https://www.google.com/maps?q=" +
-  encodeURIComponent(
-    "Iconic Shyamal, Shyamal Cross Road, Satellite, Ahmedabad 380015 India",
-  ) +
-  "&output=embed&z=15";
+/** OpenStreetMap embed — no API key; works with CSP frame-src for openstreetmap.org. */
+const MAP_OSM_EMBED_SRC =
+  "https://www.openstreetmap.org/export/embed.html?bbox=" +
+  encodeURIComponent("72.485,23.008,72.545,23.048") +
+  "&layer=mapnik&marker=" +
+  encodeURIComponent("23.0269,72.5283");
 
 const MAPS_OPEN_URL =
   "https://www.google.com/maps/search/?api=1&query=" +
@@ -119,12 +118,32 @@ export default function AboutPage() {
               <div className="overflow-hidden rounded-2xl border border-border-strong bg-surface-elevated shadow-lg shadow-black/10 lg:col-span-7">
                 <iframe
                   title={`Map: ${siteName} office, Satellite, Ahmedabad`}
-                  src={MAPS_EMBED_SRC}
+                  src={MAP_OSM_EMBED_SRC}
                   className="aspect-4/3 min-h-[280px] w-full border-0 sm:min-h-[360px] lg:aspect-auto lg:min-h-[400px]"
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   allowFullScreen
                 />
+                <p className="border-t border-border bg-canvas/30 px-3 py-2 text-center text-[11px] text-muted-soft">
+                  ©{" "}
+                  <a
+                    href="https://www.openstreetmap.org/copyright"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-teal underline-offset-2 hover:underline"
+                  >
+                    OpenStreetMap
+                  </a>{" "}
+                  contributors ·{" "}
+                  <a
+                    href="https://www.openstreetmap.org/?mlat=23.0269&mlon=72.5283#map=17/23.0269/72.5283"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-teal underline-offset-2 hover:underline"
+                  >
+                    Full screen map
+                  </a>
+                </p>
               </div>
             </div>
           </div>

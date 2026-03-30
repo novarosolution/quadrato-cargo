@@ -120,17 +120,12 @@ export function AdminDashboardView(data: DashboardSnapshot) {
             If all metrics are zero, backend is connected but database has no
             records yet.
           </p>
-          <ol className="mt-3 list-inside list-decimal space-y-1.5 text-left">
+          <ol className="mt-3 list-inside list-decimal space-y-1.5 text-left text-muted">
             <li>
-              <code className="rounded bg-pill px-1.5 py-0.5 text-xs text-ink">
-                Start backend: cd /Users/kuldip/2\ day/server && npm run dev
-              </code>
+              Start the API from the <code className="rounded bg-pill px-1.5 py-0.5 text-xs text-ink">quadrato-cargo/server</code> folder:{" "}
+              <code className="rounded bg-pill px-1.5 py-0.5 text-xs text-ink">npm run dev</code>
             </li>
-            <li>
-              <code className="rounded bg-pill px-1.5 py-0.5 text-xs text-ink">
-                Create some records from website forms (bookings/public/contact/public/register)
-              </code>
-            </li>
+            <li>Create test data from the public site: book, contact, or register.</li>
           </ol>
           <p className="mt-3 text-xs text-muted-soft">
             Refresh this page after creating new records to see live analytics.
@@ -139,8 +134,8 @@ export function AdminDashboardView(data: DashboardSnapshot) {
       ) : null}
       <div className="border-b border-border-strong pb-8">
         <AdminPageHeader
-          title="Admin dashboard"
-          description="Live overview — monitor customers, enquiries, and courier bookings. Open any card to view or edit records."
+          title="Dashboard"
+          description="Live counts and recent activity. Click any number to open that list and edit records."
           actions={
             <Link
               href="/admin/settings"
