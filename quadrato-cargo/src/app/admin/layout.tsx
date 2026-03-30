@@ -9,8 +9,8 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="app-shell min-h-screen bg-canvas text-ink">
-      <div className="sticky top-0 z-30 border-b border-border bg-surface-elevated/90 backdrop-blur-md">
+    <div className="app-shell admin-app-shell min-h-screen bg-canvas text-ink">
+      <div className="sticky top-0 z-30 border-b border-border-strong/80 bg-surface-elevated/95 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.35)] backdrop-blur-xl dark:shadow-[0_12px_40px_-16px_rgba(0,0,0,0.55)]">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">

@@ -15,58 +15,59 @@ export function HeroVisual() {
   const canAnimateHover = allowHoverMotion && !reduce;
 
   return (
-    <div className="relative mx-auto w-full max-w-md lg:max-w-none">
+    <div className="relative mx-auto w-full max-w-md overflow-x-clip lg:max-w-none">
       <motion.div
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[120%] w-[120%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-b from-teal/10 via-transparent to-accent/5 blur-2xl"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[120%] w-[120%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-linear-to-b from-teal/10 via-transparent to-accent/5 blur-2xl"
         aria-hidden
         animate={canAnimateAmbient ? { scale: [1, 1.025, 1], y: [0, -6, 0] } : undefined}
         transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
       />
       <svg
-        className="absolute left-4 top-8 hidden h-[calc(100%-4rem)] w-8 text-teal/30 md:block"
-        viewBox="0 0 32 200"
+        className="absolute left-6 top-8 hidden h-[calc(100%-4rem)] w-7 text-teal/25 md:block"
+        viewBox="0 0 28 200"
         fill="none"
         aria-hidden
       >
         <motion.path
-          d="M16 0 V200"
+          d="M14 0 V200"
           stroke="currentColor"
-          strokeWidth="2"
-          strokeDasharray="6 8"
+          strokeWidth="1.5"
+          strokeDasharray="5 7"
+          strokeLinecap="round"
           initial={reduce ? undefined : { pathLength: 0, opacity: 0.4 }}
           animate={reduce ? undefined : { pathLength: 1, opacity: 1 }}
           transition={{ duration: 1.4, ease, delay: 0.5 }}
         />
         <motion.circle
-          cx="16"
+          cx="14"
           cy="36"
-          r="5"
-          className="fill-teal/60"
+          r="4.5"
+          className="fill-teal/55"
           initial={reduce ? undefined : { scale: 0, opacity: 0 }}
           animate={reduce ? undefined : { scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 400, damping: 18, delay: 0.85 }}
         />
         <motion.circle
-          cx="16"
+          cx="14"
           cy="100"
-          r="5"
-          className="fill-accent/60"
+          r="4.5"
+          className="fill-accent/55"
           initial={reduce ? undefined : { scale: 0, opacity: 0 }}
           animate={reduce ? undefined : { scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 400, damping: 18, delay: 1.05 }}
         />
         <motion.circle
-          cx="16"
+          cx="14"
           cy="164"
-          r="5"
-          className="fill-white/30"
+          r="4.5"
+          className="fill-white/28"
           initial={reduce ? undefined : { scale: 0, opacity: 0 }}
           animate={reduce ? undefined : { scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 400, damping: 18, delay: 1.25 }}
         />
       </svg>
 
-      <div className="relative flex flex-col gap-4 pl-0 md:pl-10">
+      <div className="relative flex flex-col gap-4 pl-0 md:pl-11">
         {homeHeroCardData.map((card, i) => (
           <motion.div
             key={card.label}

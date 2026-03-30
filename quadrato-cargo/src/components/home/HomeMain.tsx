@@ -200,13 +200,13 @@ export function HomeView() {
 
   return (
     <>
-      <section className="relative overflow-hidden border-b border-border page-section">
+      <section className="relative border-b border-border page-section">
         <div
-          className="pointer-events-none absolute -right-32 top-0 h-[500px] w-[500px] rounded-full bg-accent/10 blur-[90px]"
+          className="pointer-events-none absolute right-0 top-0 h-[min(520px,90vw)] w-[min(520px,90vw)] translate-x-1/4 rounded-full bg-accent/10 blur-[90px]"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-teal/10 blur-[70px]"
+          className="pointer-events-none absolute bottom-0 left-0 h-80 w-80 rounded-full bg-teal/7 blur-[80px] sm:left-8 sm:h-96 sm:w-96"
           aria-hidden
         />
         <Container wide className="relative">
