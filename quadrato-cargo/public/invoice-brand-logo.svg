@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Quadrato Cargo lockup from brand source (grid + wordmark + tagline). White title for use on teal/dark headers. -->
+<!-- Quadrato Cargo lockup for print/PDF: grid + dark wordmark on white (no header fill). -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="40 224 378 96" fill="none" role="img" aria-labelledby="invLogoTitle">
   <title id="invLogoTitle">Quadrato Cargo</title>
   <g id="mark">
@@ -8,10 +8,10 @@
     <path d="m 86.5687,276.3147 v 37.0379 h 38.0194 v -37.0379 z" fill="#3ed5c2" fill-rule="evenodd"/>
     <path d="m 86.3844,234.8904 v 37.0378 h 38.0194 v -37.0378 z" fill="#ed7304" fill-rule="evenodd"/>
   </g>
-  <text x="131" y="279.5" font-family="'Russo One', 'Arial Black', system-ui, sans-serif" font-size="28" font-weight="700" fill="#ffffff">
+  <text x="131" y="279.5" font-family="'Russo One', 'Arial Black', system-ui, sans-serif" font-size="28" font-weight="700" fill="#0f172a">
     Quadrato Cargo
   </text>
-  <text x="171.5" y="298" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" font-weight="600" fill="#ee5f10">
+  <text x="171.5" y="298" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" font-weight="600" fill="#ea580c">
     Fast Forward Rapid Reach
   </text>
 </svg>

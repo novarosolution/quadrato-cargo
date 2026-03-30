@@ -544,7 +544,11 @@ async function buildPdfDataFromBooking(req, parsedData) {
     dimensionsLabel: dimensions,
     contentsLabel,
     instructionsLabel: payloadValue(payload, ["instructions"], "-"),
-    trackingNotesLabel: String(booking.publicTrackingNote || booking.customerTrackingNote || "-"),
+    trackingNotesLabel: String(
+      [booking.publicTrackingNote, booking.customerTrackingNote].find((n) => String(n || "").trim()) ||
+        "-"
+    ),
+    operationalNotesLabel: String(booking.trackingNotes || "").trim() || null,
     agencyLabel: String(booking.assignedAgency || "-"),
     courierNameLabel: courierName,
     trackUrl,
@@ -665,23 +669,27 @@ function buildPdfHtml(input, barcodeDataUrl) {
         border-radius: 14px;
         background: #ffffff;
       }
+      .invoice-doc-header {
+        margin: 0 0 16px 0;
+        padding: 0 0 14px 0;
+        border-bottom: 3px solid ${data.settings.primary};
+      }
       .top {
         display: grid;
         grid-template-columns: 1.25fr 1fr 1fr;
-        align-items: center;
-        column-gap: 14px;
+        align-items: start;
+        column-gap: 16px;
       }
-      .brand-row {
+      .brand-lockup {
         display: flex;
         align-items: center;
-        background: ${data.settings.primary};
-        border-radius: 12px;
-        padding: 8px 12px;
-        min-height: 52px;
+        background: transparent;
+        padding: 0;
+        min-height: 48px;
       }
-      .brand-row img {
+      .brand-lockup img {
         display: block;
-        height: 44px;
+        height: 46px;
         width: auto;
         max-width: 100%;
         object-fit: contain;
@@ -696,9 +704,13 @@ function buildPdfHtml(input, barcodeDataUrl) {
       }
       .company-meta {
         text-align: left;
-        font-size: 13px;
-        line-height: 1.4;
-        color: #475569;
+        font-size: 12px;
+        line-height: 1.45;
+        color: #334155;
+      }
+      .company-meta strong {
+        color: #0f172a;
+        font-weight: 600;
       }
       .barcode {
         text-align: right;
@@ -845,19 +857,20 @@ function buildPdfHtml(input, barcodeDataUrl) {
   </head>
   <body>
     <div class="page">
+      <header class="invoice-doc-header">
       <section class="top">
         <div>
           ${
             INVOICE_BRAND_LOGO_DATA_URL
-              ? `<div class="brand-row"><img src="${INVOICE_BRAND_LOGO_DATA_URL}" alt="${esc(data.settings.companyName)}" /></div>`
+              ? `<div class="brand-lockup"><img src="${INVOICE_BRAND_LOGO_DATA_URL}" alt="${esc(data.settings.companyName)}" /></div>`
               : `<div class="brand">${esc(data.settings.companyName)}</div>`
           }
         </div>
         <div class="company-meta">
-          <div>TIN: ${esc(data.bookingId)}</div>
+          <div><strong>${esc(data.settings.companyName)}</strong></div>
+          <div>${esc(data.settings.companyAddress || "—")}</div>
           <div>Phone: ${esc(data.settings.supportPhone)}</div>
           <div>Email: ${esc(data.settings.supportEmail)}</div>
-          <div>Street: ${esc(data.settings.companyAddress)}</div>
         </div>
         <div class="barcode">
           <img src="${esc(barcodeDataUrl)}" alt="Invoice barcode" />
@@ -869,6 +882,7 @@ function buildPdfHtml(input, barcodeDataUrl) {
           }
         </div>
       </section>
+      </header>
 
       <div class="separator"></div>
 
@@ -881,10 +895,14 @@ function buildPdfHtml(input, barcodeDataUrl) {
           <div>${esc(data.recipientEmail)}</div>
         </div>
         <table class="mini-table">
+          <tr><td>Booking ID</td><td><span style="font-family:monospace">${esc(data.bookingId)}</span></td></tr>
+          <tr><td>Consignment / scan</td><td><strong>${esc(data.scanCode)}</strong></td></tr>
           <tr><td>Shipping mode</td><td>${esc(data.routeTypeLabel)}</td></tr>
           <tr><td>Courier company</td><td>${esc(data.agencyLabel)}</td></tr>
-          <tr><td>Service Mode</td><td>${esc(data.statusLabel)}</td></tr>
-          <tr><td>Shipping Date</td><td>${esc(data.bookingDateLabel)}</td></tr>
+          <tr><td>Pickup courier</td><td>${esc(data.courierNameLabel)}</td></tr>
+          <tr><td>Status</td><td>${esc(data.statusLabel)}</td></tr>
+          <tr><td>Booked</td><td>${esc(data.bookingDateLabel)}</td></tr>
+          <tr><td>Last updated</td><td>${esc(data.updatedAtLabel)}</td></tr>
           <tr><td>Invoice #</td><td><strong>${esc(data.displayInvoiceId)}</strong></td></tr>
         </table>
       </section>
@@ -959,6 +977,18 @@ function buildPdfHtml(input, barcodeDataUrl) {
       <div class="terms-text">${esc(data.adminInvoiceNotes)}</div>`
           : ""
       }
+      ${
+        data.trackingNotesLabel && String(data.trackingNotesLabel).trim() !== "-"
+          ? `<div class="terms-title">TRACKING UPDATE</div>
+      <div class="terms-text">${esc(data.trackingNotesLabel)}</div>`
+          : ""
+      }
+      ${
+        data.operationalNotesLabel
+          ? `<div class="terms-title">ACTIVITY LOG</div>
+      <div class="terms-text">${esc(data.operationalNotesLabel)}</div>`
+          : ""
+      }
 
       <div class="terms-title">TERMS</div>
       <div class="terms-text">
@@ -994,25 +1024,27 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
         width: 100%;
         padding: 18px 20px 20px;
       }
+      .track-doc-header {
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+        border-bottom: 3px solid ${primary};
+      }
       .top {
         display: grid;
         grid-template-columns: 1fr auto;
-        column-gap: 10px;
-        align-items: center;
-        border-bottom: 1px solid #e5e7eb;
-        padding-bottom: 10px;
+        column-gap: 14px;
+        align-items: start;
       }
-      .brand-row {
+      .brand-lockup {
         display: flex;
         align-items: center;
-        background: ${primary};
-        border-radius: 12px;
-        padding: 8px 12px;
-        min-height: 48px;
+        background: transparent;
+        padding: 0;
+        min-height: 44px;
       }
-      .brand-row img {
+      .brand-lockup img {
         display: block;
-        height: 40px;
+        height: 42px;
         width: auto;
         max-width: 100%;
         object-fit: contain;
@@ -1027,9 +1059,14 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
       }
       .meta {
         text-align: right;
+        font-size: 11px;
+        line-height: 1.4;
+        color: #374151;
+      }
+      .meta .co {
+        font-weight: 700;
+        color: #0f172a;
         font-size: 12px;
-        line-height: 1.3;
-        color: #4b5563;
       }
       .barcode-wrap {
         margin-top: 12px;
@@ -1188,18 +1225,26 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
   </head>
   <body>
     <div class="page">
+      <header class="track-doc-header">
       <section class="top">
         ${
           INVOICE_BRAND_LOGO_DATA_URL
-            ? `<div class="brand-row"><img src="${INVOICE_BRAND_LOGO_DATA_URL}" alt="${esc(input.settings.companyName)}" /></div>`
+            ? `<div class="brand-lockup"><img src="${INVOICE_BRAND_LOGO_DATA_URL}" alt="${esc(input.settings.companyName)}" /></div>`
             : `<div class="brand">${esc(input.settings.companyName)}</div>`
         }
         <div class="meta">
+          <div class="co">${esc(input.settings.companyName)}</div>
           <div>${esc(input.settings.headerSubtitle)}</div>
-          <div>${esc(input.settings.companyAddress)}</div>
+          <div>${esc(input.settings.companyAddress || "—")}</div>
           <div>Phone: ${esc(input.settings.supportPhone)}</div>
+          ${
+            input.settings.website
+              ? `<div>${esc(input.settings.website)}</div>`
+              : ""
+          }
         </div>
       </section>
+      </header>
 
       <div class="barcode-wrap">
         <img src="${esc(barcodeDataUrl)}" alt="Tracking Barcode" />
@@ -1212,13 +1257,24 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
           : ""
       }
 
-      <div class="package-ref">PACKAGE REFERENCE:</div>
+      <div class="package-ref">PACKAGE REFERENCE</div>
+      <div class="line" style="font-size:12px;margin-top:4px;">
+        Booking ID: <strong>${esc(input.bookingId)}</strong>
+        · Last updated: <strong>${esc(input.updatedAtLabel)}</strong>
+      </div>
       <div class="line">
-        Date: ${esc(input.bookingDateLabel)} | Amount: ${esc(input.amountLabel)} | Weight: ${esc(input.weightLabel)} | Cost: ${esc(input.amountLabel)}
+        Booked: ${esc(input.bookingDateLabel)} | Amount: ${esc(input.amountLabel)} | Weight: ${esc(input.weightLabel)}
       </div>
       <div class="line">
         Dimensions: ${esc(input.dimensionsLabel)}
       </div>
+      ${
+        input.trackingNotesLabel && String(input.trackingNotesLabel).trim() !== "-"
+          ? `<div class="line" style="margin-top:10px;text-align:left;max-width:640px;margin-left:auto;margin-right:auto;padding:8px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;font-size:12px;">
+        <strong>Status note:</strong> ${esc(input.trackingNotesLabel)}
+      </div>`
+          : ""
+      }
 
       <div class="service">
         <strong>SERVICE REFERENCE</strong> ${esc(input.statusLabel)}
@@ -1243,12 +1299,14 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
           <div class="name">${esc(input.senderName)}</div>
           <div class="block">${esc(input.senderAddress)}</div>
           <div class="block">${esc(input.senderPhone)}</div>
+          <div class="block">${esc(input.senderEmail)}</div>
         </div>
         <div class="person">
           <h4>Recipient</h4>
           <div class="name">${esc(input.recipientName)}</div>
           <div class="block">${esc(input.recipientAddress)}</div>
           <div class="block">${esc(input.recipientPhone)}</div>
+          <div class="block">${esc(input.recipientEmail)}</div>
         </div>
       </section>
 

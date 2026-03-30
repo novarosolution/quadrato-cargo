@@ -62,45 +62,45 @@ export function drawBrandedPdfHeader(
   const accent = parseHexRgb(branding.accentColorHex, [249, 115, 22]);
   const headerH = 34;
 
-  doc.setFillColor(...primary);
-  doc.rect(0, 0, 210, headerH, "F");
-
   const name = String(branding.companyName || "").trim() || "Quadrato Cargo";
   const sub = String(branding.headerSubtitle || "").trim();
   const refLine = `Ref: ${String(branding.reference || "").trim() || "-"}`;
 
   const logoPng = logo?.logoPngDataUrl?.trim() || "";
   const aspect = logo?.logoAspect && logo.logoAspect > 0 ? logo.logoAspect : 378 / 96;
+  /** Light PDF header (logo has dark text; no fill behind mark). */
+  const ink: [number, number, number] = [15, 23, 42];
+
+  doc.setFillColor(255, 255, 255);
+  doc.rect(0, 0, 210, headerH, "F");
+  doc.setDrawColor(primary[0], primary[1], primary[2]);
+  doc.setLineWidth(0.5);
+  doc.line(0, headerH, 210, headerH);
 
   if (logoPng) {
     const logoW = 78;
     const logoH = logoW / aspect;
-    const yLogo = Math.max(4, (headerH - logoH) / 2);
+    const yLogo = Math.max(3, (headerH - logoH) / 2);
     doc.addImage(logoPng, "PNG", 10, yLogo, logoW, logoH);
     const textX = 10 + logoW + 5;
-    doc.setTextColor(255, 255, 255);
+    doc.setTextColor(...ink);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    if (sub) doc.text(sub, textX, 13);
+    if (sub) doc.text(sub, textX, 12);
     doc.setFontSize(8);
-    doc.text(refLine, textX, 20);
+    doc.text(refLine, textX, 19);
   } else {
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(10, 5, 15.5, 24, 2, 2, "F");
-
     const cell = 4.85;
-    drawQuadratoMark(doc, 11.15, 7.1, cell, 0.3);
-
-    doc.setTextColor(255, 255, 255);
+    drawQuadratoMark(doc, 11, 6.5, cell, 0.3);
+    doc.setTextColor(...ink);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text(name, 28, 12);
+    doc.setFontSize(13);
+    doc.text(name, 28, 11);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    if (sub) doc.text(sub, 28, 17);
+    if (sub) doc.text(sub, 28, 16);
     doc.setFontSize(8);
     doc.text(refLine, 28, 22);
-
     doc.setTextColor(...accent);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7);
@@ -108,8 +108,9 @@ export function drawBrandedPdfHeader(
   }
 
   if (qrPngDataUrl) {
+    doc.setDrawColor(226, 232, 240);
     doc.setFillColor(255, 255, 255);
-    doc.roundedRect(164, 5, 38, 24, 2, 2, "F");
+    doc.roundedRect(164, 5, 38, 24, 2, 2, "FD");
     doc.addImage(qrPngDataUrl, "PNG", 170, 7, 18, 18);
     doc.setTextColor(...primary);
     doc.setFont("helvetica", "bold");
