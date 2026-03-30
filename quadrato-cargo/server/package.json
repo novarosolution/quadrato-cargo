@@ -9,7 +9,9 @@
     "db:schema": "node -e \"import('./src/db/mongo.js').then(async (m) => { await m.getDb(); await m.closeDb(); console.log('Database schema synced from model definitions.'); })\""
   },
   "dependencies": {
+    "@sparticuz/chromium": "^143.0.4",
     "bcryptjs": "^3.0.3",
+    "bwip-js": "^4.8.0",
     "cloudinary": "^2.9.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
@@ -24,6 +26,9 @@
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.4",
+    "puppeteer": "^24.40.0",
+    "puppeteer-core": "^24.40.0",
+    "qrcode": "^1.5.4",
     "zod": "^3.25.76"
   }
 }

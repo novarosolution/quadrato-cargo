@@ -3,7 +3,6 @@ function trackShowFlag(value) {
   return value !== false;
 }
 
-/** Only allow official Google Maps embed iframes (admin pastes src from Share → Embed). */
 function sanitizeGoogleMapsEmbedSrc(raw) {
   const s = String(raw ?? "").trim();
   if (!s) return "";
@@ -27,7 +26,6 @@ export function normalizeSiteSettings(row) {
     announcementCtaHref: String(row?.announcementCtaHref ?? "").trim(),
     pdfCompanyName: String(row?.pdfCompanyName ?? "Quadrato Cargo").trim(),
     pdfCompanyAddress: String(row?.pdfCompanyAddress ?? "").trim(),
-    /** Optional Google Maps embed iframe src (https://www.google.com/maps/embed?...). */
     googleMapsEmbedSrc: sanitizeGoogleMapsEmbedSrc(row?.googleMapsEmbedSrc),
     pdfLogoText: String(row?.pdfLogoText ?? "QR").trim(),
     pdfPrimaryColor: String(row?.pdfPrimaryColor ?? "#0f766e").trim(),
@@ -36,7 +34,6 @@ export function normalizeSiteSettings(row) {
     pdfHeaderSubtitle: String(row?.pdfHeaderSubtitle ?? "International courier service").trim(),
     pdfSupportEmail: String(row?.pdfSupportEmail ?? "support@quadratocargo.com").trim(),
     pdfSupportPhone: String(row?.pdfSupportPhone ?? "+1 (555) 010-0199").trim(),
-    /** Optional second public contact line (footer); primary phone/email use PDF fields above. */
     publicInfoEmail: String(row?.publicInfoEmail ?? "").trim(),
     pdfWebsite: String(row?.pdfWebsite ?? "https://quadratocargo.com").trim(),
     pdfWatermarkText: String(row?.pdfWatermarkText ?? "Quadrato Cargo").trim(),

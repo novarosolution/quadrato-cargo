@@ -15,6 +15,7 @@ function buildAddressLine(address = {}) {
 
 function buildCustomerTrackingNote(status, row) {
   void status;
+  // Only show admin-curated public note on customer-facing surfaces.
   return cleanText(row?.publicTrackingNote);
 }
 
@@ -69,6 +70,10 @@ export function mergePublicTimelineOverrides(existingRaw, patchRaw) {
   return base;
 }
 
+/**
+ * Optional per-stage copy for the public “professional” timeline (domestic / international).
+ * Keys are string indices "0"… matching stage arrays in professional-tracking-stages.
+ */
 export function normalizePublicTimelineOverrides(raw) {
   if (!raw || typeof raw !== "object") return null;
   const out = {};
@@ -155,6 +160,34 @@ export function toPublicBooking(row) {
   };
 }
 
+export function toPublicBookingSummary(row) {
+  if (!row) return null;
+  const sender = row.payload?.sender ?? {};
+  const recipient = row.payload?.recipient ?? {};
+  return {
+    id: String(row._id),
+    userId: row.userId ? String(row.userId) : null,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt ?? row.createdAt,
+    routeType: row.routeType ?? "domestic",
+    status: row.status ?? "submitted",
+    consignmentNumber: row.consignmentNumber ?? null,
+    trackingNotes: null,
+    publicTrackingNote: row.publicTrackingNote ?? null,
+    customerTrackingNote: buildCustomerTrackingNote(row.status, row),
+    assignedAgency: row.assignedAgency ?? null,
+    senderName: cleanText(sender.name),
+    senderAddress: buildAddressLine(sender),
+    recipientName: cleanText(recipient.name),
+    recipientAddress: buildAddressLine(recipient),
+    pickupOtpVerifiedAt: row.pickupOtpVerifiedAt ?? null,
+    courierId: row.courierId ? String(row.courierId) : null,
+    publicBarcodeCode: row.publicBarcodeCode
+      ? String(row.publicBarcodeCode).trim().toUpperCase()
+      : null
+  };
+}
+
 export function createBookingDoc({ routeType, payload, userId }) {
   const now = new Date();
   const safeRoute =
@@ -168,6 +201,7 @@ export function createBookingDoc({ routeType, payload, userId }) {
     status: "submitted",
     consignmentNumber: null,
     trackingNotes: null,
+    publicTrackingNote: null,
     internalNotes: null,
     serviceabilityStatus: "pending",
     workflowStage: "awaiting_serviceability_check",
@@ -201,6 +235,7 @@ export const bookingModelSchema = {
         status: { bsonType: "string", minLength: 2, maxLength: 64 },
         consignmentNumber: { bsonType: ["string", "null"] },
         trackingNotes: { bsonType: ["string", "null"] },
+        publicTrackingNote: { bsonType: ["string", "null"] },
         internalNotes: { bsonType: ["string", "null"] },
         assignedAgency: { bsonType: ["string", "null"] },
         payload: { bsonType: "object" },

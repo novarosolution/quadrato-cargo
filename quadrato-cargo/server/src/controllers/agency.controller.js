@@ -1,18 +1,20 @@
+import { z } from "zod";
 import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
 import {
   listBookingsByAgency,
   updateBookingByAgency,
   verifyAgencyHandoverOtp
 } from "../modules/bookings/booking-repo.js";
+import { objectIdStringSchema } from "../shared/zod-helpers.js";
 
-const ALLOWED_AGENCY_STATUSES = new Set([
+const ALLOWED_AGENCY_STATUSES = [
   "agency_processing",
   "in_transit",
   "out_for_delivery",
   "delivery_attempted",
   "on_hold",
   "delivered"
-]);
+];
 
 export function requireAgency(req, res, next) {
   const role = String(req.auth?.user?.role ?? "");
@@ -21,6 +23,26 @@ export function requireAgency(req, res, next) {
   }
   return next();
 }
+
+const agencyReferenceSchema = z
+  .string()
+  .trim()
+  .min(4)
+  .max(40)
+  .regex(/^[a-zA-Z0-9-]+$/);
+
+const agencyVerifyHandoverSchema = z.object({
+  reference: agencyReferenceSchema,
+  otpCode: z.string().trim().regex(/^\d{6}$/, "OTP must be exactly 6 digits.")
+});
+
+const agencyUpdateBookingSchema = z.object({
+  status: z.string().refine((s) => ALLOWED_AGENCY_STATUSES.includes(s), {
+    message: "Invalid status for agency update."
+  }),
+  publicTrackingNote: z.string().trim().max(2000).optional(),
+  trackingNotes: z.string().trim().max(2000).optional()
+});
 
 export async function listMyAgencyBookings(req, res, next) {
   try {
@@ -33,11 +55,12 @@ export async function listMyAgencyBookings(req, res, next) {
 
 export async function verifyAgencyHandover(req, res, next) {
   try {
-    const reference = String(req.body?.reference ?? "").trim();
-    const otpCode = String(req.body?.otpCode ?? "").trim();
-    if (!reference || !otpCode) {
-      return sendError(res, "Reference and OTP are required.");
+    const parsed = agencyVerifyHandoverSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const msg = parsed.error.issues[0]?.message ?? "Invalid request.";
+      return sendError(res, msg);
     }
+    const { reference, otpCode } = parsed.data;
     const result = await verifyAgencyHandoverOtp(req.auth.user, reference, otpCode);
     if (!result.ok) {
       if (result.reason === "not_found") {
@@ -46,7 +69,7 @@ export async function verifyAgencyHandover(req, res, next) {
       if (result.reason === "handover_not_ready") {
         return sendError(
           res,
-          "Agency handover is not ready yet. Courier must verify pickup OTP first.",
+          "Agency handover is not ready yet. Courier must verify pickup OTP first."
         );
       }
       if (result.reason === "expired") {
@@ -67,13 +90,25 @@ export async function verifyAgencyHandover(req, res, next) {
 
 export async function updateMyAgencyBooking(req, res, next) {
   try {
-    const status = String(req.body?.status ?? "").trim();
-    if (!ALLOWED_AGENCY_STATUSES.has(status)) {
-      return sendError(res, "Invalid status for agency update.");
+    const idParsed = objectIdStringSchema.safeParse(req.params.id);
+    if (!idParsed.success) {
+      return sendError(res, idParsed.error.issues[0]?.message ?? "Invalid booking id.");
     }
-    const row = await updateBookingByAgency(req.auth.user, req.params.id, {
-      status,
-      trackingNotes: req.body?.trackingNotes
+
+    const parsed = agencyUpdateBookingSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const msg = parsed.error.issues[0]?.message ?? "Invalid agency update.";
+      return sendError(res, msg);
+    }
+
+    const publicNote =
+      parsed.data.publicTrackingNote !== undefined
+        ? parsed.data.publicTrackingNote
+        : parsed.data.trackingNotes;
+
+    const row = await updateBookingByAgency(req.auth.user, idParsed.data, {
+      status: parsed.data.status,
+      publicTrackingNote: publicNote
     });
     if (!row) {
       return sendNotFound(res, "Booking not found for this agency.");

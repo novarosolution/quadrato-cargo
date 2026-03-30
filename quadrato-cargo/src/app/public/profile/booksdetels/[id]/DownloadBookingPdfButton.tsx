@@ -112,6 +112,20 @@ export function DownloadBookingPdfButton({
   settings,
   invoiceDetails = null,
 }: Props) {
+  void (
+    updatedAtLabel,
+    senderPhone,
+    senderEmail,
+    recipientPhone,
+    recipientEmail,
+    amountLabel,
+    weightLabel,
+    dimensionsLabel,
+    instructionsLabel,
+    agencyLabel,
+    courierNameLabel
+  );
+
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 

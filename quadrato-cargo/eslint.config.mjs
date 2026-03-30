@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Nested Express API is linted separately; avoid duplicate rules on .js files.
+    "server/**",
   ]),
 ]);
 

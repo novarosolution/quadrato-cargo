@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { normalizeBookingStatus } from "@/lib/booking-status";
 import type { PublicTimelineOverrides } from "@/lib/api/public-client";
 import {
@@ -57,22 +57,6 @@ export function AdminTimelineQuickCardForm({
   const [shownAtLocal, setShownAtLocal] = useState(() =>
     stageSnap?.shownAt ? isoToDatetimeLocal(stageSnap.shownAt) : "",
   );
-
-  useEffect(() => {
-    const s = initial?.[modeKey]?.[idxKey];
-    setTitle(s?.title?.trim() ?? "");
-    setLocation(s?.location?.trim() ?? "");
-    setHint(s?.hint?.trim() ?? "");
-    setShownAtLocal(s?.shownAt ? isoToDatetimeLocal(s.shownAt) : "");
-  }, [
-    bookingId,
-    modeKey,
-    idxKey,
-    stageSnap?.title,
-    stageSnap?.location,
-    stageSnap?.hint,
-    stageSnap?.shownAt,
-  ]);
 
   const stepPayloadJson = useMemo(
     () =>

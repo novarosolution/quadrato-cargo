@@ -311,6 +311,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           <h2 className="font-display text-lg font-semibold text-ink">Current timeline step</h2>
           <div className="mt-4">
             <AdminTimelineQuickCardForm
+              key={`${row.id}-${row.routeType}-${row.status}-${JSON.stringify(row.publicTimelineOverrides ?? null)}`}
               bookingId={row.id}
               routeType={row.routeType}
               status={row.status}
@@ -321,6 +322,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
 
         <AdminCollapsible id="booking-customer-timeline" title="All timeline steps">
           <AdminCustomerTimelineForm
+            key={`${row.id}-${row.routeType}`}
             bookingId={row.id}
             routeType={row.routeType}
             initial={row.publicTimelineOverrides ?? null}

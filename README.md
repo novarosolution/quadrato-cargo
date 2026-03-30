@@ -5,7 +5,8 @@ Final full-stack project update by NovaRo team.
 ## Project Structure
 
 - `quadrato-cargo/` — Next.js frontend (customer, admin, courier, agency UI)
-- `quadrato-cargo/server/` — Express + MongoDB backend API
+- `server/` — **Canonical** Express + MongoDB API (PDFs, exports, full routes). Keep this in sync with production.
+- `quadrato-cargo/server/` — Copy of `server/` for developers who prefer the app nested under the frontend folder (install and run the same way; do not let it drift).
 
 ## Frontend (`quadrato-cargo`)
 
@@ -24,18 +25,18 @@ npm run dev
 
 Frontend runs on `http://localhost:3000`.
 
-## Backend (`quadrato-cargo/server`)
+## Backend (`server/` at repo root — recommended)
 
 ### Install
 
 ```bash
-cd quadrato-cargo/server
+cd server
 npm install
 ```
 
 ### Environment
 
-Create `quadrato-cargo/server/.env` using `quadrato-cargo/server/.env.example` and set:
+Create `server/.env` from `server/.env.example` and set:
 
 - `PORT`
 - `MONGODB_URI`
@@ -52,7 +53,11 @@ Create `quadrato-cargo/server/.env` using `quadrato-cargo/server/.env.example` a
 npm run dev
 ```
 
-Backend runs on `http://localhost:4010`.
+Backend runs on `http://localhost:4010` (or your `PORT`).
+
+### Alternate path (`quadrato-cargo/server`)
+
+If you use the nested copy, run `npm install` and `npm run dev` there instead — it is kept aligned with `server/` so features like **`POST /api/public/bookings/pdf`** work the same.
 
 ## Main Features
 

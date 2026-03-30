@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useMemo, useState } from "react";
+import { useActionState, useCallback, useMemo, useState } from "react";
 import {
   DOMESTIC_PROFESSIONAL_STAGES,
   INTERNATIONAL_PROFESSIONAL_STAGES,
@@ -115,10 +115,6 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
   const [locSaveMask, setLocSaveMask] = useState<Record<string, boolean>>(() =>
     defaultLocationSaveMask(stages.length),
   );
-
-  useEffect(() => {
-    setLocSaveMask(defaultLocationSaveMask(stages.length));
-  }, [bookingId, stages.length]);
 
   const updateField = useCallback(
     (idx: number, field: keyof StageFields, value: string) => {

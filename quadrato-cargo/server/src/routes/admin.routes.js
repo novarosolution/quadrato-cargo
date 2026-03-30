@@ -13,237 +13,11 @@ import {
 import { toPublicContact } from "../models/contact.model.js";
 import { normalizeSiteSettings } from "../models/site-settings.model.js";
 import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
+import { MIN_PASSWORD_LENGTH } from "../shared/constants.js";
 import { findBookingByReference } from "../modules/bookings/booking-repo.js";
 
 const router = Router();
 const PAGE_SIZE = 25;
-
-const bookingInvoiceSchema = z.object({
-  invoicePdfReady: z.boolean(),
-  invoice: z
-    .object({
-      number: z.string().trim().max(120).optional().default(""),
-      currency: z.string().trim().max(12).optional().default("INR"),
-      subtotal: z.string().trim().max(500).optional().default(""),
-      tax: z.string().trim().max(500).optional().default(""),
-      insurance: z.string().trim().max(500).optional().default(""),
-      customsDuties: z.string().trim().max(500).optional().default(""),
-      discount: z.string().trim().max(500).optional().default(""),
-      total: z.string().trim().max(500).optional().default(""),
-      lineDescription: z.string().trim().max(4000).optional().default(""),
-      notes: z.string().trim().max(4000).optional().default("")
-    })
-    .default({})
-});
-
-const bookingControlsSchema = z.object({
-  status: z.string().trim().min(1),
-  consignmentNumber: z.string().trim().max(120).optional().default(""),
-  publicTrackingNote: z.string().trim().max(4000).optional().default(""),
-  trackingNotes: z.string().trim().max(4000).optional().default(""),
-  operationalTrackingNotes: z.string().trim().max(20000).optional().default(""),
-  internalNotes: z.string().trim().max(4000).optional().default(""),
-  assignedAgency: z.string().trim().max(320).optional().default("")
-});
-
-const timelineStageOverrideSchema = z.object({
-  title: z.union([z.string().max(200), z.null()]).optional(),
-  location: z.union([z.string().max(500), z.null()]).optional(),
-  hint: z.union([z.string().max(2000), z.null()]).optional(),
-  shownAt: z.union([z.string().max(64), z.null()]).optional()
-});
-
-const timelineOverridesBodySchema = z.object({
-  merge: z.boolean().optional(),
-  domestic: z.record(z.string(), timelineStageOverrideSchema).optional(),
-  international: z.record(z.string(), timelineStageOverrideSchema).optional()
-});
-
-const bookingContactPartyPatchSchema = z
-  .object({
-    name: z.string().trim().max(200).optional(),
-    email: z.string().trim().max(320).optional(),
-    phone: z.string().trim().max(40).optional(),
-    street: z.string().trim().max(500).optional(),
-    city: z.string().trim().max(200).optional(),
-    postal: z.string().trim().max(32).optional(),
-    country: z.string().trim().max(120).optional()
-  })
-  .strict();
-
-const bookingShipmentDimensionsMergeSchema = z
-  .object({
-    l: z.string().trim().max(32).optional(),
-    w: z.string().trim().max(32).optional(),
-    h: z.string().trim().max(32).optional()
-  })
-  .strict();
-
-const bookingShipmentMergeSchema = z
-  .object({
-    contentsDescription: z.string().trim().max(2000).optional(),
-    declaredValue: z.string().trim().max(200).optional(),
-    weightKg: z.union([z.number(), z.string()]).optional(),
-    dimensionsCm: bookingShipmentDimensionsMergeSchema.optional()
-  })
-  .strict();
-
-const bookingMergePayloadSchema = z
-  .object({
-    sender: bookingContactPartyPatchSchema.optional(),
-    recipient: bookingContactPartyPatchSchema.optional(),
-    collectionMode: z.union([z.enum(["instant", "scheduled"]), z.literal("")]).optional(),
-    pickupDate: z.string().trim().max(32).optional(),
-    pickupTimeSlot: z.string().trim().max(64).optional(),
-    pickupTimeSlotCustom: z.string().trim().max(64).optional(),
-    pickupPreference: z.string().trim().max(2000).optional(),
-    instructions: z.string().trim().max(4000).optional(),
-    shipment: bookingShipmentMergeSchema.optional()
-  })
-  .strict();
-
-const bookingDataBodySchema = z.object({
-  merge: z.boolean().optional(),
-  routeType: z.enum(["domestic", "international"]).optional().default("domestic"),
-  payload: z.unknown()
-});
-
-const MERGE_PARTY_KEYS = ["name", "email", "phone", "street", "city", "postal", "country"];
-
-function applyBookingContactPartyPatch(existingParty, patch) {
-  const out =
-    existingParty && typeof existingParty === "object" && !Array.isArray(existingParty)
-      ? { ...existingParty }
-      : {};
-  if (!patch || typeof patch !== "object") return out;
-  for (const key of MERGE_PARTY_KEYS) {
-    if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
-    const raw = patch[key];
-    if (raw === undefined) continue;
-    const s = String(raw).trim();
-    if (s === "") delete out[key];
-    else out[key] = s;
-  }
-  return out;
-}
-
-const MERGE_PICKUP_TOP_KEYS = [
-  "collectionMode",
-  "pickupDate",
-  "pickupTimeSlot",
-  "pickupTimeSlotCustom",
-  "pickupPreference",
-  "instructions"
-];
-
-function mergePickupTopLevelIntoPayload(base, patch) {
-  if (!patch || typeof patch !== "object") return;
-  if (Object.prototype.hasOwnProperty.call(patch, "collectionMode")) {
-    const cm = patch.collectionMode;
-    if (cm === "" || cm === undefined) delete base.collectionMode;
-    else if (cm === "instant" || cm === "scheduled") base.collectionMode = cm;
-  }
-  for (const key of MERGE_PICKUP_TOP_KEYS) {
-    if (key === "collectionMode") continue;
-    if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
-    const raw = patch[key];
-    if (raw === undefined) continue;
-    const s = String(raw).trim();
-    if (s === "") delete base[key];
-    else base[key] = s;
-  }
-}
-
-function mergeShipmentPatchIntoPayload(base, patch) {
-  if (!patch || typeof patch !== "object") return;
-  const prev =
-    base.shipment && typeof base.shipment === "object" && !Array.isArray(base.shipment)
-      ? { ...base.shipment }
-      : {};
-  const out = { ...prev };
-  for (const key of ["contentsDescription", "declaredValue"]) {
-    if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
-    const raw = patch[key];
-    if (raw === undefined) continue;
-    const s = String(raw).trim();
-    if (s === "") delete out[key];
-    else out[key] = s;
-  }
-  if (Object.prototype.hasOwnProperty.call(patch, "weightKg")) {
-    const w = patch.weightKg;
-    if (w === "" || w === undefined || w === null) {
-      delete out.weightKg;
-    } else if (typeof w === "number" && Number.isFinite(w)) {
-      out.weightKg = w;
-    } else {
-      const s = String(w).trim();
-      if (!s) delete out.weightKg;
-      else {
-        const n = Number.parseFloat(s.replace(/[^0-9.-]/g, ""));
-        if (Number.isFinite(n)) out.weightKg = n;
-        else out.weightKg = s;
-      }
-    }
-  }
-  if (patch.dimensionsCm && typeof patch.dimensionsCm === "object") {
-    const dimPatch = patch.dimensionsCm;
-    const d =
-      out.dimensionsCm && typeof out.dimensionsCm === "object" && !Array.isArray(out.dimensionsCm)
-        ? { ...out.dimensionsCm }
-        : {};
-    for (const dim of ["l", "w", "h"]) {
-      if (!Object.prototype.hasOwnProperty.call(dimPatch, dim)) continue;
-      const s = String(dimPatch[dim] ?? "").trim();
-      if (s === "") delete d[dim];
-      else d[dim] = s;
-    }
-    if (Object.keys(d).length) out.dimensionsCm = d;
-    else delete out.dimensionsCm;
-  }
-  if (Object.keys(out).length) base.shipment = out;
-  else delete base.shipment;
-}
-
-function mergeBookingContactPayloadIntoExisting(existingRaw, patch) {
-  const base =
-    existingRaw && typeof existingRaw === "object" && !Array.isArray(existingRaw)
-      ? { ...existingRaw }
-      : {};
-  if (patch.sender) base.sender = applyBookingContactPartyPatch(base.sender, patch.sender);
-  if (patch.recipient) base.recipient = applyBookingContactPartyPatch(base.recipient, patch.recipient);
-  mergePickupTopLevelIntoPayload(base, patch);
-  if (patch.shipment) mergeShipmentPatchIntoPayload(base, patch.shipment);
-  return base;
-}
-
-function normalizeBookingInvoiceForDb(raw) {
-  if (!raw || typeof raw !== "object") return null;
-  const out = {};
-  const keys = [
-    "number",
-    "currency",
-    "subtotal",
-    "tax",
-    "insurance",
-    "customsDuties",
-    "discount",
-    "total",
-    "lineDescription",
-    "notes"
-  ];
-  for (const k of keys) {
-    let v = String(raw[k] ?? "").trim();
-    if (!v) continue;
-    if (k === "currency") {
-      out[k] = v.toUpperCase().slice(0, 12);
-    } else if (k === "lineDescription" || k === "notes") {
-      out[k] = v.slice(0, 4000);
-    } else {
-      out[k] = v.slice(0, 500);
-    }
-  }
-  return Object.keys(out).length ? out : null;
-}
 const USER_ROLES = ["customer", "staff", "courier", "agency"];
 const USER_ROLES_SET = new Set(USER_ROLES);
 const ALLOWED_BOOKING_STATUSES = new Set([
@@ -303,6 +77,10 @@ function normalizeText(value) {
   return String(value ?? "").trim();
 }
 
+function escapeRegex(value) {
+  return String(value ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function normalizeConsignment(value) {
   return String(value ?? "")
     .trim()
@@ -327,19 +105,164 @@ function requireObjectIdOrNotFound(res, rawValue, message) {
 }
 
 function parseUserCreateInput(body) {
-  const name = normalizeText(body?.name);
-  const email = normalizeEmail(body?.email);
-  const password = String(body?.password ?? "");
-  const confirmPassword = String(body?.confirmPassword ?? "");
-
-  if (!name || !email || !password) {
-    return { error: "Name, email and password are required." };
-  }
-  if (password !== confirmPassword) {
-    return { error: "Passwords do not match." };
-  }
-  return { name, email, password };
+  const schema = z.object({
+    name: z.string().trim().min(2).max(120),
+    email: z.string().trim().email().max(320),
+    password: z.string().min(MIN_PASSWORD_LENGTH).max(72),
+    confirmPassword: z.string().min(MIN_PASSWORD_LENGTH).max(72)
+  });
+  const parsed = schema.safeParse(body ?? {});
+  if (!parsed.success) return { error: "Name, email and password are required." };
+  const { name, email, password, confirmPassword } = parsed.data;
+  if (password !== confirmPassword) return { error: "Passwords do not match." };
+  return { name: normalizeText(name), email: normalizeEmail(email), password };
 }
+
+const updateUserSchema = z.object({
+  name: z.string().trim().max(120).optional().default(""),
+  email: z.string().trim().email().max(320),
+  role: z.enum(USER_ROLES).optional().default("customer"),
+  isActive: z.boolean().optional(),
+  isOnDuty: z.boolean().optional(),
+  newPassword: z.string().max(72).optional().default(""),
+  confirmPassword: z.string().max(72).optional().default("")
+});
+
+const bookingControlsSchema = z.object({
+  status: z.string().trim().min(1),
+  consignmentNumber: z.string().trim().max(120).optional().default(""),
+  publicTrackingNote: z.string().trim().max(4000).optional().default(""),
+  /** Legacy: treated as public note only when `publicTrackingNote` is empty. */
+  trackingNotes: z.string().trim().max(4000).optional().default(""),
+  /** Full operational log (DB `trackingNotes`); editable by admin. */
+  operationalTrackingNotes: z.string().trim().max(20000).optional().default(""),
+  internalNotes: z.string().trim().max(4000).optional().default(""),
+  assignedAgency: z.string().trim().max(320).optional().default("")
+});
+
+const bookingContactPartyPatchSchema = z
+  .object({
+    name: z.string().trim().max(200).optional(),
+    email: z.string().trim().max(320).optional(),
+    phone: z.string().trim().max(40).optional()
+  })
+  .strict();
+
+const bookingMergePayloadSchema = z
+  .object({
+    sender: bookingContactPartyPatchSchema.optional(),
+    recipient: bookingContactPartyPatchSchema.optional()
+  })
+  .strict();
+
+const bookingDataSchema = z.object({
+  merge: z.boolean().optional(),
+  routeType: z.enum(["domestic", "international"]).optional().default("domestic"),
+  payload: z.unknown()
+});
+
+function applyBookingContactPartyPatch(existingParty, patch) {
+  const out =
+    existingParty && typeof existingParty === "object" && !Array.isArray(existingParty)
+      ? { ...existingParty }
+      : {};
+  if (!patch || typeof patch !== "object") return out;
+  for (const key of ["name", "email", "phone"]) {
+    if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
+    const raw = patch[key];
+    if (raw === undefined) continue;
+    const s = String(raw).trim();
+    if (s === "") delete out[key];
+    else out[key] = s;
+  }
+  return out;
+}
+
+function mergeBookingContactPayloadIntoExisting(existingRaw, patch) {
+  const base =
+    existingRaw && typeof existingRaw === "object" && !Array.isArray(existingRaw)
+      ? { ...existingRaw }
+      : {};
+  if (patch.sender) base.sender = applyBookingContactPartyPatch(base.sender, patch.sender);
+  if (patch.recipient) base.recipient = applyBookingContactPartyPatch(base.recipient, patch.recipient);
+  return base;
+}
+
+const timelineStageOverrideSchema = z.object({
+  title: z.union([z.string().max(200), z.null()]).optional(),
+  location: z.union([z.string().max(500), z.null()]).optional(),
+  hint: z.union([z.string().max(2000), z.null()]).optional(),
+  shownAt: z.union([z.string().max(64), z.null()]).optional()
+});
+
+const timelineOverridesBodySchema = z.object({
+  merge: z.boolean().optional(),
+  domestic: z.record(z.string(), timelineStageOverrideSchema).optional(),
+  international: z.record(z.string(), timelineStageOverrideSchema).optional()
+});
+
+const bookingInvoiceSchema = z.object({
+  invoicePdfReady: z.boolean(),
+  invoice: z
+    .object({
+      number: z.string().trim().max(120).optional().default(""),
+      currency: z.string().trim().max(12).optional().default("INR"),
+      subtotal: z.string().trim().max(500).optional().default(""),
+      tax: z.string().trim().max(500).optional().default(""),
+      insurance: z.string().trim().max(500).optional().default(""),
+      customsDuties: z.string().trim().max(500).optional().default(""),
+      discount: z.string().trim().max(500).optional().default(""),
+      total: z.string().trim().max(500).optional().default(""),
+      lineDescription: z.string().trim().max(4000).optional().default(""),
+      notes: z.string().trim().max(4000).optional().default("")
+    })
+    .default({})
+});
+
+function normalizeBookingInvoiceForDb(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const out = {};
+  const keys = [
+    "number",
+    "currency",
+    "subtotal",
+    "tax",
+    "insurance",
+    "customsDuties",
+    "discount",
+    "total",
+    "lineDescription",
+    "notes"
+  ];
+  for (const k of keys) {
+    let v = String(raw[k] ?? "").trim();
+    if (!v) continue;
+    if (k === "currency") {
+      out[k] = v.toUpperCase().slice(0, 12);
+    } else if (k === "lineDescription" || k === "notes") {
+      out[k] = v.slice(0, 4000);
+    } else {
+      out[k] = v.slice(0, 500);
+    }
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+const linkBookingSchema = z.object({
+  customerEmail: z.string().trim().max(320).optional().default("")
+});
+
+const assignCourierSchema = z.object({
+  courierUserId: z.string().trim().min(1)
+});
+
+const updateContactSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  email: z.string().trim().email().max(320),
+  phone: z.string().trim().max(24).optional().default(""),
+  service: z.string().trim().min(1).max(120),
+  message: z.string().trim().min(1).max(2000)
+});
 
 function createUserByRoleHandler(role) {
   return async (req, res, next) => {
@@ -376,9 +299,10 @@ function buildUserListFilter(rawQuery, rawRole) {
   const filter = {};
 
   if (query) {
+    const safeQuery = escapeRegex(query);
     filter.$or = [
-      { email: { $regex: query, $options: "i" } },
-      { name: { $regex: query, $options: "i" } }
+      { email: { $regex: safeQuery, $options: "i" } },
+      { name: { $regex: safeQuery, $options: "i" } }
     ];
   }
 
@@ -442,143 +366,6 @@ async function fetchUserBookingStats(db, userIds) {
 }
 
 router.use(requireAdminApi);
-
-function csvEscapeCell(value) {
-  const s = value == null ? "" : String(value);
-  if (/[",\n\r]/.test(s)) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
-}
-
-function csvLine(cells) {
-  return `${cells.map(csvEscapeCell).join(",")}\n`;
-}
-
-router.get("/export/users", async (_req, res, next) => {
-  try {
-    const db = await getDb();
-    res.setHeader("Content-Type", "text/csv; charset=utf-8");
-    res.setHeader("Content-Disposition", 'attachment; filename="quadrato-users.csv"');
-    res.write(
-      csvLine(["id", "email", "name", "role", "isActive", "isOnDuty", "createdAt", "updatedAt"]),
-    );
-    const cursor = db
-      .collection("users")
-      .find({})
-      .project({ passwordHash: 0 })
-      .sort({ createdAt: -1 });
-    for await (const u of cursor) {
-      res.write(
-        csvLine([
-          String(u._id),
-          u.email ?? "",
-          u.name ?? "",
-          u.role ?? "customer",
-          u.isActive !== false ? "true" : "false",
-          u.isOnDuty !== false ? "true" : "false",
-          u.createdAt instanceof Date ? u.createdAt.toISOString() : "",
-          u.updatedAt instanceof Date ? u.updatedAt.toISOString() : ""
-        ]),
-      );
-    }
-    res.end();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get("/export/contacts", async (_req, res, next) => {
-  try {
-    const db = await getDb();
-    res.setHeader("Content-Type", "text/csv; charset=utf-8");
-    res.setHeader("Content-Disposition", 'attachment; filename="quadrato-contacts.csv"');
-    res.write(csvLine(["id", "name", "email", "phone", "service", "message", "createdAt"]));
-    const cursor = db.collection("contacts").find({}).sort({ createdAt: -1 });
-    for await (const c of cursor) {
-      res.write(
-        csvLine([
-          String(c._id),
-          c.name ?? "",
-          c.email ?? "",
-          c.phone ?? "",
-          c.service ?? "",
-          c.message ?? "",
-          c.createdAt instanceof Date ? c.createdAt.toISOString() : ""
-        ]),
-      );
-    }
-    res.end();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get("/export/bookings", async (_req, res, next) => {
-  try {
-    const db = await getDb();
-    res.setHeader("Content-Type", "text/csv; charset=utf-8");
-    res.setHeader("Content-Disposition", 'attachment; filename="quadrato-bookings.csv"');
-    res.write(
-      csvLine([
-        "id",
-        "status",
-        "routeType",
-        "createdAt",
-        "updatedAt",
-        "consignmentNumber",
-        "publicBarcodeCode",
-        "assignedAgency",
-        "userId",
-        "courierId",
-        "senderName",
-        "senderEmail",
-        "senderCity",
-        "recipientName",
-        "recipientEmail",
-        "recipientCity",
-        "weightKg"
-      ]),
-    );
-    const cursor = db.collection("bookings").find({}).sort({ createdAt: -1 });
-    for await (const b of cursor) {
-      const p = b.payload && typeof b.payload === "object" ? b.payload : {};
-      const sender = p.sender && typeof p.sender === "object" ? p.sender : {};
-      const recipient = p.recipient && typeof p.recipient === "object" ? p.recipient : {};
-      const ship = p.shipment && typeof p.shipment === "object" ? p.shipment : {};
-      let weightKg = "";
-      if (typeof ship.weightKg === "number" && Number.isFinite(ship.weightKg)) {
-        weightKg = String(ship.weightKg);
-      } else if (ship.weightKg != null) {
-        weightKg = String(ship.weightKg).trim();
-      }
-      res.write(
-        csvLine([
-          String(b._id),
-          b.status ?? "",
-          b.routeType ?? "",
-          b.createdAt instanceof Date ? b.createdAt.toISOString() : "",
-          b.updatedAt instanceof Date ? b.updatedAt.toISOString() : "",
-          b.consignmentNumber ?? "",
-          b.publicBarcodeCode ?? "",
-          b.assignedAgency ?? "",
-          b.userId ? String(b.userId) : "",
-          b.courierId ? String(b.courierId) : "",
-          sender.name ?? "",
-          sender.email ?? "",
-          sender.city ?? "",
-          recipient.name ?? "",
-          recipient.email ?? "",
-          recipient.city ?? "",
-          weightKg
-        ]),
-      );
-    }
-    res.end();
-  } catch (error) {
-    next(error);
-  }
-});
 
 router.get("/overview", async (_req, res, next) => {
   try {
@@ -872,10 +659,11 @@ router.get("/bookings", async (req, res, next) => {
     if (accountFilter === "guest") bookingFilter.userId = null;
     if (accountFilter === "linked") bookingFilter.userId = { $ne: null };
     if (bookingQuery) {
+      const safeBookingQuery = escapeRegex(bookingQuery);
       const bookingSearchClauses = [
-        { consignmentNumber: { $regex: bookingQuery, $options: "i" } },
-        { publicBarcodeCode: { $regex: bookingQuery, $options: "i" } },
-        { routeType: { $regex: bookingQuery, $options: "i" } }
+        { consignmentNumber: { $regex: safeBookingQuery, $options: "i" } },
+        { publicBarcodeCode: { $regex: safeBookingQuery, $options: "i" } },
+        { routeType: { $regex: safeBookingQuery, $options: "i" } }
       ];
       const queryObjectId = parseObjectId(bookingQuery);
       if (queryObjectId) bookingSearchClauses.push({ _id: queryObjectId });
@@ -995,10 +783,10 @@ router.get("/contacts", async (req, res, next) => {
       contactQuery.length > 0
         ? {
             $or: [
-              { name: { $regex: contactQuery, $options: "i" } },
-              { email: { $regex: contactQuery, $options: "i" } },
-              { service: { $regex: contactQuery, $options: "i" } },
-              { message: { $regex: contactQuery, $options: "i" } }
+              { name: { $regex: escapeRegex(contactQuery), $options: "i" } },
+              { email: { $regex: escapeRegex(contactQuery), $options: "i" } },
+              { service: { $regex: escapeRegex(contactQuery), $options: "i" } },
+              { message: { $regex: escapeRegex(contactQuery), $options: "i" } }
             ]
           }
         : {};
@@ -1077,18 +865,27 @@ router.patch("/users/:id", async (req, res, next) => {
     const db = await getDb();
     const _id = requireObjectIdOrNotFound(res, req.params.id, "User not found.");
     if (!_id) return;
-    const name = normalizeText(req.body?.name);
-    const email = normalizeEmail(req.body?.email);
-    const role = normalizeText(req.body?.role || "customer");
+    const parsed = updateUserSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return sendError(res, "Invalid user update payload.");
+    const name = normalizeText(parsed.data.name);
+    const email = normalizeEmail(parsed.data.email);
+    const role = normalizeText(parsed.data.role || "customer");
+    /** Explicit boolean from JSON; default true only when field omitted (legacy clients). */
     const isActive =
-      typeof req.body?.isActive === "boolean" ? req.body.isActive : true;
-    const hasIsOnDuty = typeof req.body?.isOnDuty === "boolean";
-    const isOnDuty = req.body?.isOnDuty === true;
-    const newPassword = String(req.body?.newPassword ?? "");
-    const confirmPassword = String(req.body?.confirmPassword ?? "");
+      typeof parsed.data.isActive === "boolean" ? parsed.data.isActive : true;
+    const hasIsOnDuty = typeof parsed.data.isOnDuty === "boolean";
+    const isOnDuty = parsed.data.isOnDuty === true;
+    const newPassword = String(parsed.data.newPassword ?? "");
+    const confirmPassword = String(parsed.data.confirmPassword ?? "");
     if (!email) return sendError(res, "Email is required.");
     if (!USER_ROLES_SET.has(role)) {
       return sendError(res, "Invalid role.");
+    }
+    if (newPassword && newPassword.length < MIN_PASSWORD_LENGTH) {
+      return sendError(
+        res,
+        `New password must be at least ${MIN_PASSWORD_LENGTH} characters.`
+      );
     }
     if (newPassword && newPassword !== confirmPassword) {
       return sendError(res, "Passwords do not match.");
@@ -1215,13 +1012,13 @@ router.patch("/bookings/:id/data", async (req, res, next) => {
     const db = await getDb();
     const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
     if (!_id) return;
-    const parsed = bookingDataBodySchema.safeParse(req.body ?? {});
+    const parsed = bookingDataSchema.safeParse(req.body ?? {});
     if (!parsed.success) return sendError(res, "Invalid booking data body.");
     const mergeMode = parsed.data.merge === true;
     const now = new Date();
     if (mergeMode) {
       const sub = bookingMergePayloadSchema.safeParse(parsed.data.payload ?? {});
-      if (!sub.success) return sendError(res, "Invalid merge payload.");
+      if (!sub.success) return sendError(res, "Invalid contact merge payload.");
       const booking = await db.collection("bookings").findOne(
         { _id },
         { projection: { payload: 1, routeType: 1 } }
@@ -1279,12 +1076,16 @@ router.patch("/bookings/:id/link-user", async (req, res, next) => {
     const db = await getDb();
     const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
     if (!_id) return;
-    const customerEmail = normalizeEmail(req.body?.customerEmail);
-    if (!customerEmail) {
+    const parsed = linkBookingSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return sendError(res, "Invalid customer email.");
+    const customerEmailRaw = normalizeEmail(parsed.data.customerEmail);
+    const customerEmail = customerEmailRaw ? z.string().email().safeParse(customerEmailRaw) : null;
+    if (!customerEmailRaw) {
       await db.collection("bookings").updateOne({ _id }, { $set: { userId: null, updatedAt: new Date() } });
       return sendOk(res);
     }
-    const user = await db.collection("users").findOne({ email: customerEmail });
+    if (!customerEmail?.success) return sendError(res, "Invalid customer email.");
+    const user = await db.collection("users").findOne({ email: customerEmailRaw });
     if (!user) return sendNotFound(res, "No user found with this email.");
     await db.collection("bookings").updateOne({ _id }, { $set: { userId: user._id, updatedAt: new Date() } });
     return sendOk(res);
@@ -1298,7 +1099,9 @@ router.patch("/bookings/:id/assign-courier", async (req, res, next) => {
     const db = await getDb();
     const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
     if (!_id) return;
-    const courierUserId = normalizeText(req.body?.courierUserId);
+    const parsed = assignCourierSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return sendError(res, "Invalid courier account.");
+    const courierUserId = normalizeText(parsed.data.courierUserId);
     if (!courierUserId || courierUserId === "__unassigned") {
       await db.collection("bookings").updateOne({ _id }, { $set: { courierId: null, updatedAt: new Date() } });
       return sendOk(res);
@@ -1349,16 +1152,17 @@ router.patch("/contacts/:id", async (req, res, next) => {
     const db = await getDb();
     const _id = requireObjectIdOrNotFound(res, req.params.id, "Contact not found.");
     if (!_id) return;
-    const update = {
-      name: normalizeText(req.body?.name),
-      email: normalizeEmail(req.body?.email),
-      phone: normalizeText(req.body?.phone) || null,
-      service: normalizeText(req.body?.service),
-      message: normalizeText(req.body?.message)
-    };
-    if (!update.name || !update.email || !update.service || !update.message) {
+    const parsed = updateContactSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
       return sendError(res, "Name, email, service and message are required.");
     }
+    const update = {
+      name: normalizeText(parsed.data.name),
+      email: normalizeEmail(parsed.data.email),
+      phone: normalizeText(parsed.data.phone) || null,
+      service: normalizeText(parsed.data.service),
+      message: normalizeText(parsed.data.message)
+    };
     await db.collection("contacts").updateOne({ _id }, { $set: update });
     return sendOk(res);
   } catch (error) {

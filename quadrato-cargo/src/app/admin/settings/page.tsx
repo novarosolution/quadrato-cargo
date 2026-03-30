@@ -86,31 +86,34 @@ export default async function AdminDataPage() {
         </p>
         <ul className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <li>
-            <a
+            <Link
               href="/api/admin/exports/users"
+              prefetch={false}
               className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/40 px-4 py-3 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
             >
               <Download className="h-4 w-4 text-ink" strokeWidth={2} />
               Export all users (CSV)
-            </a>
+            </Link>
           </li>
           <li>
-            <a
+            <Link
               href="/api/admin/exports/contacts"
+              prefetch={false}
               className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/40 px-4 py-3 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
             >
               <Download className="h-4 w-4 text-teal" strokeWidth={2} />
               Export all contacts (CSV)
-            </a>
+            </Link>
           </li>
           <li>
-            <a
+            <Link
               href="/api/admin/exports/bookings"
+              prefetch={false}
               className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/40 px-4 py-3 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
             >
               <Download className="h-4 w-4 text-accent" strokeWidth={2} />
               Export all bookings (CSV)
-            </a>
+            </Link>
           </li>
         </ul>
       </section>

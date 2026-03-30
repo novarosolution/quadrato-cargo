@@ -32,9 +32,6 @@ function parseBool(value, fallback) {
   return fallback;
 }
 
-const defaultCookieSameSite =
-  process.env.NODE_ENV?.trim() === "production" ? "none" : "lax";
-
 const isProdEnv = process.env.NODE_ENV?.trim() === "production";
 /** Required in production; defaults for local dev so the app boots without a full .env copy. */
 const frontendOrigin = normalizeOrigin(
@@ -43,6 +40,7 @@ const frontendOrigin = normalizeOrigin(
 const configuredOrigins = parseOrigins(process.env.CORS_ORIGIN);
 const corsOrigins =
   configuredOrigins.length > 0 ? configuredOrigins : [frontendOrigin];
+const defaultCookieSameSite = isProdEnv ? "none" : "lax";
 
 export const env = {
   nodeEnv: process.env.NODE_ENV?.trim() || "development",
@@ -56,10 +54,8 @@ export const env = {
   frontendOrigin,
   corsOrigins,
   cookieSameSite: parseSameSite(process.env.COOKIE_SAMESITE, defaultCookieSameSite),
-  cookieSecure: parseBool(
-    process.env.COOKIE_SECURE,
-    process.env.NODE_ENV?.trim() === "production",
-  ),
+  cookieSecure: parseBool(process.env.COOKIE_SECURE, process.env.NODE_ENV?.trim() === "production"),
+  cookieDomain: process.env.COOKIE_DOMAIN?.trim() || undefined,
   adminApiSecret: required("ADMIN_API_SECRET"),
   adminEmail: required("ADMIN_EMAIL").toLowerCase(),
   adminPassword: required("ADMIN_PASSWORD")

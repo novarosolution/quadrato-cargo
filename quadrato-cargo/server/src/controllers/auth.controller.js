@@ -15,17 +15,45 @@ import {
   findUserById
 } from "../modules/users/user-repo.js";
 import { MIN_PASSWORD_LENGTH } from "../shared/constants.js";
+import { passwordComplexitySchema } from "../shared/password-rules.js";
+
+function hasMinEmailLocalPart(value, minLength = 5) {
+  const email = String(value ?? "").trim();
+  const [local] = email.split("@");
+  return Boolean(local && local.length >= minLength);
+}
 
 const registerSchema = z.object({
-  name: z.string().trim().max(120).optional(),
-  email: z.string().trim().email(),
-  password: z.string().min(MIN_PASSWORD_LENGTH),
-  confirmPassword: z.string().min(MIN_PASSWORD_LENGTH)
+  name: z
+    .string()
+    .trim()
+    .min(8, "Name must be at least 8 characters.")
+    .max(120)
+    .refine((value) => value.length >= 8, {
+      message: "Name must be at least 8 characters."
+    }),
+  email: z
+    .string()
+    .trim()
+    .email("Enter a valid email address.")
+    .max(320)
+    .refine((value) => hasMinEmailLocalPart(value, 5), {
+      message: "Email must have at least 5 characters before @."
+    }),
+  password: passwordComplexitySchema,
+  confirmPassword: z.string().min(MIN_PASSWORD_LENGTH).max(72)
 });
 
 const loginSchema = z.object({
-  email: z.string().trim().email(),
-  password: z.string().min(1)
+  email: z
+    .string()
+    .trim()
+    .email("Enter a valid email address.")
+    .max(320)
+    .refine((value) => hasMinEmailLocalPart(value, 5), {
+      message: "Email must have at least 5 characters before @."
+    }),
+  password: z.string().min(MIN_PASSWORD_LENGTH).max(72)
 });
 
 export async function register(req, res, next) {
@@ -91,6 +119,12 @@ export async function login(req, res, next) {
     if (!userDoc) {
       return sendError(res, "Invalid email or password.", 401, { fieldErrors: {} });
     }
+    if (userDoc.isActive === false) {
+      clearAuthCookie(res);
+      return sendError(res, "Your account is inactive. Please contact support.", 403, {
+        fieldErrors: {}
+      });
+    }
 
     const isMatch = await bcrypt.compare(password, userDoc.passwordHash);
     if (!isMatch) {
@@ -126,6 +160,10 @@ export async function me(req, res, next) {
     if (!userId) return sendOk(res, { user: null });
 
     const userDoc = await findUserById(userId);
+    if (!userDoc || userDoc.isActive === false) {
+      clearAuthCookie(res);
+      return sendOk(res, { user: null });
+    }
     return sendOk(res, { user: toPublicUser(userDoc) });
   } catch (error) {
     return next(error);

@@ -51,7 +51,7 @@ export function createApp() {
     );
   }
   app.use(morgan(env.nodeEnv === "production" ? "combined" : "dev"));
-
+  
   app.use(
     cors({
       origin(origin, callback) {
