@@ -88,7 +88,7 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
             Customer PDF receipt template
           </h3>
           <p className="mt-1 text-sm text-muted">
-            These values appear when users download booking details PDF.
+            These values appear on customer PDFs and in the public site footer (phone and primary email).
           </p>
         </div>
 
@@ -216,7 +216,7 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
             htmlFor="pdf-support-email"
             className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
           >
-            Support email
+            Support email (PDF + footer)
           </label>
           <input
             id="pdf-support-email"
@@ -233,7 +233,7 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
             htmlFor="pdf-support-phone"
             className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
           >
-            Support phone
+            Support phone (PDF + footer)
           </label>
           <input
             id="pdf-support-phone"
@@ -243,6 +243,30 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
             placeholder="+1 (555) 010-0199"
             className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
           />
+        </div>
+
+        <div className="rounded-xl border border-border bg-canvas/25 p-4 md:col-span-2">
+          <h4 className="text-sm font-semibold text-ink">Public footer — extra email</h4>
+          <p className="mt-1 text-xs text-muted-soft">
+            Phone and primary email use the support fields above. Add a second line in the footer only if you want another address
+            (e.g. info@). Leave empty to hide.
+          </p>
+          <div className="mt-3">
+            <label
+              htmlFor="public-info-email"
+              className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+            >
+              Optional second email
+            </label>
+            <input
+              id="public-info-email"
+              name="publicInfoEmail"
+              type="email"
+              defaultValue={initialSettings.publicInfoEmail ?? ""}
+              placeholder="info@example.com"
+              className="mt-2 w-full max-w-md rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            />
+          </div>
         </div>
 
         <div>

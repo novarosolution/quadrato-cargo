@@ -9,6 +9,7 @@ import {
   postLogoutApi,
   type ApiUser,
 } from "@/lib/api/auth-client";
+import { fetchSiteSettings, type SiteSettings } from "@/lib/api/public-client";
 import { useMotionPreferences } from "@/lib/motion-preferences";
 import { QuadratoBrandLogo } from "@/components/QuadratoBrandLogo";
 import { authNav, mainNav } from "@/lib/nav";
@@ -35,6 +36,17 @@ export function Footer() {
     "loading" | "authenticated" | "unauthenticated"
   >("loading");
   const [user, setUser] = useState<ApiUser | null>(null);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchSiteSettings().then((s) => {
+      if (!cancelled) setSiteSettings(s);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -196,24 +208,44 @@ export function Footer() {
               <dl className="mt-4 space-y-4 text-sm">
                 <div>
                   <dt className="font-medium text-ink">Phone</dt>
-                  <dd className="mt-1 text-muted">+1 (555) 010-0199</dd>
+                  <dd className="mt-1 text-muted">
+                    {siteSettings ? (
+                      <a
+                        href={`tel:${siteSettings.pdfSupportPhone.replace(/\s/g, "")}`}
+                        className="transition hover:text-teal"
+                      >
+                        {siteSettings.pdfSupportPhone}
+                      </a>
+                    ) : (
+                      <span className="text-muted-soft">…</span>
+                    )}
+                  </dd>
                 </div>
                 <div>
                   <dt className="font-medium text-ink">Email</dt>
                   <dd className="mt-1 space-y-1 text-muted">
-                    <a
-                      href="mailto:info@quadratocargo.com"
-                      title="info@quadratocargo.com"
-                      className="block transition hover:text-teal"
-                    >
-                      info@quadratocargo.com
-                    </a>
-                    <a
-                      href="mailto:support@quadratocargo.com"
-                      className="block transition hover:text-teal"
-                    >
-                      support@quadratocargo.com
-                    </a>
+                    {siteSettings ? (
+                      <>
+                        <a
+                          href={`mailto:${siteSettings.pdfSupportEmail}`}
+                          title={siteSettings.pdfSupportEmail}
+                          className="block transition hover:text-teal"
+                        >
+                          {siteSettings.pdfSupportEmail}
+                        </a>
+                        {siteSettings.publicInfoEmail.trim() ? (
+                          <a
+                            href={`mailto:${siteSettings.publicInfoEmail.trim()}`}
+                            title={siteSettings.publicInfoEmail.trim()}
+                            className="block transition hover:text-teal"
+                          >
+                            {siteSettings.publicInfoEmail.trim()}
+                          </a>
+                        ) : null}
+                      </>
+                    ) : (
+                      <span className="text-muted-soft">…</span>
+                    )}
                   </dd>
                 </div>
                 <div>

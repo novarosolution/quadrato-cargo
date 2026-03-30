@@ -140,14 +140,53 @@ const bookingControlsSchema = z.object({
   assignedAgency: z.string().trim().max(320).optional().default("")
 });
 
+const bookingContactPartyPatchSchema = z
+  .object({
+    name: z.string().trim().max(200).optional(),
+    email: z.string().trim().max(320).optional(),
+    phone: z.string().trim().max(40).optional()
+  })
+  .strict();
+
+const bookingMergePayloadSchema = z
+  .object({
+    sender: bookingContactPartyPatchSchema.optional(),
+    recipient: bookingContactPartyPatchSchema.optional()
+  })
+  .strict();
+
 const bookingDataSchema = z.object({
+  merge: z.boolean().optional(),
   routeType: z.enum(["domestic", "international"]).optional().default("domestic"),
-  payload: z
-    .unknown()
-    .refine((value) => Boolean(value) && typeof value === "object" && !Array.isArray(value), {
-      message: "Payload must be a valid JSON object."
-    })
+  payload: z.unknown()
 });
+
+function applyBookingContactPartyPatch(existingParty, patch) {
+  const out =
+    existingParty && typeof existingParty === "object" && !Array.isArray(existingParty)
+      ? { ...existingParty }
+      : {};
+  if (!patch || typeof patch !== "object") return out;
+  for (const key of ["name", "email", "phone"]) {
+    if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
+    const raw = patch[key];
+    if (raw === undefined) continue;
+    const s = String(raw).trim();
+    if (s === "") delete out[key];
+    else out[key] = s;
+  }
+  return out;
+}
+
+function mergeBookingContactPayloadIntoExisting(existingRaw, patch) {
+  const base =
+    existingRaw && typeof existingRaw === "object" && !Array.isArray(existingRaw)
+      ? { ...existingRaw }
+      : {};
+  if (patch.sender) base.sender = applyBookingContactPartyPatch(base.sender, patch.sender);
+  if (patch.recipient) base.recipient = applyBookingContactPartyPatch(base.recipient, patch.recipient);
+  return base;
+}
 
 const timelineStageOverrideSchema = z.object({
   title: z.union([z.string().max(200), z.null()]).optional(),
@@ -974,12 +1013,33 @@ router.patch("/bookings/:id/data", async (req, res, next) => {
     const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
     if (!_id) return;
     const parsed = bookingDataSchema.safeParse(req.body ?? {});
-    if (!parsed.success) return sendError(res, "Payload must be a valid JSON object.");
-    const routeType = normalizeText(parsed.data.routeType || "domestic");
+    if (!parsed.success) return sendError(res, "Invalid booking data body.");
+    const mergeMode = parsed.data.merge === true;
+    const now = new Date();
+    if (mergeMode) {
+      const sub = bookingMergePayloadSchema.safeParse(parsed.data.payload ?? {});
+      if (!sub.success) return sendError(res, "Invalid contact merge payload.");
+      const booking = await db.collection("bookings").findOne(
+        { _id },
+        { projection: { payload: 1, routeType: 1 } }
+      );
+      if (!booking) return sendNotFound(res, "Booking not found.");
+      const mergedPayload = mergeBookingContactPayloadIntoExisting(booking.payload, sub.data);
+      const routeType = normalizeText(parsed.data.routeType || booking.routeType || "domestic");
+      await db.collection("bookings").updateOne(
+        { _id },
+        { $set: { routeType, payload: mergedPayload, updatedAt: now } }
+      );
+      return sendOk(res);
+    }
     const payload = parsed.data.payload;
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return sendError(res, "Payload must be a valid JSON object.");
+    }
+    const routeType = normalizeText(parsed.data.routeType || "domestic");
     await db.collection("bookings").updateOne(
       { _id },
-      { $set: { routeType, payload, updatedAt: new Date() } }
+      { $set: { routeType, payload, updatedAt: now } }
     );
     return sendOk(res);
   } catch (error) {

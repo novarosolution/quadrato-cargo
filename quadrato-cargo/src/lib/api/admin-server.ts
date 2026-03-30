@@ -93,6 +93,7 @@ export type AdminSiteSettings = {
   pdfHeaderSubtitle: string;
   pdfSupportEmail: string;
   pdfSupportPhone: string;
+  publicInfoEmail: string;
   pdfWebsite: string;
   pdfWatermarkText: string;
   pdfFooterNote: string;

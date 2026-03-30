@@ -208,6 +208,8 @@ export type SiteSettings = {
   pdfHeaderSubtitle: string;
   pdfSupportEmail: string;
   pdfSupportPhone: string;
+  /** Optional extra footer mailto (e.g. info@); primary public email is pdfSupportEmail. */
+  publicInfoEmail: string;
   pdfWebsite: string;
   pdfWatermarkText: string;
   pdfFooterNote: string;
@@ -235,6 +237,7 @@ const SITE_SETTINGS_FALLBACK: SiteSettings = {
   pdfHeaderSubtitle: "International courier service",
   pdfSupportEmail: "support@quadratocargo.com",
   pdfSupportPhone: "+1 (555) 010-0199",
+  publicInfoEmail: "",
   pdfWebsite: "https://quadratocargo.com",
   pdfWatermarkText: "Quadrato Cargo",
   pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
@@ -250,8 +253,9 @@ const SITE_SETTINGS_FALLBACK: SiteSettings = {
 
 export async function fetchSiteSettings(): Promise<SiteSettings> {
   try {
+    const isBrowser = typeof window !== "undefined";
     const res = await fetch(`${getApiBaseUrl()}/api/public/site-settings`, {
-      next: { revalidate: 30 },
+      ...(isBrowser ? { cache: "no-store" as RequestCache } : { next: { revalidate: 30 } }),
     });
     if (!res.ok) {
       return { ...SITE_SETTINGS_FALLBACK };

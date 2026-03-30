@@ -15,8 +15,10 @@ import { deleteCourierBooking } from "../../dashboard/actions";
 import { AdminBookingDispatchSplit } from "../AdminBookingDispatchSplit";
 import { AdminBookingCustomerLink } from "../linkcustomer";
 import { AdminBookingDataForm } from "../booking";
+import { AdminBookingContactForm } from "../AdminBookingContactForm";
 import { AdminBookingInvoiceForm } from "../AdminBookingInvoiceForm";
 import { AdminCustomerTimelineForm } from "../AdminCustomerTimelineForm";
+import { AdminTimelineQuickCardForm } from "../AdminTimelineQuickCardForm";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -56,6 +58,18 @@ export default async function AdminBookingDetailPage({ params }: Props) {
   const sender = (payload.sender && typeof payload.sender === "object"
     ? payload.sender
     : {}) as Record<string, unknown>;
+  const recipient = (payload.recipient && typeof payload.recipient === "object"
+    ? payload.recipient
+    : {}) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" ? v : "");
+  const contactInitial = {
+    senderName: str(sender.name),
+    senderEmail: str(sender.email),
+    senderPhone: str(sender.phone),
+    recipientName: str(recipient.name),
+    recipientEmail: str(recipient.email),
+    recipientPhone: str(recipient.phone),
+  };
   const collectionMode =
     typeof payload.collectionMode === "string" ? payload.collectionMode : "";
   const pickupPreference =
@@ -207,6 +221,37 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           couriers={couriers}
           assignedCourierId={row.courierId}
         />
+
+        <AdminCollapsible
+          id="booking-contacts"
+          title="Sender & recipient contact"
+          description="Name, email, and phone for sender and recipient. Cleared fields remove those keys from the payload. Full addresses stay in Booking data JSON."
+        >
+          <AdminBookingContactForm
+            bookingId={row.id}
+            routeType={row.routeType === "international" ? "international" : "domestic"}
+            initial={contactInitial}
+          />
+        </AdminCollapsible>
+
+        <section className="rounded-2xl border border-teal/25 bg-teal/[0.04] p-5 dark:bg-teal/10">
+          <h2 className="font-display text-lg font-semibold text-ink">
+            Current public tracking card
+          </h2>
+          <p className="mt-1 text-xs text-muted-soft">
+            The step below matches this booking&apos;s status on the{" "}
+            <span className="capitalize">{row.routeType}</span> timeline. Saving updates only that card; other
+            steps are unchanged.
+          </p>
+          <div className="mt-4">
+            <AdminTimelineQuickCardForm
+              bookingId={row.id}
+              routeType={row.routeType}
+              status={row.status}
+              initial={row.publicTimelineOverrides ?? null}
+            />
+          </div>
+        </section>
 
         <AdminCollapsible
           id="booking-customer-timeline"

@@ -456,6 +456,45 @@ export async function updateCourierBookingDataAdmin(
   return { ok: true, message: "Booking route and payload updated." };
 }
 
+/** Deep-merge only sender/recipient name, email, phone into booking payload. */
+export async function updateBookingContactAdmin(
+  _prev: DataManageState | undefined,
+  formData: FormData,
+): Promise<DataManageState> {
+  const bookingId = String(formData.get("bookingId") ?? "").trim();
+  const routeTypeRaw = String(formData.get("routeType") ?? "domestic").trim();
+  const routeType = routeTypeRaw === "international" ? "international" : "domestic";
+  const pick = (name: string) => String(formData.get(name) ?? "").trim();
+  const sender = {
+    name: pick("senderName"),
+    email: pick("senderEmail"),
+    phone: pick("senderPhone"),
+  };
+  const recipient = {
+    name: pick("recipientName"),
+    email: pick("recipientEmail"),
+    phone: pick("recipientPhone"),
+  };
+  if (!bookingId) return { ok: false, error: "Missing booking." };
+  const result = await adminMutation(
+    `/api/admin/bookings/${encodeURIComponent(bookingId)}/data`,
+    {
+      merge: true,
+      routeType,
+      payload: { sender, recipient },
+    },
+  );
+  if (!result.ok) {
+    return { ok: false, error: result.message || "Failed to update contacts." };
+  }
+  revalidatePath("/admin/bookings");
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/public/tsking");
+  revalidatePath("/courier/bookings");
+  revalidatePath(`/courier/bookings/${bookingId}`);
+  return { ok: true, message: "Sender and recipient contact details saved." };
+}
+
 export async function updateBookingInvoiceAdmin(
   _prev: DataManageState | undefined,
   formData: FormData,
@@ -547,6 +586,7 @@ export async function updateSiteSettingsAdmin(
     pdfHeaderSubtitle: String(formData.get("pdfHeaderSubtitle") ?? "").trim(),
     pdfSupportEmail: String(formData.get("pdfSupportEmail") ?? "").trim(),
     pdfSupportPhone: String(formData.get("pdfSupportPhone") ?? "").trim(),
+    publicInfoEmail: String(formData.get("publicInfoEmail") ?? "").trim(),
     pdfWebsite: String(formData.get("pdfWebsite") ?? "").trim(),
     pdfWatermarkText: String(formData.get("pdfWatermarkText") ?? "").trim(),
     pdfFooterNote: String(formData.get("pdfFooterNote") ?? "").trim(),
