@@ -29,11 +29,17 @@ import {
 } from "@/lib/professional-tracking-stages";
 
 function formatTrackingTimestamp(iso: string): string {
-  return new Intl.DateTimeFormat("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    hour12: true,
-  }).format(new Date(iso));
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  try {
+    return new Intl.DateTimeFormat("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      hour12: true,
+    }).format(d);
+  } catch {
+    return "—";
+  }
 }
 
 /** Default stage icons on neutral card surface. */

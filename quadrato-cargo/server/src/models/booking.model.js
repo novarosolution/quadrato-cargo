@@ -1,3 +1,23 @@
+function cleanText(value) {
+  const text = String(value ?? "").trim();
+  return text.length ? text : null;
+}
+
+function buildAddressLine(address = {}) {
+  const parts = [
+    cleanText(address.street),
+    cleanText(address.city),
+    cleanText(address.postal),
+    cleanText(address.country)
+  ].filter(Boolean);
+  return parts.length ? parts.join(", ") : null;
+}
+
+function buildCustomerTrackingNote(status, row) {
+  void status;
+  return cleanText(row?.publicTrackingNote);
+}
+
 function toPublicInvoice(row) {
   const inv = row?.invoice;
   if (!inv || typeof inv !== "object") return null;
@@ -22,6 +42,8 @@ function toPublicInvoice(row) {
 
 export function toPublicBooking(row) {
   if (!row) return null;
+  const sender = row.payload?.sender ?? {};
+  const recipient = row.payload?.recipient ?? {};
   return {
     id: String(row._id),
     userId: row.userId ? String(row.userId) : null,
@@ -31,8 +53,14 @@ export function toPublicBooking(row) {
     status: row.status ?? "submitted",
     consignmentNumber: row.consignmentNumber ?? null,
     trackingNotes: row.trackingNotes ?? null,
+    publicTrackingNote: row.publicTrackingNote ?? null,
+    customerTrackingNote: buildCustomerTrackingNote(row.status, row),
     internalNotes: row.internalNotes ?? null,
     assignedAgency: row.assignedAgency ?? null,
+    senderName: cleanText(sender.name),
+    senderAddress: buildAddressLine(sender),
+    recipientName: cleanText(recipient.name),
+    recipientAddress: buildAddressLine(recipient),
     pickupOtpVerifiedAt: row.pickupOtpVerifiedAt ?? null,
     agencyHandoverVerifiedAt: row.agencyHandoverVerifiedAt ?? null,
     payload: row.payload ?? null,

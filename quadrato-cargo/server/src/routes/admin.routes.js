@@ -31,6 +31,15 @@ const bookingInvoiceSchema = z.object({
     .default({})
 });
 
+const bookingControlsSchema = z.object({
+  status: z.string().trim().min(1),
+  consignmentNumber: z.string().trim().max(120).optional().default(""),
+  publicTrackingNote: z.string().trim().max(4000).optional().default(""),
+  trackingNotes: z.string().trim().max(4000).optional().default(""),
+  internalNotes: z.string().trim().max(4000).optional().default(""),
+  assignedAgency: z.string().trim().max(320).optional().default("")
+});
+
 function normalizeBookingInvoiceForDb(raw) {
   if (!raw || typeof raw !== "object") return null;
   const out = {};
@@ -116,6 +125,16 @@ function parseObjectId(value) {
 
 function normalizeText(value) {
   return String(value ?? "").trim();
+}
+
+function normalizeConsignment(value) {
+  return String(value ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/[_\s]+/g, "-")
+    .replace(/[^A-Z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function normalizeEmail(value) {
@@ -788,11 +807,15 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
     const db = await getDb();
     const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
     if (!_id) return;
-    const status = normalizeText(req.body?.status);
-    const consignmentNumber = normalizeText(req.body?.consignmentNumber);
-    const trackingNotes = normalizeText(req.body?.trackingNotes);
-    const internalNotes = normalizeText(req.body?.internalNotes);
-    const assignedAgency = normalizeText(req.body?.assignedAgency);
+    const parsed = bookingControlsSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return sendError(res, "Invalid booking control payload.");
+    const status = normalizeText(parsed.data.status);
+    const consignmentNumber = normalizeConsignment(parsed.data.consignmentNumber);
+    const publicTrackingNote = normalizeText(
+      parsed.data.publicTrackingNote || parsed.data.trackingNotes
+    );
+    const internalNotes = normalizeText(parsed.data.internalNotes);
+    const assignedAgency = normalizeText(parsed.data.assignedAgency);
     if (!status) return sendError(res, "Status is required.");
     if (!ALLOWED_BOOKING_STATUSES.has(status)) {
       return sendError(res, "Invalid booking status.");
@@ -803,7 +826,7 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
         $set: {
           status,
           consignmentNumber: consignmentNumber || null,
-          trackingNotes: trackingNotes || null,
+          publicTrackingNote: publicTrackingNote || null,
           internalNotes: internalNotes || null,
           assignedAgency: assignedAgency || null,
           updatedAt: new Date()

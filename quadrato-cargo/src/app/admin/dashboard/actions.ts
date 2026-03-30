@@ -134,6 +134,7 @@ export async function assignCourierToBookingAdmin(
   if (!result.ok) return { ok: false, error: result.message || "Failed to assign courier." };
   revalidatePath("/admin/bookings");
   revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/public/tsking");
   return { ok: true, message: "Courier assignment updated." };
 }
 
@@ -193,6 +194,7 @@ export async function updateCourierBookingAdmin(
   }
   revalidatePath("/admin/bookings");
   revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/public/tsking");
   return { ok: true, message: "Booking controls updated." };
 }
 
@@ -222,6 +224,7 @@ export async function updateCourierBookingDataAdmin(
   if (!result.ok) return { ok: false, error: result.message || "Failed to update booking data." };
   revalidatePath("/admin/bookings");
   revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/public/tsking");
   return { ok: true, message: "Booking route and payload updated." };
 }
 
@@ -254,6 +257,7 @@ export async function updateBookingInvoiceAdmin(
   }
   revalidatePath("/admin/bookings");
   revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/public/tsking");
   return { ok: true, message: "Invoice PDF settings saved." };
 }
 

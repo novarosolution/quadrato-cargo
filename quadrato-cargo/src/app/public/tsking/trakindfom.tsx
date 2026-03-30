@@ -369,7 +369,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                               {step.id === "submitted"
                                 ? `Created: ${prettyDate(data.createdAt)}`
                                 : isCurrent
-                                  ? "Latest update"
+                                  ? `Last updated: ${prettyDate(data.updatedAt ?? data.createdAt)}`
                                   : "Completed status"}
                             </p>
                           </div>
