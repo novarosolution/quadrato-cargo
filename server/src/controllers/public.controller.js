@@ -565,7 +565,8 @@ async function buildPdfDataFromBooking(req, parsedData) {
   };
 }
 
-function buildPdfHtml(input, barcodeDataUrl) {
+/** Shared field normalisation for invoice PDFs (server-rendered). */
+function prepareInvoicePdfData(input) {
   const primary = normalizeHex(input.settings.primaryColor, "#0f766e");
   const accent = normalizeHex(input.settings.accentColor, "#16a34a");
   const card = normalizeHex(input.settings.cardColor, "#f8fafc");
@@ -611,7 +612,7 @@ function buildPdfHtml(input, barcodeDataUrl) {
   const chargeTotalEnvio = useAdminCharges
     ? `${currencyLabel} ${String(ai.total || ai.subtotal || subtotal).trim()}`
     : `INR ${subtotal}`;
-  const data = {
+  return {
     ...input,
     settings: {
       ...input.settings,
@@ -640,8 +641,23 @@ function buildPdfHtml(input, barcodeDataUrl) {
     chargeDeclaredTotal,
     chargeDeclaredValue,
     chargeTotalEnvio,
+    currencyLabel,
     adminInvoiceNotes: ai?.notes ? String(ai.notes).trim() : ""
   };
+}
+
+/**
+ * Compact invoice HTML for ISO A6 (105 mm × 148 mm) — matches tracking slip page size.
+ */
+function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
+  const data = prepareInvoicePdfData(input);
+  const p = data.settings.primary;
+  const card = data.settings.card;
+
+  const chargeRow = (label, value) =>
+    value != null && String(value).trim()
+      ? `<div class="chg"><span>${esc(label)}</span><strong>${esc(String(value).trim())}</strong></div>`
+      : "";
 
   return `<!doctype html>
 <html>
@@ -653,346 +669,224 @@ function buildPdfHtml(input, barcodeDataUrl) {
         margin: 0;
         font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
         color: #0f172a;
-        background: #ffffff;
+        background: #fff;
       }
-      .page {
-        padding: 22px;
-        border: 1px solid #e2e8f0;
-        border-radius: 14px;
-        background: #ffffff;
-      }
-      .invoice-doc-header {
-        margin: 0 0 16px 0;
-        padding: 0 0 14px 0;
-        border-bottom: 3px solid ${data.settings.primary};
+      .page { width: 100%; padding: 5px 7px 6px; }
+      .inv-head {
+        padding-bottom: 5px;
+        margin-bottom: 5px;
+        border-bottom: 2px solid ${p};
       }
       .top {
         display: grid;
-        grid-template-columns: 1.25fr 1fr 1fr;
+        grid-template-columns: 1fr auto;
+        gap: 6px;
         align-items: start;
-        column-gap: 16px;
       }
-      .brand-lockup {
-        display: flex;
-        align-items: center;
-        background: transparent;
-        padding: 0;
-        min-height: 48px;
-      }
-      .brand-lockup img {
-        display: block;
-        height: 46px;
-        width: auto;
-        max-width: 100%;
-        object-fit: contain;
-        object-position: left center;
-      }
+      .brand-lockup img { display: block; height: 22px; width: auto; max-width: 100%; object-fit: contain; }
       .brand {
-        color: ${data.settings.primary};
-        font-size: 38px;
+        color: ${p};
         font-weight: 700;
-        font-family: "Times New Roman", serif;
-        margin-top: 0;
-      }
-      .company-meta {
-        text-align: left;
-        font-size: 12px;
-        line-height: 1.45;
-        color: #334155;
-      }
-      .company-meta strong {
-        color: #0f172a;
-        font-weight: 600;
-      }
-      .barcode {
-        text-align: right;
-      }
-      .barcode img {
-        width: 230px;
-        height: 72px;
-        object-fit: contain;
-        border: 1px solid #cbd5e1;
-        border-radius: 10px;
-        padding: 6px;
-        background: #fff;
-      }
-      .barcode .code {
-        margin-top: 4px;
-        font-size: 28px;
-        font-family: "Courier New", monospace;
-        letter-spacing: .7px;
-      }
-      .barcode .code-sub {
-        margin-top: 2px;
-        font-size: 12px;
-        color: #64748b;
-        font-family: "Courier New", monospace;
-      }
-      .separator {
-        margin: 12px 0 14px;
-        border-top: 1px solid #e2e8f0;
-      }
-      .meta-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-      }
-      .meta-grid .mini-table-wrap {
-        grid-column: 1 / -1;
-      }
-      .billto {
         font-size: 14px;
-        line-height: 1.38;
-        background: ${data.settings.card};
-        border: 1px solid #dbeafe;
-        border-radius: 10px;
-        padding: 10px 12px;
+        font-family: "Times New Roman", serif;
+        line-height: 1.1;
       }
-      .billto .title {
-        font-weight: 700;
-        margin-bottom: 4px;
-        color: ${data.settings.primary};
+      .co-meta {
+        font-size: 6.5px;
+        line-height: 1.3;
+        color: #374151;
+        text-align: right;
+        max-width: 48mm;
       }
-      .mini-table {
-        border: 1px solid #cbd5e1;
-        border-collapse: collapse;
-        width: 100%;
-        font-size: 13px;
-        border-radius: 10px;
-        overflow: hidden;
+      .co-meta .co { font-weight: 700; color: #0f172a; font-size: 7.5px; }
+      .bc-wrap {
+        margin-top: 4px;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 3px 5px;
+        background: #fafafa;
       }
-      .mini-table td {
-        border: 1px solid #cbd5e1;
-        padding: 7px 8px;
+      .bc-wrap img { width: 100%; max-width: 100%; height: 28px; object-fit: contain; }
+      .bc-id {
+        font-family: "Courier New", monospace;
+        font-size: 8px;
+        letter-spacing: 0.25px;
+        margin-top: 1px;
       }
-      .mini-table td:first-child {
-        background: ${data.settings.primary};
-        color: #fff;
-        width: 42%;
-        font-weight: 600;
+      .inv-title {
+        margin-top: 4px;
+        font-size: 11px;
+        font-weight: 800;
+        color: #111827;
       }
-      .detail-table {
-        margin-top: 14px;
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-        border-radius: 10px;
-        overflow: hidden;
+      .inv-sub {
+        font-size: 7.5px;
+        color: #4b5563;
+        margin-top: 2px;
+        line-height: 1.35;
       }
-      .detail-table th, .detail-table td {
-        border: 1px solid #cbd5e1;
-        padding: 7px 6px;
-        vertical-align: top;
-      }
-      .detail-table th {
-        background: ${data.settings.primary};
-        color: #fff;
-        text-align: left;
-        font-weight: 700;
-      }
-      .detail-table tbody tr:nth-child(even) { background: #f8fafc; }
-      .totals-wrap {
-        margin-top: 16px;
+      .people {
+        margin-top: 5px;
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 12px;
+        gap: 4px;
       }
-      .totals-left, .totals-right {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-        border-radius: 10px;
-        overflow: hidden;
+      .person {
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        background: ${card};
+        padding: 4px 5px;
+        font-size: 6.5px;
+        line-height: 1.3;
       }
-      .totals-left td, .totals-right td {
-        border: 1px solid #cbd5e1;
-        padding: 7px 8px;
-      }
-      .charges-table {
-        margin-top: 14px;
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-        border-radius: 10px;
-        overflow: hidden;
-      }
-      .charges-table th, .charges-table td {
-        border: 1px solid #cbd5e1;
-        padding: 8px 6px;
-      }
-      .charges-table th {
-        background: ${data.settings.primary};
-        color: #fff;
-        text-align: left;
-      }
-      .charges-table tbody tr:nth-child(even) { background: #f8fafc; }
-      .terms-title {
-        margin-top: 14px;
-        border-top: 1px solid #cbd5e1;
-        border-bottom: 1px solid #cbd5e1;
-        text-align: center;
-        letter-spacing: 3px;
-        padding: 6px 0;
+      .person h4 {
+        margin: 0 0 2px;
+        font-size: 6.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: ${p};
         font-weight: 700;
-        color: #334155;
       }
-      .terms-text {
-        margin-top: 8px;
-        font-size: 13px;
-        line-height: 1.45;
-        color: #334155;
+      .person .nm { font-weight: 700; font-size: 7.5px; color: #111827; }
+      .kv {
+        margin-top: 4px;
+        font-size: 6.5px;
+        line-height: 1.35;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 3px;
+      }
+      .kv div { margin-bottom: 1px; }
+      .kv strong { color: #374151; }
+      .ship {
+        margin-top: 3px;
+        font-size: 6.5px;
+        line-height: 1.35;
+        color: #1f2937;
+        word-break: break-word;
+      }
+      .chg-grid {
+        margin-top: 4px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px 8px;
+        font-size: 6.5px;
+      }
+      .chg { display: flex; justify-content: space-between; gap: 4px; border-bottom: 1px dotted #e5e7eb; padding-bottom: 1px; }
+      .chg span { color: #6b7280; }
+      .note {
+        margin-top: 3px;
+        font-size: 6px;
+        line-height: 1.3;
+        color: #64748b;
+        max-height: 14mm;
+        overflow: hidden;
+      }
+      .terms {
+        margin-top: 3px;
+        font-size: 5.5px;
+        line-height: 1.3;
+        color: #64748b;
+      }
+      .a6-tag {
+        margin-top: 2px;
+        text-align: center;
+        font-size: 5px;
+        color: #94a3b8;
+        letter-spacing: 0.2px;
       }
       .footer {
-        margin-top: 10px;
+        margin-top: 2px;
         text-align: center;
-        font-size: 12px;
-        color: #64748b;
+        font-size: 6px;
+        color: #6b7280;
       }
     </style>
   </head>
   <body>
     <div class="page">
-      <header class="invoice-doc-header">
-      <section class="top">
-        <div>
+      <header class="inv-head">
+        <section class="top">
           ${
             INVOICE_BRAND_LOGO_DATA_URL
               ? `<div class="brand-lockup"><img src="${INVOICE_BRAND_LOGO_DATA_URL}" alt="${esc(data.settings.companyName)}" /></div>`
-              : `<div class="brand">${esc(data.settings.companyName)}</div>`
+              : `<div class="brand">${esc(data.settings.companyName).slice(0, 36)}</div>`
           }
-        </div>
-        <div class="company-meta">
-          <div><strong>${esc(data.settings.companyName)}</strong></div>
-          <div>${esc(data.settings.companyAddress || "—")}</div>
-          <div>Phone: ${esc(data.settings.supportPhone)}</div>
-          <div>Email: ${esc(data.settings.supportEmail)}</div>
-        </div>
-        <div class="barcode">
-          <img src="${esc(barcodeDataUrl)}" alt="Invoice barcode" />
-          <div class="code">${esc(data.scanCode)}</div>
-          ${
-            data.showAltTrackingRef
-              ? `<div class="code-sub">Consignment / ref: ${esc(data.safeReference)}</div>`
-              : ""
-          }
-        </div>
-      </section>
+          <div class="co-meta">
+            <div class="co">${esc(data.settings.companyName).slice(0, 40)}</div>
+            <div>${esc(data.settings.companyAddress || "—").slice(0, 120)}</div>
+            <div>${esc(data.settings.supportPhone)} · ${esc(data.settings.supportEmail)}</div>
+          </div>
+        </section>
       </header>
 
-      <div class="separator"></div>
+      <div class="bc-wrap">
+        <img src="${esc(barcodeDataUrl)}" alt="Barcode" />
+        <div class="bc-id">${esc(data.scanCode)}</div>
+        ${
+          data.showAltTrackingRef
+            ? `<div style="font-size:6px;color:#6b7280;margin-top:1px;">Ref: ${esc(data.safeReference)}</div>`
+            : ""
+        }
+      </div>
 
-      <section class="meta-grid">
-        <div class="billto">
-          <div class="title">Sender</div>
-          <div><strong>${esc(data.senderName)}</strong></div>
-          <div>${esc(data.senderAddress || data.fromCity)}</div>
-          <div>${esc(data.senderPhone)}</div>
-          <div>${esc(data.senderEmail)}</div>
+      <div class="inv-title">Invoice · ${esc(data.displayInvoiceId).slice(0, 28)}</div>
+      <div class="inv-sub">
+        Booked ${esc(data.bookingDateLabel)} · Updated ${esc(data.updatedAtLabel)} ·
+        ID <span style="font-family:monospace">${esc(data.bookingId)}</span> ·
+        ${esc(data.routeTypeLabel)} · ${esc(data.agencyLabel).slice(0, 22)}
+      </div>
+
+      <section class="people">
+        <div class="person">
+          <h4>Sender</h4>
+          <div class="nm">${esc(data.senderName).slice(0, 48)}</div>
+          <div>${esc((data.senderAddress || data.fromCity || "").slice(0, 140))}</div>
+          <div>${esc(data.senderPhone)} ${esc(data.senderEmail).slice(0, 36)}</div>
         </div>
-        <div class="billto">
-          <div class="title">Bill to</div>
-          <div><strong>${esc(data.recipientName)}</strong></div>
-          <div>${esc(data.recipientAddress || data.toCity)}</div>
-          <div>${esc(data.recipientPhone)}</div>
-          <div>${esc(data.recipientEmail)}</div>
-        </div>
-        <div class="mini-table-wrap">
-        <table class="mini-table">
-          <tr><td>Booking ID</td><td><span style="font-family:monospace">${esc(data.bookingId)}</span></td></tr>
-          <tr><td>Consignment / scan</td><td><strong>${esc(data.scanCode)}</strong></td></tr>
-          <tr><td>Shipping mode</td><td>${esc(data.routeTypeLabel)}</td></tr>
-          <tr><td>Courier company</td><td>${esc(data.agencyLabel)}</td></tr>
-          <tr><td>Pickup courier</td><td>${esc(data.courierNameLabel)}</td></tr>
-          <tr><td>Booked</td><td>${esc(data.bookingDateLabel)}</td></tr>
-          <tr><td>Last updated</td><td>${esc(data.updatedAtLabel)}</td></tr>
-          <tr><td>Invoice #</td><td><strong>${esc(data.displayInvoiceId)}</strong></td></tr>
-        </table>
+        <div class="person">
+          <h4>Bill to</h4>
+          <div class="nm">${esc(data.recipientName).slice(0, 48)}</div>
+          <div>${esc((data.recipientAddress || data.toCity || "").slice(0, 140))}</div>
+          <div>${esc(data.recipientPhone)} ${esc(data.recipientEmail).slice(0, 36)}</div>
         </div>
       </section>
 
-      <table class="detail-table">
-        <thead>
-          <tr>
-            <th>Amount</th>
-            <th>Description</th>
-            <th>Weight</th>
-            <th>Length</th>
-            <th>Width</th>
-            <th>Height</th>
-            <th>Weight Vol.</th>
-            <th>Fixed charge</th>
-            <th>DecValue</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>${esc(data.amount)}</td>
-            <td>${esc(data.contentsLabel)}</td>
-            <td>${esc(String(data.weight))}</td>
-            <td>${esc(data.length)}</td>
-            <td>${esc(data.width)}</td>
-            <td>${esc(data.height)}</td>
-            <td>${esc(String(data.volumetric))}</td>
-            <td>${esc(data.fixedCharge)}</td>
-            <td>${esc(data.declaredValue)}</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="totals-wrap">
-        <table class="totals-left">
-          <tr><td><strong>Price kg: ${esc(String(data.weight))}</strong></td><td><strong>Weight: ${esc(String(data.weight))}</strong></td></tr>
-          <tr><td><strong>Volumetric weight: ${esc(String(data.volumetric))}</strong></td><td><strong>Total weight calculation: ${esc(String(data.weight))}</strong></td></tr>
-        </table>
-        <table class="totals-right">
-          <tr><td><strong>Subtotal</strong></td><td>${esc(data.subtotal)}</td></tr>
-        </table>
+      <div class="kv">
+        <div><strong>Courier</strong> ${esc(data.courierNameLabel).slice(0, 42)}</div>
+        <div><strong>Consignment</strong> ${esc(data.scanCode)}</div>
       </div>
 
-      <table class="charges-table">
-        <thead>
-          <tr>
-            <th>Discount 0 %</th>
-            <th>Shipping Insurance</th>
-            <th>Customs Duties</th>
-            <th>Tax</th>
-            <th>Declared total value</th>
-            <th>Declared value</th>
-            <th>Total envio</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>${esc(data.chargeDiscount)}</td>
-            <td>${esc(data.chargeInsurance)}</td>
-            <td>${esc(data.chargeCustoms)}</td>
-            <td>${esc(data.chargeTax)}</td>
-            <td>${esc(data.chargeDeclaredTotal)}</td>
-            <td>${esc(data.chargeDeclaredValue)}</td>
-            <td>${esc(data.chargeTotalEnvio)}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="ship">
+        <strong>Shipment</strong> ${esc(data.contentsLabel).slice(0, 200)} · Wt ${esc(String(data.weight))} ·
+        ${esc(data.length)}×${esc(data.width)}×${esc(data.height)} cm · Amt ${esc(data.amount)} · Decl. ${esc(data.declaredValue)}
+      </div>
+
+      <div class="chg-grid">
+        ${chargeRow("Subtotal", data.subtotal)}
+        ${chargeRow("Tax", data.chargeTax)}
+        ${chargeRow("Insurance", data.chargeInsurance)}
+        ${chargeRow("Customs", data.chargeCustoms)}
+        ${chargeRow("Discount", data.chargeDiscount)}
+        ${chargeRow("Total", data.chargeTotalEnvio)}
+      </div>
 
       ${
         data.adminInvoiceNotes
-          ? `<div class="terms-title">BILLING NOTES</div>
-      <div class="terms-text">${esc(data.adminInvoiceNotes)}</div>`
+          ? `<div class="note"><strong>Note:</strong> ${esc(data.adminInvoiceNotes).slice(0, 280)}</div>`
           : ""
       }
       ${
         data.trackingNotesLabel && String(data.trackingNotesLabel).trim() !== "-"
-          ? `<div class="terms-title">TRACKING UPDATE</div>
-      <div class="terms-text">${esc(data.trackingNotesLabel)}</div>`
+          ? `<div class="note"><strong>Tracking:</strong> ${esc(data.trackingNotesLabel).slice(0, 200)}</div>`
           : ""
       }
 
-      <div class="terms-title">TERMS</div>
-      <div class="terms-text">
-        ACCEPTED: The sender declares that shipment details are accurate and no prohibited items are included. In case of customs checks, the client is responsible for duties and supporting documents. Courier transit timelines may vary by route, service mode, and destination compliance checks.
+      <div class="terms">
+        Sender declares details accurate; customs/duties may apply; transit varies by route and compliance.
       </div>
-
-      <div class="footer">${esc(data.settings.footerNote)}</div>
+      <div class="a6-tag">ISO A6 · 105 × 148 mm</div>
+      <div class="footer">${esc(data.settings.footerNote).slice(0, 90)}</div>
     </div>
   </body>
 </html>`;
@@ -1478,8 +1372,8 @@ export async function generateBookingPdf(req, res, next) {
       bwipjs.toBuffer({
         bcid: "code128",
         text: String(input.publicBarcodeCode || input.reference || input.bookingId || "QC-INVOICE"),
-        scale: isTrackingTemplate ? 2 : 3,
-        height: isTrackingTemplate ? 12 : 16,
+        scale: 2,
+        height: 12,
         includetext: false,
         backgroundcolor: "FFFFFF"
       })
@@ -1487,16 +1381,12 @@ export async function generateBookingPdf(req, res, next) {
     const barcodeDataUrl = `data:image/png;base64,${barcodePng.toString("base64")}`;
     const html = isTrackingTemplate
       ? buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl)
-      : buildPdfHtml(input, barcodeDataUrl);
+      : buildInvoiceA6PdfHtml(input, barcodeDataUrl);
 
     const browser = await getPdfBrowser();
     page = await browser.newPage();
-    /** A6 receipt (105×148 mm) vs A4 invoice — viewport matches page aspect for sharper render. */
-    await page.setViewport(
-      isTrackingTemplate
-        ? { width: 794, height: 1123, deviceScaleFactor: 2 }
-        : { width: 1240, height: 1754, deviceScaleFactor: 2 }
-    );
+    /** Viewport ~ A6 aspect (105:148) for sharp print on ISO A6 PDFs */
+    await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 2 });
     await page.setContent(html, { waitUntil: "load", timeout: 45_000 });
     await page
       .evaluate(async () => {
@@ -1515,19 +1405,11 @@ export async function generateBookingPdf(req, res, next) {
         );
       })
       .catch(() => {});
-    const pdfBuffer = await page.pdf(
-      isTrackingTemplate
-        ? {
-            format: "A6",
-            printBackground: true,
-            margin: { top: "3mm", right: "3mm", bottom: "3mm", left: "3mm" }
-          }
-        : {
-            format: "A4",
-            printBackground: true,
-            margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" }
-          }
-    );
+    const pdfBuffer = await page.pdf({
+      format: "A6",
+      printBackground: true,
+      margin: { top: "3mm", right: "3mm", bottom: "3mm", left: "3mm" }
+    });
 
     const filenameSafeRef = String(input.reference || input.bookingId)
       .replace(/[^a-zA-Z0-9-_]/g, "-")
