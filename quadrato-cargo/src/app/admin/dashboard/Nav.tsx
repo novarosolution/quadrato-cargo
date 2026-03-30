@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  CircleHelp,
   Database,
   LayoutDashboard,
   Mail,
@@ -53,6 +54,12 @@ const adminNavItems: Array<{
     label: "Bookings",
     hint: "Shipments — search, edit, delete",
     Icon: Package,
+  },
+  {
+    href: "/admin/help",
+    label: "Help",
+    hint: "What you can do in admin",
+    Icon: CircleHelp,
   },
 ];
 

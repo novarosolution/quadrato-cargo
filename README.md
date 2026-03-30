@@ -4,8 +4,8 @@ Final full-stack project update by NovaRo team.
 
 ## Project Structure
 
-- `quadrato-cargo/` -> Next.js frontend (customer, admin, courier, agency UI)
-- `server/` -> Express + MongoDB backend API
+- `quadrato-cargo/` — Next.js frontend (customer, admin, courier, agency UI)
+- `quadrato-cargo/server/` — Express + MongoDB backend API
 
 ## Frontend (`quadrato-cargo`)
 
@@ -24,18 +24,18 @@ npm run dev
 
 Frontend runs on `http://localhost:3000`.
 
-## Backend (`server`)
+## Backend (`quadrato-cargo/server`)
 
 ### Install
 
 ```bash
-cd server
+cd quadrato-cargo/server
 npm install
 ```
 
 ### Environment
 
-Create `server/.env` using `server/.env.example` and set:
+Create `quadrato-cargo/server/.env` using `quadrato-cargo/server/.env.example` and set:
 
 - `PORT`
 - `MONGODB_URI`
@@ -61,6 +61,11 @@ Backend runs on `http://localhost:4010`.
 - Courier flow: start job, pickup OTP, handover reference/OTP
 - Agency flow: verify handover, process shipment status updates
 - Booking status and notes sync to user/admin tracking views
+
+## Admin & roles
+
+- See [`quadrato-cargo/docs/ROLES_AND_FLOWS.md`](quadrato-cargo/docs/ROLES_AND_FLOWS.md) for who can do what.
+- Planned admin improvements: [`quadrato-cargo/docs/ADMIN_IMPROVEMENT_ROADMAP.md`](quadrato-cargo/docs/ADMIN_IMPROVEMENT_ROADMAP.md).
 
 ## Notes
 

@@ -21,6 +21,7 @@ import { AdminCustomerTimelineForm } from "../AdminCustomerTimelineForm";
 import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminTimelineQuickCardForm } from "../AdminTimelineQuickCardForm";
 import { AdminBookingPickupForm } from "../AdminBookingPickupForm";
+import { AdminBookingShipmentForm } from "../AdminBookingShipmentForm";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -63,6 +64,14 @@ export default async function AdminBookingDetailPage({ params }: Props) {
   const recipient = (payload.recipient && typeof payload.recipient === "object"
     ? payload.recipient
     : {}) as Record<string, unknown>;
+  const shipmentRaw =
+    payload.shipment && typeof payload.shipment === "object"
+      ? (payload.shipment as Record<string, unknown>)
+      : {};
+  const dims =
+    shipmentRaw.dimensionsCm && typeof shipmentRaw.dimensionsCm === "object"
+      ? (shipmentRaw.dimensionsCm as Record<string, unknown>)
+      : {};
   const str = (v: unknown) => (typeof v === "string" ? v : "");
   const contactInitial = {
     senderName: str(sender.name),
@@ -71,6 +80,22 @@ export default async function AdminBookingDetailPage({ params }: Props) {
     recipientName: str(recipient.name),
     recipientEmail: str(recipient.email),
     recipientPhone: str(recipient.phone),
+    recipientStreet: str(recipient.street),
+    recipientCity: str(recipient.city),
+    recipientPostal: str(recipient.postal),
+    recipientCountry: str(recipient.country),
+  };
+  const weightFromPayload =
+    typeof shipmentRaw.weightKg === "number" && Number.isFinite(shipmentRaw.weightKg)
+      ? String(shipmentRaw.weightKg)
+      : str(shipmentRaw.weightKg);
+  const shipmentInitial = {
+    contentsDescription: str(shipmentRaw.contentsDescription),
+    weightKg: weightFromPayload,
+    declaredValue: str(shipmentRaw.declaredValue),
+    dimL: str(dims.l),
+    dimW: str(dims.w),
+    dimH: str(dims.h),
   };
   const pickupPin = typeof sender.postal === "string" ? sender.postal : "";
   const pickupInitial = {
@@ -153,6 +178,11 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           <li>
             <a href="#booking-customer-view" className={jumpLinkClass}>
               Customer view
+            </a>
+          </li>
+          <li>
+            <a href="#booking-shipment" className={jumpLinkClass}>
+              Shipment
             </a>
           </li>
           <li>
@@ -309,6 +339,22 @@ export default async function AdminBookingDetailPage({ params }: Props) {
             bookingId={row.id}
             routeType={row.routeType === "international" ? "international" : "domestic"}
             initial={contactInitial}
+          />
+        </AdminCollapsible>
+      </section>
+
+      <section id="booking-shipment" className="scroll-mt-24 space-y-4">
+        <div className="rounded-xl border border-border-strong/80 bg-canvas/20 px-4 py-3">
+          <h2 className="font-display text-lg font-semibold text-ink">Shipment details</h2>
+          <p className="mt-1 text-sm text-muted">
+            Weight, dimensions, contents, and declared value (shown on track and profile when enabled).
+          </p>
+        </div>
+        <AdminCollapsible id="booking-shipment-form" title="Parcel &amp; declared value" defaultOpen>
+          <AdminBookingShipmentForm
+            bookingId={row.id}
+            routeType={row.routeType === "international" ? "international" : "domestic"}
+            initial={shipmentInitial}
           />
         </AdminCollapsible>
       </section>

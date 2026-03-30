@@ -8,7 +8,9 @@ import {
   ArrowRight,
   BarChart3,
   Calendar,
+  CircleHelp,
   ClipboardList,
+  ExternalLink,
   Mail,
   Package,
   Users,
@@ -137,17 +139,72 @@ export function AdminDashboardView(data: DashboardSnapshot) {
           title="Dashboard"
           description="Live counts and recent activity. Click any number to open that list and edit records."
           actions={
-            <Link
-              href="/admin/settings"
-              prefetch={false}
-              className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/50 px-4 py-2.5 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
-            >
-              <ClipboardList className="h-4 w-4 text-teal" strokeWidth={2} />
-              Data &amp; exports
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/admin/settings"
+                prefetch={false}
+                className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/50 px-4 py-2.5 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
+              >
+                <ClipboardList className="h-4 w-4 text-teal" strokeWidth={2} />
+                Data &amp; exports
+              </Link>
+              <Link
+                href="/admin/help"
+                prefetch={false}
+                className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/50 px-4 py-2.5 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
+              >
+                <CircleHelp className="h-4 w-4 text-teal" strokeWidth={2} />
+                Help
+              </Link>
+            </div>
           }
         />
       </div>
+
+      <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-5">
+        <h2 className="font-display text-sm font-semibold text-ink">Shortcuts</h2>
+        <p className="mt-1 text-xs text-muted-soft">
+          Common jumps — same tab, signed-in session.
+        </p>
+        <ul className="mt-4 flex flex-wrap gap-2">
+          <Link
+            href="/public/book"
+            prefetch={false}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border-strong bg-canvas/40 px-3 py-2 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+          >
+            New booking (public)
+            <ExternalLink className="h-3.5 w-3.5 opacity-70" strokeWidth={2} />
+          </Link>
+          <Link
+            href="/admin/bookings?status=in_transit"
+            prefetch={false}
+            className="rounded-xl border border-border-strong bg-canvas/40 px-3 py-2 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+          >
+            In transit
+          </Link>
+          <Link
+            href="/admin/bookings?status=submitted"
+            prefetch={false}
+            className="rounded-xl border border-border-strong bg-canvas/40 px-3 py-2 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+          >
+            Submitted
+          </Link>
+          <Link
+            href="/admin/reports"
+            prefetch={false}
+            className="rounded-xl border border-border-strong bg-canvas/40 px-3 py-2 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+          >
+            Reports
+          </Link>
+          <Link
+            href="/api/admin/exports/bookings"
+            prefetch={false}
+            className="rounded-xl border border-border-strong bg-canvas/40 px-3 py-2 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+          >
+            Download bookings CSV
+          </Link>
+        </ul>
+      </section>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard

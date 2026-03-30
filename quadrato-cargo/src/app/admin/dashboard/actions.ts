@@ -34,11 +34,23 @@ async function adminMutation(
       ok?: boolean;
       message?: string;
     };
-    return { ok: Boolean(res.ok && data.ok), message: data.message };
+    if (res.ok && data.ok) return { ok: true, message: data.message };
+    const fallback =
+      res.status === 401
+        ? "Unauthorized — check ADMIN_API_SECRET matches the server."
+        : res.status === 404
+          ? "Record not found."
+          : res.status >= 500
+            ? "Server error. Try again or check API logs."
+            : "Request failed.";
+    return {
+      ok: false,
+      message: (typeof data.message === "string" && data.message.trim()) || fallback,
+    };
   } catch {
     return {
       ok: false,
-      message: "Cannot connect to server. Start backend and try again.",
+      message: "Cannot connect to server. Start the API and try again.",
     };
   }
 }
@@ -474,6 +486,10 @@ export async function updateBookingContactAdmin(
     name: pick("recipientName"),
     email: pick("recipientEmail"),
     phone: pick("recipientPhone"),
+    street: pick("recipientStreet"),
+    city: pick("recipientCity"),
+    postal: pick("recipientPostal"),
+    country: pick("recipientCountry"),
   };
   if (!bookingId) return { ok: false, error: "Missing booking." };
   const result = await adminMutation(
@@ -493,6 +509,47 @@ export async function updateBookingContactAdmin(
   revalidatePath("/courier/bookings");
   revalidatePath(`/courier/bookings/${bookingId}`);
   return { ok: true, message: "Sender and recipient contact details saved." };
+}
+
+export async function updateBookingShipmentAdmin(
+  _prev: DataManageState | undefined,
+  formData: FormData,
+): Promise<DataManageState> {
+  const bookingId = String(formData.get("bookingId") ?? "").trim();
+  const routeTypeRaw = String(formData.get("routeType") ?? "domestic").trim();
+  const routeType = routeTypeRaw === "international" ? "international" : "domestic";
+  const pick = (name: string) => String(formData.get(name) ?? "").trim();
+  if (!bookingId) return { ok: false, error: "Missing booking." };
+
+  const payload: Record<string, unknown> = {
+    shipment: {
+      contentsDescription: pick("contentsDescription"),
+      declaredValue: pick("declaredValue"),
+      weightKg: pick("weightKg"),
+      dimensionsCm: {
+        l: pick("dimL"),
+        w: pick("dimW"),
+        h: pick("dimH"),
+      },
+    },
+  };
+
+  const result = await adminMutation(
+    `/api/admin/bookings/${encodeURIComponent(bookingId)}/data`,
+    {
+      merge: true,
+      routeType,
+      payload,
+    },
+  );
+  if (!result.ok) {
+    return { ok: false, error: result.message || "Failed to update shipment details." };
+  }
+  revalidatePath("/admin/bookings");
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/public/tsking");
+  revalidatePath("/public/profile");
+  return { ok: true, message: "Shipment details saved (weight, dimensions, contents)." };
 }
 
 export async function updateBookingPickupAdmin(

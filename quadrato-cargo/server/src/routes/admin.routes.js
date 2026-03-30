@@ -71,6 +71,23 @@ const bookingContactPartyPatchSchema = z
   })
   .strict();
 
+const bookingShipmentDimensionsMergeSchema = z
+  .object({
+    l: z.string().trim().max(32).optional(),
+    w: z.string().trim().max(32).optional(),
+    h: z.string().trim().max(32).optional()
+  })
+  .strict();
+
+const bookingShipmentMergeSchema = z
+  .object({
+    contentsDescription: z.string().trim().max(2000).optional(),
+    declaredValue: z.string().trim().max(200).optional(),
+    weightKg: z.union([z.number(), z.string()]).optional(),
+    dimensionsCm: bookingShipmentDimensionsMergeSchema.optional()
+  })
+  .strict();
+
 const bookingMergePayloadSchema = z
   .object({
     sender: bookingContactPartyPatchSchema.optional(),
@@ -80,7 +97,8 @@ const bookingMergePayloadSchema = z
     pickupTimeSlot: z.string().trim().max(64).optional(),
     pickupTimeSlotCustom: z.string().trim().max(64).optional(),
     pickupPreference: z.string().trim().max(2000).optional(),
-    instructions: z.string().trim().max(4000).optional()
+    instructions: z.string().trim().max(4000).optional(),
+    shipment: bookingShipmentMergeSchema.optional()
   })
   .strict();
 
@@ -136,6 +154,56 @@ function mergePickupTopLevelIntoPayload(base, patch) {
   }
 }
 
+function mergeShipmentPatchIntoPayload(base, patch) {
+  if (!patch || typeof patch !== "object") return;
+  const prev =
+    base.shipment && typeof base.shipment === "object" && !Array.isArray(base.shipment)
+      ? { ...base.shipment }
+      : {};
+  const out = { ...prev };
+  for (const key of ["contentsDescription", "declaredValue"]) {
+    if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
+    const raw = patch[key];
+    if (raw === undefined) continue;
+    const s = String(raw).trim();
+    if (s === "") delete out[key];
+    else out[key] = s;
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "weightKg")) {
+    const w = patch.weightKg;
+    if (w === "" || w === undefined || w === null) {
+      delete out.weightKg;
+    } else if (typeof w === "number" && Number.isFinite(w)) {
+      out.weightKg = w;
+    } else {
+      const s = String(w).trim();
+      if (!s) delete out.weightKg;
+      else {
+        const n = Number.parseFloat(s.replace(/[^0-9.-]/g, ""));
+        if (Number.isFinite(n)) out.weightKg = n;
+        else out.weightKg = s;
+      }
+    }
+  }
+  if (patch.dimensionsCm && typeof patch.dimensionsCm === "object") {
+    const dimPatch = patch.dimensionsCm;
+    const d =
+      out.dimensionsCm && typeof out.dimensionsCm === "object" && !Array.isArray(out.dimensionsCm)
+        ? { ...out.dimensionsCm }
+        : {};
+    for (const dim of ["l", "w", "h"]) {
+      if (!Object.prototype.hasOwnProperty.call(dimPatch, dim)) continue;
+      const s = String(dimPatch[dim] ?? "").trim();
+      if (s === "") delete d[dim];
+      else d[dim] = s;
+    }
+    if (Object.keys(d).length) out.dimensionsCm = d;
+    else delete out.dimensionsCm;
+  }
+  if (Object.keys(out).length) base.shipment = out;
+  else delete base.shipment;
+}
+
 function mergeBookingContactPayloadIntoExisting(existingRaw, patch) {
   const base =
     existingRaw && typeof existingRaw === "object" && !Array.isArray(existingRaw)
@@ -144,6 +212,7 @@ function mergeBookingContactPayloadIntoExisting(existingRaw, patch) {
   if (patch.sender) base.sender = applyBookingContactPartyPatch(base.sender, patch.sender);
   if (patch.recipient) base.recipient = applyBookingContactPartyPatch(base.recipient, patch.recipient);
   mergePickupTopLevelIntoPayload(base, patch);
+  if (patch.shipment) mergeShipmentPatchIntoPayload(base, patch.shipment);
   return base;
 }
 
@@ -373,6 +442,143 @@ async function fetchUserBookingStats(db, userIds) {
 }
 
 router.use(requireAdminApi);
+
+function csvEscapeCell(value) {
+  const s = value == null ? "" : String(value);
+  if (/[",\n\r]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+function csvLine(cells) {
+  return `${cells.map(csvEscapeCell).join(",")}\n`;
+}
+
+router.get("/export/users", async (_req, res, next) => {
+  try {
+    const db = await getDb();
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="quadrato-users.csv"');
+    res.write(
+      csvLine(["id", "email", "name", "role", "isActive", "isOnDuty", "createdAt", "updatedAt"]),
+    );
+    const cursor = db
+      .collection("users")
+      .find({})
+      .project({ passwordHash: 0 })
+      .sort({ createdAt: -1 });
+    for await (const u of cursor) {
+      res.write(
+        csvLine([
+          String(u._id),
+          u.email ?? "",
+          u.name ?? "",
+          u.role ?? "customer",
+          u.isActive !== false ? "true" : "false",
+          u.isOnDuty !== false ? "true" : "false",
+          u.createdAt instanceof Date ? u.createdAt.toISOString() : "",
+          u.updatedAt instanceof Date ? u.updatedAt.toISOString() : ""
+        ]),
+      );
+    }
+    res.end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/export/contacts", async (_req, res, next) => {
+  try {
+    const db = await getDb();
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="quadrato-contacts.csv"');
+    res.write(csvLine(["id", "name", "email", "phone", "service", "message", "createdAt"]));
+    const cursor = db.collection("contacts").find({}).sort({ createdAt: -1 });
+    for await (const c of cursor) {
+      res.write(
+        csvLine([
+          String(c._id),
+          c.name ?? "",
+          c.email ?? "",
+          c.phone ?? "",
+          c.service ?? "",
+          c.message ?? "",
+          c.createdAt instanceof Date ? c.createdAt.toISOString() : ""
+        ]),
+      );
+    }
+    res.end();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/export/bookings", async (_req, res, next) => {
+  try {
+    const db = await getDb();
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", 'attachment; filename="quadrato-bookings.csv"');
+    res.write(
+      csvLine([
+        "id",
+        "status",
+        "routeType",
+        "createdAt",
+        "updatedAt",
+        "consignmentNumber",
+        "publicBarcodeCode",
+        "assignedAgency",
+        "userId",
+        "courierId",
+        "senderName",
+        "senderEmail",
+        "senderCity",
+        "recipientName",
+        "recipientEmail",
+        "recipientCity",
+        "weightKg"
+      ]),
+    );
+    const cursor = db.collection("bookings").find({}).sort({ createdAt: -1 });
+    for await (const b of cursor) {
+      const p = b.payload && typeof b.payload === "object" ? b.payload : {};
+      const sender = p.sender && typeof p.sender === "object" ? p.sender : {};
+      const recipient = p.recipient && typeof p.recipient === "object" ? p.recipient : {};
+      const ship = p.shipment && typeof p.shipment === "object" ? p.shipment : {};
+      let weightKg = "";
+      if (typeof ship.weightKg === "number" && Number.isFinite(ship.weightKg)) {
+        weightKg = String(ship.weightKg);
+      } else if (ship.weightKg != null) {
+        weightKg = String(ship.weightKg).trim();
+      }
+      res.write(
+        csvLine([
+          String(b._id),
+          b.status ?? "",
+          b.routeType ?? "",
+          b.createdAt instanceof Date ? b.createdAt.toISOString() : "",
+          b.updatedAt instanceof Date ? b.updatedAt.toISOString() : "",
+          b.consignmentNumber ?? "",
+          b.publicBarcodeCode ?? "",
+          b.assignedAgency ?? "",
+          b.userId ? String(b.userId) : "",
+          b.courierId ? String(b.courierId) : "",
+          sender.name ?? "",
+          sender.email ?? "",
+          sender.city ?? "",
+          recipient.name ?? "",
+          recipient.email ?? "",
+          recipient.city ?? "",
+          weightKg
+        ]),
+      );
+    }
+    res.end();
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get("/overview", async (_req, res, next) => {
   try {

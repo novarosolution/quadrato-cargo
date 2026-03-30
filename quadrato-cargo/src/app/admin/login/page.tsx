@@ -21,9 +21,10 @@ export default async function AdminLoginPage() {
           Quadrato Cargo — Admin
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Super-admin (.env credentials) or team accounts created under Users →
-          Create team account. Manage contacts, bookings, users, and status
-          updates here.
+          Sign in with the admin email and password from your API environment (
+          <code className="rounded bg-pill px-1 py-0.5 text-xs">ADMIN_EMAIL</code> /{" "}
+          <code className="rounded bg-pill px-1 py-0.5 text-xs">ADMIN_PASSWORD</code>
+          ). Courier, agency, and customer accounts use the public login — not this screen.
         </p>
         <div className="mt-8">
           <AdminLoginForm />

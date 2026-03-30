@@ -81,13 +81,13 @@ export default async function AdminDataPage() {
       <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
         <h2 className="font-display text-lg font-semibold">CSV export</h2>
         <p className="mt-2 text-sm text-muted">
-          Downloads require an active admin session (same browser tab). Open the
-          link while signed in.
+          You must be signed in to admin. Each link downloads a UTF-8 CSV (opens in
+          Excel or Sheets).
         </p>
         <ul className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <li>
             <a
-              href="#"
+              href="/api/admin/exports/users"
               className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/40 px-4 py-3 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
             >
               <Download className="h-4 w-4 text-ink" strokeWidth={2} />
@@ -96,7 +96,7 @@ export default async function AdminDataPage() {
           </li>
           <li>
             <a
-              href="#"
+              href="/api/admin/exports/contacts"
               className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/40 px-4 py-3 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
             >
               <Download className="h-4 w-4 text-teal" strokeWidth={2} />
@@ -105,7 +105,7 @@ export default async function AdminDataPage() {
           </li>
           <li>
             <a
-              href="#"
+              href="/api/admin/exports/bookings"
               className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/40 px-4 py-3 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
             >
               <Download className="h-4 w-4 text-accent" strokeWidth={2} />

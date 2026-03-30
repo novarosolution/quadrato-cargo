@@ -13,6 +13,10 @@ export type BookingContactInitial = {
   recipientName: string;
   recipientEmail: string;
   recipientPhone: string;
+  recipientStreet: string;
+  recipientCity: string;
+  recipientPostal: string;
+  recipientCountry: string;
 };
 
 type Props = {
@@ -142,6 +146,72 @@ export function AdminBookingContactForm({
               name="recipientPhone"
               type="tel"
               defaultValue={initial.recipientPhone}
+              autoComplete="off"
+              className={`mt-1 w-full ${field}`}
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="admin-contact-recipient-street"
+              className="text-xs font-medium text-muted-soft"
+            >
+              Street / address line
+            </label>
+            <input
+              id="admin-contact-recipient-street"
+              name="recipientStreet"
+              type="text"
+              defaultValue={initial.recipientStreet}
+              autoComplete="off"
+              className={`mt-1 w-full ${field}`}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label
+                htmlFor="admin-contact-recipient-city"
+                className="text-xs font-medium text-muted-soft"
+              >
+                City
+              </label>
+              <input
+                id="admin-contact-recipient-city"
+                name="recipientCity"
+                type="text"
+                defaultValue={initial.recipientCity}
+                autoComplete="off"
+                className={`mt-1 w-full ${field}`}
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="admin-contact-recipient-postal"
+                className="text-xs font-medium text-muted-soft"
+              >
+                Postal
+              </label>
+              <input
+                id="admin-contact-recipient-postal"
+                name="recipientPostal"
+                type="text"
+                defaultValue={initial.recipientPostal}
+                autoComplete="off"
+                className={`mt-1 w-full ${field}`}
+              />
+            </div>
+          </div>
+          <div>
+            <label
+              htmlFor="admin-contact-recipient-country"
+              className="text-xs font-medium text-muted-soft"
+            >
+              Country
+            </label>
+            <input
+              id="admin-contact-recipient-country"
+              name="recipientCountry"
+              type="text"
+              defaultValue={initial.recipientCountry}
               autoComplete="off"
               className={`mt-1 w-full ${field}`}
             />
