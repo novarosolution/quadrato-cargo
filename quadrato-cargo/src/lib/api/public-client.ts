@@ -5,32 +5,6 @@ import { getApiBaseUrl } from "@/lib/api/base-url";
 
 const JSON_HEADERS = { "Content-Type": "application/json" } as const;
 
-export type HealthResponse = {
-  ok: boolean;
-  service: string;
-  time: string;
-};
-
-export async function fetchHealth(): Promise<HealthResponse> {
-  try {
-    const res = await fetch(`${getApiBaseUrl()}/api/health`, { cache: "no-store" });
-    if (!res.ok) {
-      return {
-        ok: false,
-        service: "quadrato-cargo",
-        time: new Date().toISOString(),
-      };
-    }
-    return (await res.json()) as HealthResponse;
-  } catch {
-    return {
-      ok: false,
-      service: "quadrato-cargo",
-      time: new Date().toISOString(),
-    };
-  }
-}
-
 export type ContactApiBody = {
   name: string;
   email: string;

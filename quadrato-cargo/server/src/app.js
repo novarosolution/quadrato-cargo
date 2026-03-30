@@ -19,10 +19,17 @@ import courierRoutes from "./routes/courier.routes.js";
 export function createApp() {
   const app = express();
   app.set("trust proxy", 1);
+  app.disable("x-powered-by");
+  const allowList = new Set(env.corsOrigins);
 
   app.use(
     helmet({
-      crossOriginResourcePolicy: false
+      crossOriginResourcePolicy: false,
+      referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+      hsts:
+        env.nodeEnv === "production"
+          ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+          : false
     })
   );
   app.use(compression());
@@ -41,7 +48,12 @@ export function createApp() {
 
   app.use(
     cors({
-      origin: env.frontendOrigin,
+      origin(origin, callback) {
+        if (!origin) return callback(null, true);
+        const normalized = String(origin).replace(/\/+$/, "");
+        if (allowList.has(normalized)) return callback(null, true);
+        return callback(new Error(`CORS blocked for origin: ${origin}`));
+      },
       credentials: true
     })
   );

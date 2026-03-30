@@ -124,3 +124,23 @@ export async function postLogoutApi(): Promise<void> {
     return;
   }
 }
+
+/** Client-side session probe (e.g. footer); uses the same cookie as server `auth()`. */
+export async function fetchAuthMeClient(): Promise<ApiUser | null> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/auth/me`, {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      user?: ApiUser | null;
+    };
+    if (!data?.ok || !data.user?.id) return null;
+    return data.user;
+  } catch {
+    return null;
+  }
+}

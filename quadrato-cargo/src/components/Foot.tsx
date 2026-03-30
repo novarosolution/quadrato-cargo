@@ -2,40 +2,16 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { fetchHealth } from "@/lib/api/public-client";
+import {
+  fetchAuthMeClient,
+  postLogoutApi,
+  type ApiUser,
+} from "@/lib/api/auth-client";
 import { useMotionPreferences } from "@/lib/motion-preferences";
 import { QuadratoBrandLogo } from "@/components/QuadratoBrandLogo";
 import { authNav, mainNav } from "@/lib/nav";
-
-function ApiHealthLine() {
-  const [label, setLabel] = useState("Checking API…");
-
-  useEffect(() => {
-    let cancelled = false;
-    // Footer status is informational only; ignore failures to avoid noisy UI errors.
-    fetchHealth()
-      .then((h) => {
-        if (!cancelled) {
-          setLabel(
-            h.ok ? `API online · ${h.service}` : "API responded unexpectedly",
-          );
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setLabel("API unreachable");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return (
-    <p className="text-xs text-muted-soft" aria-live="polite">
-      {label}
-    </p>
-  );
-}
 
 const footerLinkClass =
   "text-sm font-medium text-muted transition hover:text-teal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal";
@@ -51,13 +27,38 @@ const colVariants = {
 
 export function Footer() {
   const year = new Date().getFullYear();
+  const router = useRouter();
   const reduce = useReducedMotion();
   const { allowHoverMotion } = useMotionPreferences();
   const canHoverMotion = allowHoverMotion && !reduce;
-  const [status] = useState<"loading" | "authenticated" | "unauthenticated">(
-    "unauthenticated",
-  );
-  const signedIn = false;
+  const [authState, setAuthState] = useState<
+    "loading" | "authenticated" | "unauthenticated"
+  >("loading");
+  const [user, setUser] = useState<ApiUser | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchAuthMeClient()
+      .then((u) => {
+        if (cancelled) return;
+        if (u) {
+          setUser(u);
+          setAuthState("authenticated");
+        } else {
+          setUser(null);
+          setAuthState("unauthenticated");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setUser(null);
+          setAuthState("unauthenticated");
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <footer className="relative mt-auto border-t border-border bg-surface/90 backdrop-blur-xl">
@@ -145,9 +146,9 @@ export function Footer() {
             <motion.nav variants={colVariants} aria-label="Account">
               <p className="section-eyebrow text-muted-soft">Account</p>
               <ul className="mt-4 flex flex-col gap-3">
-                {status === "loading" ? (
+                {authState === "loading" ? (
                   <li className="text-sm text-muted-soft">…</li>
-                ) : signedIn ? (
+                ) : authState === "authenticated" && user ? (
                   <>
                     <motion.li
                       whileHover={canHoverMotion ? { x: 4 } : undefined}
@@ -163,7 +164,12 @@ export function Footer() {
                     >
                       <button
                         type="button"
-                        onClick={() => {}}
+                        onClick={async () => {
+                          await postLogoutApi();
+                          setUser(null);
+                          setAuthState("unauthenticated");
+                          router.refresh();
+                        }}
                         className={`${footerLinkClass} text-left`}
                       >
                         Sign out
@@ -219,7 +225,7 @@ export function Footer() {
           </motion.div>
         </div>
 
-        <div className="mt-14 flex flex-col gap-3 border-t border-border pt-8 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-14 border-t border-border pt-8">
           <div className="text-center sm:text-left">
             <p className="text-xs text-muted-soft">
               © {year} Quadrato Cargo. All rights reserved.
@@ -236,9 +242,6 @@ export function Footer() {
               </a>
               .
             </p>
-          </div>
-          <div className="flex justify-center sm:justify-end">
-            <ApiHealthLine />
           </div>
         </div>
       </div>
