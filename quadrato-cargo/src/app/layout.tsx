@@ -84,7 +84,7 @@ export default function RootLayout({
         <div className="body-grid" aria-hidden />
         <div className="body-noise" aria-hidden />
         {/* Keep all routes above fixed background layers (avoids rare clipping). */}
-        <div className="relative z-10 min-h-full">{children}</div>
+        <div className="relative z-10 isolate min-h-full">{children}</div>
       </body>
     </html>
   );

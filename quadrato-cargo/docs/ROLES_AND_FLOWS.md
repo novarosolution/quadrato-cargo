@@ -164,7 +164,7 @@ flowchart LR
 1. **Customer or guest** submits booking → document in **`bookings`** with `payload` (sender, recipient, shipment, pickup fields), `status` (e.g. `submitted`), OTP fields for pickup.
 2. **Admin** searches booking → updates **status**, **consignment number**, **public note**, assigns **agency** / **courier**, edits **pickup** and **invoice**, **timeline** for customer view.
 3. **Courier** verifies **pickup OTP** → status moves toward picked up / in transit (per your business rules in controllers).
-4. **Customer** (if linked or owns booking) sees updates on **Track** and in **profile**; may download **tracking PDF** and **invoice PDF** (A6) when flags and OTP rules allow.
+4. **Customer** (if linked or owns booking) sees updates on **Track** and in **profile**; may download **tracking** and **invoice** PDFs (same page format) when flags and OTP rules allow.
 
 ---
 

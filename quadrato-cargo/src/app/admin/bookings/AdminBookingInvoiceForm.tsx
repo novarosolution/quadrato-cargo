@@ -53,19 +53,18 @@ export function AdminBookingInvoiceForm({
             className="mt-1"
           />
           <span>
-            <span className="font-medium text-ink">Allow customer invoice PDF</span>
+            <span className="font-medium text-ink">Customer can download invoice</span>
             <span className="mt-0.5 block text-xs text-muted-soft">
-              When enabled, the account holder can download the invoice PDF after pickup OTP
-              is verified. Amounts below are merged into that PDF (by booking ID).
+              After pickup OTP. Same PDF size as tracking slip. Uses fields below.
             </span>
           </span>
         </label>
       </div>
       <p className="text-xs text-muted-soft">
-        Leave fields blank to fall back to booking declared value and contents on the PDF.
+        Empty fields use booking declared value / contents on the PDF.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
-        <AdminFormField label="Invoice number (optional)" htmlFor="admin-inv-number">
+        <AdminFormField label="Invoice no. (optional)" htmlFor="admin-inv-number">
           <input
             id="admin-inv-number"
             name="invoiceNumber"
@@ -150,10 +149,7 @@ export function AdminBookingInvoiceForm({
           />
         </AdminFormField>
       </div>
-      <AdminFormField
-        label="Line description (optional, appears with contents on PDF)"
-        htmlFor="admin-inv-line"
-      >
+      <AdminFormField label="Line description (optional)" htmlFor="admin-inv-line">
         <textarea
           id="admin-inv-line"
           name="invoiceLineDescription"
@@ -162,7 +158,7 @@ export function AdminBookingInvoiceForm({
           className={textareaClass}
         />
       </AdminFormField>
-      <AdminFormField label="Billing notes (optional, printed on PDF)" htmlFor="admin-inv-notes">
+      <AdminFormField label="Notes (optional)" htmlFor="admin-inv-notes">
         <textarea
           id="admin-inv-notes"
           name="invoiceNotes"
@@ -176,7 +172,7 @@ export function AdminBookingInvoiceForm({
         disabled={pending}
         className="rounded-xl bg-teal px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
       >
-        {pending ? "Saving…" : "Save invoice & PDF settings"}
+        {pending ? "Saving…" : "Save invoice"}
       </button>
       {state?.ok === false ? (
         <p className="text-sm text-rose-600 dark:text-rose-400">{state.error}</p>

@@ -200,8 +200,7 @@ export function createBookingDoc({ routeType, payload, userId }) {
     payload: payload ?? {},
     status: "submitted",
     consignmentNumber: null,
-    trackingNotes:
-      "Booking received. Serviceability check at pickup PIN is pending. Logistics staff assignment and pickup confirmation will be updated manually.",
+    trackingNotes: null,
     publicTrackingNote: null,
     internalNotes: null,
     serviceabilityStatus: "pending",

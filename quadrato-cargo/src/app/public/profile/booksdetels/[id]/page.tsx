@@ -251,13 +251,11 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
           </PublicCard>
 
           <PublicCard className="sm:p-8">
-            <h2 className="font-display text-lg font-semibold text-ink">
-              PDFs — A6 (105×148 mm)
-            </h2>
+            <h2 className="font-display text-lg font-semibold text-ink">Downloads</h2>
             <p className="mt-2 text-sm text-muted">
-              Tracking slip and invoice use the same small page size. Scan the QR to open tracking.
+              Tracking slip and invoice are the same PDF size. Scan the QR to open tracking.
             </p>
-            <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
+            <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-8">
               {qrDataUrl ? (
                 <Image
                   src={qrDataUrl}
@@ -282,14 +280,67 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                 </Link>
                 {!pickupVerified ? (
                   <p className="rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-xs text-muted-soft">
-                    PDF downloads unlock after courier pickup OTP verification.
+                    Available after pickup OTP is verified.
                   </p>
                 ) : (
                   <>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-3 [&_button]:min-h-10 [&_button]:w-full [&_button]:sm:w-auto [&_button]:sm:min-w-[10.5rem]">
+                    <DownloadBookingPdfButton
+                      template="tracking"
+                      buttonLabel="Download tracking"
+                      bookingId={row.id}
+                      bookingDateLabel={dateFmt.format(row.createdAt)}
+                      updatedAtLabel={dateFmt.format(row.updatedAt)}
+                      reference={reference}
+                      routeTypeLabel={row.routeType || "-"}
+                      consignmentNumber={row.consignmentNumber || "-"}
+                      fromCity={preview.senderCity || "-"}
+                      toCity={preview.recipientCity || "-"}
+                      senderName={preview.senderName || "-"}
+                      senderAddress={
+                        [
+                          preview.senderStreet,
+                          preview.senderCity,
+                          preview.senderPostal,
+                          preview.senderCountry,
+                        ]
+                          .filter(Boolean)
+                          .join(", ") || "-"
+                      }
+                      senderPhone={preview.senderPhone || "-"}
+                      senderEmail={preview.senderEmail || "-"}
+                      recipientName={preview.recipientName || "-"}
+                      recipientAddress={
+                        [
+                          preview.recipientStreet,
+                          preview.recipientCity,
+                          preview.recipientPostal,
+                          preview.recipientCountry,
+                        ]
+                          .filter(Boolean)
+                          .join(", ") || "-"
+                      }
+                      recipientPhone={preview.recipientPhone || "-"}
+                      recipientEmail={preview.recipientEmail || "-"}
+                      amountLabel={preview.declaredValue || "-"}
+                      weightLabel={preview.weightKg ? `${preview.weightKg} kg` : "-"}
+                      dimensionsLabel={
+                        preview.dimensionsCm
+                          ? `${preview.dimensionsCm.l || "?"} x ${preview.dimensionsCm.w || "?"} x ${preview.dimensionsCm.h || "?"} cm`
+                          : "-"
+                      }
+                      contentsLabel={preview.contents || "-"}
+                      instructionsLabel={preview.instructions || "-"}
+                      trackingNotesLabel={row.customerTrackingNote || "-"}
+                      agencyLabel={row.assignedAgency || "-"}
+                      courierNameLabel={row.courierName || "-"}
+                      trackUrl={trackUrl}
+                      settings={pdfSettings}
+                    />
                     {canDownloadInvoicePdf ? (
                     <DownloadBookingPdfButton
                       template="invoice"
-                      buttonLabel="Download invoice (A6)"
+                      buttonLabel="Download invoice"
                       bookingId={row.id}
                       invoiceDetails={
                         inv
@@ -357,62 +408,10 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                     />
                     ) : (
                       <p className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-950 dark:text-amber-200">
-                        Invoice PDF will appear here after support finalizes billing for this
-                        shipment in admin.
+                        Invoice is turned off for this booking. Ask support if you need a bill.
                       </p>
                     )}
-                    <DownloadBookingPdfButton
-                      template="tracking"
-                      buttonLabel="Download Tracking PDF"
-                      bookingId={row.id}
-                      bookingDateLabel={dateFmt.format(row.createdAt)}
-                      updatedAtLabel={dateFmt.format(row.updatedAt)}
-                      reference={reference}
-                      routeTypeLabel={row.routeType || "-"}
-                      consignmentNumber={row.consignmentNumber || "-"}
-                      fromCity={preview.senderCity || "-"}
-                      toCity={preview.recipientCity || "-"}
-                      senderName={preview.senderName || "-"}
-                      senderAddress={
-                        [
-                          preview.senderStreet,
-                          preview.senderCity,
-                          preview.senderPostal,
-                          preview.senderCountry,
-                        ]
-                          .filter(Boolean)
-                          .join(", ") || "-"
-                      }
-                      senderPhone={preview.senderPhone || "-"}
-                      senderEmail={preview.senderEmail || "-"}
-                      recipientName={preview.recipientName || "-"}
-                      recipientAddress={
-                        [
-                          preview.recipientStreet,
-                          preview.recipientCity,
-                          preview.recipientPostal,
-                          preview.recipientCountry,
-                        ]
-                          .filter(Boolean)
-                          .join(", ") || "-"
-                      }
-                      recipientPhone={preview.recipientPhone || "-"}
-                      recipientEmail={preview.recipientEmail || "-"}
-                      amountLabel={preview.declaredValue || "-"}
-                      weightLabel={preview.weightKg ? `${preview.weightKg} kg` : "-"}
-                      dimensionsLabel={
-                        preview.dimensionsCm
-                          ? `${preview.dimensionsCm.l || "?"} x ${preview.dimensionsCm.w || "?"} x ${preview.dimensionsCm.h || "?"} cm`
-                          : "-"
-                      }
-                      contentsLabel={preview.contents || "-"}
-                      instructionsLabel={preview.instructions || "-"}
-                      trackingNotesLabel={row.customerTrackingNote || "-"}
-                      agencyLabel={row.assignedAgency || "-"}
-                      courierNameLabel={row.courierName || "-"}
-                      trackUrl={trackUrl}
-                      settings={pdfSettings}
-                    />
+                    </div>
                   </>
                 )}
               </div>

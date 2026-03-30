@@ -51,7 +51,7 @@ Goals: **reliable flows**, **fewer errors**, **one admin UI** that can run the p
 
 | Item | Direction |
 |------|-----------|
-| **Server PDF** | `POST /api/public/bookings/pdf` is **not registered** — client fallback only. Add server route for parity, same A6 logic, auth + booking ownership checks. |
+| **Server PDF** | `POST /api/public/bookings/pdf` is **not registered** — client fallback only. Add server route for parity, same format as client PDFs, auth + booking ownership checks. |
 | **Preview invoice** | Admin “Preview PDF” button using same generator as profile (optional). |
 
 ---

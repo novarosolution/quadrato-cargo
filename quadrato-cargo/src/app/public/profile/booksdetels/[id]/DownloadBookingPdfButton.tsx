@@ -25,7 +25,7 @@ type PdfSettings = {
   footerNote: string;
 };
 
-/** Admin invoice fields for A6 invoice PDF (ISO 105×148 mm). */
+/** Admin invoice line items (same compact PDF format as tracking slip). */
 export type InvoicePdfDetails = {
   number?: string | null;
   currency?: string | null;
@@ -43,7 +43,7 @@ type Props = {
   template?: "invoice" | "tracking";
   buttonLabel?: string;
   bookingId: string;
-  /** When template is invoice, used for line items and totals on the A6 PDF. */
+  /** When template is invoice, merged into PDF line items and totals. */
   invoiceDetails?: InvoicePdfDetails | null;
   bookingDateLabel: string;
   updatedAtLabel: string;
@@ -116,7 +116,7 @@ export function DownloadBookingPdfButton({
       return v.length ? v : "-";
     };
 
-    /** Offline fallback: delivery receipt matches server A6 (105×148 mm). */
+    /** Offline fallback: same page size as invoice (jsPDF a6). */
     if (template === "tracking") {
       const doc = new jsPDF({ unit: "mm", format: "a6" });
       const qrDataUrl = await QRCode.toDataURL(trackUrlSafe, {
@@ -187,7 +187,7 @@ export function DownloadBookingPdfButton({
       return;
     }
 
-    /** Invoice: compact A6 (105×148 mm) with admin invoice lines + track QR. */
+    /** Invoice: same dimensions as tracking slip + admin lines + track QR. */
     const doc = new jsPDF({ unit: "mm", format: "a6" });
     const qrDataUrlInv = await QRCode.toDataURL(trackUrlSafe, {
       width: 160,
@@ -335,7 +335,8 @@ export function DownloadBookingPdfButton({
 
       const blob = await response.blob();
       const stem = sanitizePdfFileStem(reference || bookingId);
-      saveBlobAsFile(blob, `courier-details-${stem}`);
+      const prefix = template === "invoice" ? "invoice" : "tracking";
+      saveBlobAsFile(blob, `${prefix}-${stem}.pdf`);
     } catch (error) {
       try {
         await runFallbackPdf();
@@ -358,7 +359,7 @@ export function DownloadBookingPdfButton({
         disabled={isDownloading}
         className="inline-flex rounded-lg border border-border-strong bg-canvas/40 px-3 py-2 text-sm font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {isDownloading ? "Preparing PDF..." : buttonLabel}
+        {isDownloading ? "Preparing…" : buttonLabel}
       </button>
       {downloadError ? (
         <p className="text-xs text-rose-400">{downloadError}</p>

@@ -144,15 +144,20 @@ html[data-theme="light"] {
 
 html {
   overflow-x: clip;
+  margin: 0;
+  padding: 0;
 }
 
 body {
+  margin: 0;
+  padding: 0;
   background-color: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
   line-height: 1.6;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
 }
 
 h1,
@@ -247,6 +252,21 @@ details summary:focus-visible {
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  /* Fade screen edges so teal/orange glows never read as a vertical “hairline” at x=0 / x=100%. */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 12px,
+    #000 calc(100% - 12px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 12px,
+    #000 calc(100% - 12px),
+    transparent 100%
+  );
   background:
     radial-gradient(ellipse 100% 80% at 50% -30%, rgba(45, 212, 191, 0.08), transparent 55%),
     radial-gradient(ellipse 50% 40% at 90% 10%, rgba(249, 115, 22, 0.07), transparent),
@@ -254,23 +274,35 @@ details summary:focus-visible {
 }
 
 html[data-theme="light"] .body-gradient {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 12px,
+    #000 calc(100% - 12px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 12px,
+    #000 calc(100% - 12px),
+    transparent 100%
+  );
   background:
     radial-gradient(ellipse 100% 80% at 50% -25%, rgba(45, 212, 191, 0.12), transparent 50%),
     radial-gradient(ellipse 55% 45% at 95% 5%, rgba(249, 115, 22, 0.08), transparent),
     linear-gradient(180deg, var(--color-canvas) 0%, var(--color-canvas-mid) 45%, var(--color-canvas) 100%);
 }
 
+/* Horizontal lines only — vertical grid lines sit on viewport edges on some DPR/zoom and pick up teal from the glow. */
 .body-grid {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  /* Offset vertical stripes so no 1px line sits on the viewport edge (avoids teal-tinted seam). */
-  background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-image: linear-gradient(var(--grid-line) 1px, transparent 1px);
   background-size: 72px 72px;
-  background-position: 0 0, 36px 0;
+  -webkit-mask-image: radial-gradient(ellipse 78% 68% at 50% 24%, black, transparent 78%);
   mask-image: radial-gradient(ellipse 78% 68% at 50% 24%, black, transparent 78%);
 }
 
@@ -583,6 +615,20 @@ html[data-theme="light"] .glass-panel {
 
 @media (prefers-color-scheme: light) {
   html:not([data-theme]) .body-gradient {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 12px,
+      #000 calc(100% - 12px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 12px,
+      #000 calc(100% - 12px),
+      transparent 100%
+    );
     background:
       radial-gradient(ellipse 100% 80% at 50% -25%, rgba(45, 212, 191, 0.12), transparent 50%),
       radial-gradient(ellipse 55% 45% at 95% 5%, rgba(249, 115, 22, 0.08), transparent),

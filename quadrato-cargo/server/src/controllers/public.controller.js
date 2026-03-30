@@ -131,7 +131,7 @@ export async function createPublicBooking(req, res, next) {
     });
     return sendOk(res, {
       message:
-        "Booking submitted. Our backend team will verify serviceability, assign logistics staff for pickup, and manually update progress until carrier handoff.",
+        "Your booking is complete. You can track status anytime with your booking or tracking reference.",
       bookingReference: booking?.id ?? null
     });
   } catch (error) {

@@ -331,7 +331,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
       <section id="booking-customer-view" className="scroll-mt-24 space-y-4">
         <div className="rounded-xl border border-border-strong/80 bg-canvas/20 px-4 py-3">
           <h2 className="font-display text-lg font-semibold text-ink">Customer view</h2>
-          <p className="mt-1 text-sm text-muted">Names and phones on Track; invoice download for the customer.</p>
+          <p className="mt-1 text-sm text-muted">Names on Track; profile downloads.</p>
         </div>
 
         <AdminCollapsible id="booking-contacts" title="Sender &amp; recipient contact" defaultOpen>
@@ -360,7 +360,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
       </section>
 
       <section id="booking-invoice" className="scroll-mt-24 space-y-4">
-        <AdminCollapsible id="booking-invoice-panel" title="Invoice PDF" defaultOpen>
+        <AdminCollapsible id="booking-invoice-panel" title="Invoice" defaultOpen>
           <AdminBookingInvoiceForm
             bookingId={row.id}
             allowCustomerInvoicePdf={row.invoicePdfReady !== false}
