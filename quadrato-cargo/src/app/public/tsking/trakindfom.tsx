@@ -23,6 +23,7 @@ import {
 import {
   fetchPublicTracking,
   mergePublicTrackUi,
+  type PublicTimelineOverrides,
   type PublicTrackUiSettings,
   type PublicTrackingShipment,
 } from "@/lib/api/public-client";
@@ -59,6 +60,7 @@ type State =
         /** From DB `updatedAt`; falls back to `createdAt` in UI if omitted (older API). */
         updatedAt?: string;
         shipment: PublicTrackingShipment | null;
+        publicTimelineOverrides?: PublicTimelineOverrides | null;
       };
     };
 
@@ -394,6 +396,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                       agencyName: data.agencyName,
                     }}
                     showPdfLink={ui.showPdfButton}
+                    timelineOverrides={data.publicTimelineOverrides ?? null}
                   />
                 );
               }
@@ -411,6 +414,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                     agencyName: data.agencyName,
                   }}
                   showPdfLink={ui.showPdfButton}
+                  timelineOverrides={data.publicTimelineOverrides ?? null}
                 />
               );
             })()

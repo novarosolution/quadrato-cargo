@@ -1,5 +1,6 @@
 import { getApiBaseUrl } from "@/lib/api/base-url";
 import { ADMIN_API_SECRET } from "@/lib/admin-api-secret";
+import type { PublicTimelineOverrides } from "@/lib/api/public-client";
 
 export type AdminContact = {
   id: string;
@@ -59,6 +60,8 @@ export type AdminBooking = {
   invoicePdfReady?: boolean;
   invoice?: AdminBookingInvoice | null;
   publicBarcodeCode?: string | null;
+  /** Optional per-stage text for the public professional timeline. */
+  publicTimelineOverrides?: PublicTimelineOverrides | null;
   user?: AdminUser | null;
   courier?: AdminUser | null;
 };

@@ -111,6 +111,20 @@ export async function postBookCourierApi(
   }
 }
 
+/** Admin-editable copy for one professional timeline card (by stage index string "0"…). */
+export type PublicTimelineStageOverride = {
+  title?: string;
+  location?: string;
+  hint?: string;
+  /** ISO datetime shown on the card instead of booking last-updated when set. */
+  shownAt?: string;
+};
+
+export type PublicTimelineOverrides = {
+  domestic?: Record<string, PublicTimelineStageOverride>;
+  international?: Record<string, PublicTimelineStageOverride>;
+};
+
 export type PublicTrackingShipment = {
   contentsDescription: string | null;
   weightKg: number | null;
@@ -172,6 +186,7 @@ export type PublicTrackingResponse =
         /** Last booking row change (status, notes, assignment, etc.). Present when API returns it. */
         updatedAt?: string;
         shipment: PublicTrackingShipment | null;
+        publicTimelineOverrides?: PublicTimelineOverrides | null;
       };
     }
   | { ok: false; message: string };

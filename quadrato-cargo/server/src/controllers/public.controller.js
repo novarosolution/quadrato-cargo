@@ -200,7 +200,8 @@ export async function trackBooking(req, res, next) {
         recipientAddress: row.recipientAddress || null,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt ?? row.createdAt,
-        shipment: buildShipmentSummaryForPublicTrack(row.payload)
+        shipment: buildShipmentSummaryForPublicTrack(row.payload),
+        publicTimelineOverrides: row.publicTimelineOverrides ?? null
       }
     });
   } catch (error) {

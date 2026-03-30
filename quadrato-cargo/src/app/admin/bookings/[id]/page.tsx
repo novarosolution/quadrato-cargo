@@ -17,6 +17,7 @@ import { ManualTrackingQuickLinks } from "../ManualTrackingQuickLinks";
 import { AdminBookingCustomerLink } from "../linkcustomer";
 import { AdminBookingDataForm } from "../booking";
 import { AdminBookingInvoiceForm } from "../AdminBookingInvoiceForm";
+import { AdminCustomerTimelineForm } from "../AdminCustomerTimelineForm";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -221,6 +222,18 @@ export default async function AdminBookingDetailPage({ params }: Props) {
               open that section if pickup or delivery addresses look wrong.
             </p>
           </div>
+        </AdminCollapsible>
+
+        <AdminCollapsible
+          id="booking-customer-timeline"
+          title="Customer shipment timeline (step by step)"
+          description="Edit the text on each timeline card on the public track page. Use Back / Next for one step at a time, then save once."
+        >
+          <AdminCustomerTimelineForm
+            bookingId={row.id}
+            routeType={row.routeType}
+            initial={row.publicTimelineOverrides ?? null}
+          />
         </AdminCollapsible>
 
         <AdminCollapsible

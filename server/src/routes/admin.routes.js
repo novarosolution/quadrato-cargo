@@ -5,7 +5,10 @@ import { z } from "zod";
 import { getDb } from "../db/mongo.js";
 import { requireAdminApi } from "../modules/admin/admin-middleware.js";
 import { createUserDoc, toPublicUser } from "../models/user.model.js";
-import { toPublicBooking } from "../models/booking.model.js";
+import {
+  normalizePublicTimelineOverrides,
+  toPublicBooking
+} from "../models/booking.model.js";
 import { toPublicContact } from "../models/contact.model.js";
 import { normalizeSiteSettings } from "../models/site-settings.model.js";
 import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
@@ -143,6 +146,18 @@ const bookingDataSchema = z.object({
     .refine((value) => Boolean(value) && typeof value === "object" && !Array.isArray(value), {
       message: "Payload must be a valid JSON object."
     })
+});
+
+const timelineStageOverrideSchema = z.object({
+  title: z.string().max(200).optional(),
+  location: z.string().max(500).optional(),
+  hint: z.string().max(2000).optional(),
+  shownAt: z.string().max(64).optional()
+});
+
+const timelineOverridesBodySchema = z.object({
+  domestic: z.record(z.string(), timelineStageOverrideSchema).optional(),
+  international: z.record(z.string(), timelineStageOverrideSchema).optional()
 });
 
 const bookingInvoiceSchema = z.object({
@@ -904,6 +919,36 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
         }
       }
     );
+    return sendOk(res);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/bookings/:id/timeline-overrides", async (req, res, next) => {
+  try {
+    const db = await getDb();
+    const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
+    if (!_id) return;
+    const parsed = timelineOverridesBodySchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return sendError(res, "Invalid timeline overrides payload.", 400);
+    }
+    const normalized = normalizePublicTimelineOverrides({
+      domestic: parsed.data.domestic,
+      international: parsed.data.international
+    });
+    if (normalized) {
+      await db.collection("bookings").updateOne(
+        { _id },
+        { $set: { publicTimelineOverrides: normalized, updatedAt: new Date() } }
+      );
+    } else {
+      await db.collection("bookings").updateOne(
+        { _id },
+        { $set: { updatedAt: new Date() }, $unset: { publicTimelineOverrides: "" } }
+      );
+    }
     return sendOk(res);
   } catch (error) {
     next(error);

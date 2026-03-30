@@ -17,6 +17,7 @@ import {
   Info,
 } from "lucide-react";
 import type { BookingStatusId } from "@/lib/booking-status";
+import type { PublicTimelineOverrides } from "@/lib/api/public-client";
 import {
   buildProfessionalTimelineSegments,
   DOMESTIC_PROFESSIONAL_STAGES,
@@ -116,6 +117,8 @@ export type ProfessionalTrackingTimelineProps = {
   ctx: TrackingShipmentContext;
   latestNote?: string | null;
   showPdfLink?: boolean;
+  /** When set, overrides default stage title, location line, hint, and optional per-card time. */
+  timelineOverrides?: PublicTimelineOverrides | null;
 };
 
 export function ProfessionalTrackingTimeline({
@@ -126,9 +129,12 @@ export function ProfessionalTrackingTimeline({
   ctx,
   latestNote = null,
   showPdfLink = true,
+  timelineOverrides = null,
 }: ProfessionalTrackingTimelineProps) {
   const isInternational = routeType === "international";
   const stages = isInternational ? INTERNATIONAL_PROFESSIONAL_STAGES : DOMESTIC_PROFESSIONAL_STAGES;
+  const modeOverrides =
+    timelineOverrides?.[isInternational ? "international" : "domestic"] ?? null;
   const currentIdx = isInternational
     ? getInternationalProfessionalStageIndex(status)
     : getDomesticProfessionalStageIndex(status);
@@ -169,9 +175,17 @@ export function ProfessionalTrackingTimeline({
             const isExceptionCard =
               isOnHold &&
               ((isInternational && stageIndex === 9) || (!isInternational && stageIndex === 3));
-            const location = isInternational
+            const defaultLocation = isInternational
               ? internationalHubLocation(stageIndex, ctx)
               : domesticHubLocation(stageIndex, ctx);
+            const o = modeOverrides?.[String(stageIndex)];
+            const titleText = o?.title?.trim() || def.title;
+            const location = o?.location?.trim() || defaultLocation;
+            const hintText = o?.hint?.trim() || def.hint;
+            const stageTimeIso =
+              o?.shownAt?.trim() && !Number.isNaN(new Date(o.shownAt).getTime())
+                ? o.shownAt.trim()
+                : updatedAt;
 
             const completed = !actuallyLatest && !isCancelled;
             const showPdf = showPdfLink && actuallyLatest && !isCancelled;
@@ -221,7 +235,7 @@ export function ProfessionalTrackingTimeline({
                     <div className="min-w-0 flex-1 space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="font-display text-base font-bold text-ink">
-                          {def.title}
+                          {titleText}
                         </h3>
                         {actuallyLatest ? (
                           <span className="rounded-full border border-teal/30 bg-teal-dim px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink dark:border-teal/40 dark:text-teal">
@@ -240,7 +254,7 @@ export function ProfessionalTrackingTimeline({
                         />
                         <span className="break-words text-muted">{location}</span>
                       </p>
-                      <p className="text-xs text-muted-soft">{def.hint}</p>
+                      <p className="text-xs text-muted-soft">{hintText}</p>
                       {actuallyLatest && latestNote?.trim() ? (
                         <p className="rounded-lg border border-border-strong bg-surface-highlight px-3 py-2 text-xs text-ink">
                           {latestNote.trim()}
@@ -257,7 +271,7 @@ export function ProfessionalTrackingTimeline({
                       ) : null}
                       <p className="flex items-center gap-1.5 font-sans text-xs text-muted-soft">
                         <Clock className="size-3.5 shrink-0 text-muted" aria-hidden />
-                        {showStageTime ? formatTrackingTimestamp(updatedAt) : "—"}
+                        {showStageTime ? formatTrackingTimestamp(stageTimeIso) : "—"}
                       </p>
                     </div>
                   </div>

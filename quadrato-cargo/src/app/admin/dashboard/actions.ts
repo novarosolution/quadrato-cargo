@@ -293,6 +293,38 @@ export async function saveManualTrackingAdmin(
   };
 }
 
+export async function saveCustomerTimelineAdmin(
+  _prev: BookingAdminUpdateState | undefined,
+  formData: FormData,
+): Promise<BookingAdminUpdateState> {
+  const bookingId = String(formData.get("bookingId") ?? "").trim();
+  const raw = String(formData.get("timelineJson") ?? "").trim();
+  if (!bookingId) return { ok: false, error: "Missing booking." };
+  let body: unknown;
+  try {
+    body = raw ? JSON.parse(raw) : {};
+  } catch {
+    return { ok: false, error: "Timeline data is not valid JSON." };
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, error: "Invalid timeline payload." };
+  }
+  const result = await adminMutation(
+    `/api/admin/bookings/${encodeURIComponent(bookingId)}/timeline-overrides`,
+    body as Record<string, unknown>,
+  );
+  if (!result.ok) {
+    return { ok: false, error: result.message || "Failed to save customer timeline." };
+  }
+  revalidatePath("/admin/bookings");
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/public/tsking");
+  return {
+    ok: true,
+    message: "Customer shipment timeline saved. It shows on the public track page.",
+  };
+}
+
 export async function updateCourierBookingDataAdmin(
   _prev: DataManageState | undefined,
   formData: FormData,

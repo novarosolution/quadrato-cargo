@@ -19,6 +19,40 @@ function buildCustomerTrackingNote(status, row) {
   return cleanText(row?.publicTrackingNote);
 }
 
+/**
+ * Optional per-stage copy for the public “professional” timeline (domestic / international).
+ * Keys are string indices "0"… matching stage arrays in professional-tracking-stages.
+ */
+export function normalizePublicTimelineOverrides(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const out = {};
+  for (const mode of ["domestic", "international"]) {
+    const src = raw[mode];
+    if (!src || typeof src !== "object") continue;
+    const dest = {};
+    const maxIdx = mode === "domestic" ? 4 : 10;
+    for (const [k, v] of Object.entries(src)) {
+      if (!/^\d+$/.test(k)) continue;
+      const idx = Number.parseInt(k, 10);
+      if (idx < 0 || idx > maxIdx) continue;
+      if (!v || typeof v !== "object") continue;
+      const o = {};
+      const title = String(v.title ?? "").trim();
+      const location = String(v.location ?? "").trim();
+      const hint = String(v.hint ?? "").trim();
+      let shownAt = String(v.shownAt ?? "").trim();
+      if (shownAt && Number.isNaN(new Date(shownAt).getTime())) shownAt = "";
+      if (title) o.title = title.slice(0, 200);
+      if (location) o.location = location.slice(0, 500);
+      if (hint) o.hint = hint.slice(0, 2000);
+      if (shownAt) o.shownAt = shownAt.slice(0, 64);
+      if (Object.keys(o).length) dest[k] = o;
+    }
+    if (Object.keys(dest).length) out[mode] = dest;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 function toPublicInvoice(row) {
   const inv = row?.invoice;
   if (!inv || typeof inv !== "object") return null;
@@ -70,7 +104,8 @@ export function toPublicBooking(row) {
     invoice: toPublicInvoice(row),
     publicBarcodeCode: row.publicBarcodeCode
       ? String(row.publicBarcodeCode).trim().toUpperCase()
-      : null
+      : null,
+    publicTimelineOverrides: normalizePublicTimelineOverrides(row?.publicTimelineOverrides)
   };
 }
 
