@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Download } from "lucide-react";
 import { fetchAdminOverview, fetchAdminSiteSettings } from "@/lib/api/admin-server";
 import { AdminDatabaseError } from "../dashboard/DbError";
+import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminSiteSettingsForm } from "./SiteSettings";
 
 export const metadata: Metadata = {
@@ -30,16 +31,11 @@ export default async function AdminDataPage() {
   const { userCount, contactCount, bookingCount } = res.snapshot;
 
   return (
-    <div className="space-y-10">
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">
-          Data management
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          Export everything from the database and jump to lists where you can
-          edit or delete records.
-        </p>
-      </div>
+    <div className="stack-page content-narrow gap-10 max-sm:gap-8">
+      <AdminPageHeader
+        title="Data management"
+        description="Export everything from the database and jump to lists where you can edit or delete records."
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-border-strong bg-surface-elevated/60 p-6">

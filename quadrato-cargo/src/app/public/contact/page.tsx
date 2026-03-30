@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <div>
+    <div className="stack-page content-full">
       <PageHero
         eyebrow="Contact"
         title="Talk to dispatch"

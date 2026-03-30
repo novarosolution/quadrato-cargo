@@ -38,14 +38,14 @@ export default async function TrackOrderPage({
     : [];
 
   return (
-    <div>
+    <div className="stack-page content-full">
       <PageHero
         eyebrow="Tracking"
         title="Track your order in real time"
         description="Enter your booking ID or Tracking ID to see the latest status."
       />
       <PublicPageSection compact>
-        <Container className="max-w-2xl">
+        <Container className="content-narrow">
           {userBookings.length > 0 ? (
             <PublicCard className="mb-5">
               <h2 className="font-display text-lg font-semibold text-ink">

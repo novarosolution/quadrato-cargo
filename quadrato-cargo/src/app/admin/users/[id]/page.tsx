@@ -72,7 +72,7 @@ export default async function AdminUserDetailPage({ params }: Props) {
       : false;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
+    <div className="stack-page content-narrow gap-8 max-sm:gap-6">
       <Link href="/admin/users" className="text-sm text-teal hover:underline">
         ← All users
       </Link>
@@ -80,7 +80,7 @@ export default async function AdminUserDetailPage({ params }: Props) {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-display text-2xl font-semibold">
+            <h1 className="font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
               {user.name ?? user.email}
             </h1>
             <span

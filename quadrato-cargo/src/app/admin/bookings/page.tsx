@@ -11,6 +11,7 @@ import { AdminPagination } from "@/components/admin/Pager";
 import { fetchAdminBookings } from "@/lib/api/admin-server";
 import { DeleteRowButton } from "@/components/admin/DeleteBtn";
 import { deleteCourierBooking } from "../dashboard/actions";
+import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { OpenBookingByReferenceForm } from "./OpenBookingByReferenceForm";
 
 const PAGE_SIZE = 25;
@@ -64,20 +65,11 @@ export default async function AdminBookingsPage({ searchParams }: Props) {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  const subtitle = `${total} booking${total === 1 ? "" : "s"}${q || statusFilter || routeFilter || accountFilter ? " (filtered)" : ""}${totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}`;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">
-          Courier bookings
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          {total} booking{total === 1 ? "" : "s"}
-          {q || statusFilter || routeFilter || accountFilter
-            ? " (filtered)"
-            : ""}
-          {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
-        </p>
-      </div>
+    <div className="stack-page content-wide">
+      <AdminPageHeader title="Courier bookings" description={subtitle} />
 
       <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-4 sm:p-5">
         <OpenBookingByReferenceForm />

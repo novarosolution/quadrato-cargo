@@ -9,6 +9,7 @@ import {
   fetchCourierBookingsServer,
   fetchCourierStatusServer,
 } from "@/lib/api/courier-client";
+import { AppSurfacePageHeader } from "@/components/layout/AppPageHeader";
 import { CourierDutyToggle } from "./dutytogle";
 
 export const metadata: Metadata = {
@@ -24,14 +25,13 @@ export default async function CourierDashboardPage() {
   ]);
   if (!res.ok || !statusRes.ok) {
     return (
-      <div className="mx-auto max-w-2xl rounded-2xl border border-rose-500/30 bg-rose-500/5 p-8 text-ink">
-        <h1 className="font-display text-xl font-semibold text-ink">
-          Unable to load courier assignments
-        </h1>
-        <p className="mt-3 text-sm text-muted">
-          Courier jobs could not be loaded from backend. Check backend server status
-          and refresh this page.
-        </p>
+      <div className="stack-page content-narrow">
+        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-8 text-ink">
+          <AppSurfacePageHeader
+            title="Unable to load courier assignments"
+            description="Courier jobs could not be loaded from backend. Check backend server status and refresh this page."
+          />
+        </div>
       </div>
     );
   }
@@ -42,16 +42,11 @@ export default async function CourierDashboardPage() {
   const courier = statusRes.data.courier;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">
-          My deliveries
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          Jobs assigned to you by dispatch. Open a row to start job, verify
-          pickup OTP, and share handover details with agency.
-        </p>
-      </div>
+    <div className="stack-page content-wide gap-6 max-sm:gap-5">
+      <AppSurfacePageHeader
+        title="My deliveries"
+        description="Jobs assigned to you by dispatch. Open a row to start job, verify pickup OTP, and share handover details with agency."
+      />
 
       <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-5">
         <h2 className="font-display text-lg font-semibold">Duty status</h2>

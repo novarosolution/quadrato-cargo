@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { PublicCard } from "@/components/public/PublicCard";
 import { PublicPageSection } from "@/components/public/PublicPageSection";
+import { PublicPageHeader } from "@/components/layout/AppPageHeader";
 import { Container } from "@/components/Wrap";
 import { BookCourierForm } from "./Courierftsx";
 
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function BookCourierPage() {
   return (
-    <div>
+    <div className="stack-page content-full">
       <PublicPageSection
         compact
         className="relative overflow-hidden border-b border-border !py-12 sm:!py-16"
@@ -37,18 +38,16 @@ export default function BookCourierPage() {
           aria-hidden
         />
         <Container className="relative">
-          <p className="section-eyebrow">Book</p>
-          <h1 className="mt-2 max-w-2xl font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-            Courier pickup at your door
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted sm:text-base">
-            Domestic or international — instant or scheduled pickup in a few steps.
-          </p>
+          <PublicPageHeader
+            eyebrow="Book"
+            title="Courier pickup at your door"
+            description="Domestic or international — instant or scheduled pickup in a few steps."
+          />
         </Container>
       </PublicPageSection>
 
       <PublicPageSection compact>
-        <Container className="max-w-3xl">
+        <Container className="content-narrow">
           <Suspense fallback={<BookFormFallback />}>
             <PublicCard className="sm:p-6 md:p-7">
               <BookCourierForm />

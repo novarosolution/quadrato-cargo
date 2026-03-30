@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/public/book",
     "/public/howwork",
     "/public/price",
+    "/public/about",
     "/public/contact",
     "/public/login",
     "/public/register",

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { PublicCard } from "@/components/public/PublicCard";
 import { PublicPageSection } from "@/components/public/PublicPageSection";
+import { PublicPageHeader } from "@/components/layout/AppPageHeader";
 import { Container } from "@/components/Wrap";
 import { formatAuthCallbackError } from "@/lib/auth-callback-errors";
 import { safeRedirectPath } from "@/lib/auth-redirect";
@@ -44,28 +45,31 @@ export default async function LoginPage({ searchParams }: PageProps) {
   const callbackError = formatAuthCallbackError(q.error);
 
   return (
-    <div>
+    <div className="stack-page content-full">
       <section className="border-b border-border py-10 sm:py-14">
         <Container className="max-w-lg">
-          <p className="section-eyebrow">Account</p>
-          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-            Log in
-          </h1>
-          <p className="mt-3 text-sm text-muted">
-            Sign in with the email and password from your registration. First
-            time?{" "}
-            <Link href="/public/register" className="font-medium text-teal hover:underline">
-              Create an account
-            </Link>{" "}
-            — it is instant and does not require admin approval.
-          </p>
-          <p className="mt-2 text-xs text-muted-soft">
-            Staff / team: use{" "}
-            <Link href="/admin/login" className="text-teal hover:underline">
-              Admin login
-            </Link>{" "}
-            — not this page.
-          </p>
+          <PublicPageHeader
+            eyebrow="Account"
+            title="Log in"
+            description={
+              <>
+                <span className="block">
+                  Sign in with the email and password from your registration. First time?{" "}
+                  <Link href="/public/register" className="font-medium text-teal hover:underline">
+                    Create an account
+                  </Link>{" "}
+                  — it is instant and does not require admin approval.
+                </span>
+                <span className="mt-2 block text-xs text-muted-soft">
+                  Staff / team: use{" "}
+                  <Link href="/admin/login" className="text-teal hover:underline">
+                    Admin login
+                  </Link>{" "}
+                  — not this page.
+                </span>
+              </>
+            }
+          />
         </Container>
       </section>
 

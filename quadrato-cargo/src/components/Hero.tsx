@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Container } from "@/components/Wrap";
 import { fadeUpItem, staggerContainer } from "@/lib/motion";
 import { useMotionPreferences } from "@/lib/motion-preferences";
@@ -17,6 +17,22 @@ export function PageHero({ eyebrow, title, description }: PageHeroProps) {
   const { allowAmbientMotion } = useMotionPreferences();
   // Keep subtle ambient cues only when the user/device can afford motion.
   const canAnimateAmbient = allowAmbientMotion && !reduce;
+  /** No fade-from-zero when reduced motion is requested (avoids copy stuck invisible). */
+  const instantHero = reduce ?? false;
+  const containerVariants = useMemo(
+    () =>
+      instantHero
+        ? ({ hidden: { opacity: 1 }, visible: { opacity: 1 } } as const)
+        : staggerContainer(0.1, 0.06),
+    [instantHero],
+  );
+  const itemVariants = useMemo(
+    () =>
+      instantHero
+        ? ({ hidden: { opacity: 1, y: 0 }, visible: { opacity: 1, y: 0 } } as const)
+        : fadeUpItem,
+    [instantHero],
+  );
 
   return (
     <section className="relative overflow-hidden border-b border-border">
@@ -36,24 +52,24 @@ export function PageHero({ eyebrow, title, description }: PageHeroProps) {
       />
       <Container className="relative py-12 sm:py-16 lg:py-20">
         <motion.div
-          initial="hidden"
+          initial={instantHero ? false : "hidden"}
           animate="visible"
-          variants={staggerContainer(0.1, 0.06)}
+          variants={containerVariants}
         >
           {eyebrow ? (
-            <motion.p variants={fadeUpItem} className="section-eyebrow">
+            <motion.p variants={itemVariants} className="section-eyebrow">
               {eyebrow}
             </motion.p>
           ) : null}
           <motion.h1
-            variants={fadeUpItem}
+            variants={itemVariants}
             className="mt-3 max-w-4xl text-3xl font-semibold tracking-tight text-ink sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]"
           >
             {title}
           </motion.h1>
           {description ? (
             <motion.div
-              variants={fadeUpItem}
+              variants={itemVariants}
               className="mt-4 max-w-2xl text-base leading-relaxed text-muted"
             >
               {description}

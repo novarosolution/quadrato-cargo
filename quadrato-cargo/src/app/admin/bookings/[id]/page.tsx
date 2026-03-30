@@ -18,6 +18,7 @@ import { AdminBookingDataForm } from "../booking";
 import { AdminBookingContactForm } from "../AdminBookingContactForm";
 import { AdminBookingInvoiceForm } from "../AdminBookingInvoiceForm";
 import { AdminCustomerTimelineForm } from "../AdminCustomerTimelineForm";
+import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminTimelineQuickCardForm } from "../AdminTimelineQuickCardForm";
 
 type Props = { params: Promise<{ id: string }> };
@@ -101,33 +102,32 @@ export default async function AdminBookingDetailPage({ params }: Props) {
     "text-sm font-medium text-teal underline-offset-2 transition hover:underline";
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="stack-page content-narrow">
       <Link href="/admin/bookings" prefetch={false} className="text-sm text-teal hover:underline">
         ← All bookings
       </Link>
 
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-        <div>
-          <h1 className="font-display text-2xl font-semibold capitalize">
-            {row.routeType} booking
-          </h1>
-          <p className="mt-1 text-sm text-muted-soft">
-            {row.createdAt.toLocaleString()} · ID{" "}
-            <span className="font-mono text-xs">{row.id}</span>
-          </p>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            Edit this booking in three areas: <strong className="font-medium text-ink">operations</strong>{" "}
-            (status, assignment, notes), <strong className="font-medium text-ink">what customers see</strong>{" "}
-            on the public track page, and <strong className="font-medium text-ink">account &amp; advanced</strong>{" "}
-            (linking the customer and raw data). Use the links below to jump.
-          </p>
-        </div>
-        <DeleteRowButton
-          label="Delete booking"
-          action={deleteCourierBooking.bind(null, row.id)}
-          redirectAfter="/admin/bookings"
-        />
-      </div>
+      <AdminPageHeader
+        title={`${row.routeType === "international" ? "International" : "Domestic"} booking`}
+        description={
+          <>
+            {row.createdAt.toLocaleString()} · ID <span className="font-mono text-xs">{row.id}</span>
+            <span className="mt-3 block max-w-2xl leading-relaxed">
+              Edit this booking in three areas: <strong className="font-medium text-ink">operations</strong>{" "}
+              (status, assignment, notes), <strong className="font-medium text-ink">what customers see</strong> on
+              the public track page, and <strong className="font-medium text-ink">account &amp; advanced</strong>{" "}
+              (linking the customer and raw data). Use the links below to jump.
+            </span>
+          </>
+        }
+        actions={
+          <DeleteRowButton
+            label="Delete booking"
+            action={deleteCourierBooking.bind(null, row.id)}
+            redirectAfter="/admin/bookings"
+          />
+        }
+      />
 
       <nav
         aria-label="On this page"

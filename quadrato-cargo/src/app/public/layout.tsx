@@ -1,6 +1,7 @@
 import { AppSessionProvider } from "@/components/auth/SessionWrap";
 import { Footer } from "@/components/Foot";
 import { PublicBottomNav } from "@/components/PublicBottomNav";
+import { PublicZone } from "@/components/public/PublicZone";
 import { PublicSpeedButtons } from "@/components/PublicSpeedButtons";
 import { Header } from "@/components/TopBar";
 import Link from "next/link";
@@ -32,7 +33,9 @@ export default async function SiteLayout({
           </div>
         ) : null}
         <Header />
-        <main className="min-w-0 flex-1 pb-20 lg:pb-0">{children}</main>
+        <main className="flex min-w-0 flex-1 flex-col pb-20 lg:pb-0">
+          <PublicZone>{children}</PublicZone>
+        </main>
         <PublicSpeedButtons />
         <PublicBottomNav />
         <Footer />

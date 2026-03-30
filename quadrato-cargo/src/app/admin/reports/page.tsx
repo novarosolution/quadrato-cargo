@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { fetchAdminMonthlyReport } from "@/lib/api/admin-server";
+import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminDatabaseError } from "../dashboard/DbError";
 
 export const metadata: Metadata = {
@@ -36,32 +37,30 @@ export default async function AdminReportsPage({ searchParams }: Props) {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Monthly reports</h1>
-          <p className="mt-2 text-sm text-muted">
-            Analyst-style summary for business activity, growth, and operations.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted-soft">Range:</span>
-          {[6, 12, 18].map((m) => (
-            <Link
-              key={m}
-              href={`/admin/reports?months=${m}`}
-              prefetch={false}
-              className={`rounded-lg px-3 py-1.5 ${
-                m === months
-                  ? "bg-teal text-slate-950"
-                  : "border border-border-strong text-ink hover:bg-pill-hover"
-              }`}
-            >
-              {m} months
-            </Link>
-          ))}
-        </div>
-      </div>
+    <div className="stack-page content-wide gap-8 max-sm:gap-6">
+      <AdminPageHeader
+        title="Monthly reports"
+        description="Analyst-style summary for business activity, growth, and operations."
+        actions={
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-muted-soft">Range:</span>
+            {[6, 12, 18].map((m) => (
+              <Link
+                key={m}
+                href={`/admin/reports?months=${m}`}
+                prefetch={false}
+                className={`rounded-lg px-3 py-1.5 ${
+                  m === months
+                    ? "bg-teal text-slate-950"
+                    : "border border-border-strong text-ink hover:bg-pill-hover"
+                }`}
+              >
+                {m} months
+              </Link>
+            ))}
+          </div>
+        }
+      />
 
       <section className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-border-strong bg-surface-elevated/60 p-6">

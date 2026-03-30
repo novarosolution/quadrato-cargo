@@ -7,6 +7,7 @@ import { fetchAdminUsers } from "@/lib/api/admin-server";
 import { normalizeUserRole } from "@/lib/user-role";
 import { AdminCreateCourierForm } from "./createcuriyar";
 import { AdminCreateAgencyForm } from "./createacagence";
+import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminCreateStaffForm } from "./createstaf";
 
 const PAGE_SIZE = 25;
@@ -49,40 +50,33 @@ export default async function AdminUsersPage({ searchParams }: Props) {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  const roleSuffix = roleFilter
+    ? ` · ${
+        roleFilter === "staff"
+          ? "team"
+          : roleFilter === "courier"
+            ? "couriers"
+            : roleFilter === "agency"
+              ? "agencies"
+              : "customers"
+      }`
+    : "";
+  const subtitle = `${total} account${total === 1 ? "" : "s"}${q ? ` matching “${q}”` : ""}${roleSuffix}${totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}`;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">
-          Users &amp; team
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          {total} account{total === 1 ? "" : "s"}
-          {q ? ` matching “${q}”` : ""}
-          {roleFilter
-            ? ` · ${
-                roleFilter === "staff"
-                  ? "team"
-                  : roleFilter === "courier"
-                    ? "couriers"
-                    : roleFilter === "agency"
-                      ? "agencies"
-                    : "customers"
-              }`
-            : ""}
-          {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
-        </p>
-        <p className="mt-3 max-w-2xl text-sm text-muted-soft">
-          Customers register on the public site. Here you add team logins, set{" "}
-          <strong className="font-medium text-muted">Customer</strong>,{" "}
-          <strong className="font-medium text-muted">Team</strong>, or{" "}
-          <strong className="font-medium text-muted">Courier / Agency</strong> on a user’s
-          profile, and attach bookings to a customer from{" "}
-          <Link href="/admin/bookings" className="text-teal hover:underline">
-            Bookings
-          </Link>{" "}
-          → open a shipment → link by email and update status.
-        </p>
-      </div>
+    <div className="stack-page content-wide">
+      <AdminPageHeader title="Users & team" description={subtitle} />
+      <p className="max-w-2xl text-sm text-muted-soft">
+        Customers register on the public site. Here you add team logins, set{" "}
+        <strong className="font-medium text-muted">Customer</strong>,{" "}
+        <strong className="font-medium text-muted">Team</strong>, or{" "}
+        <strong className="font-medium text-muted">Courier / Agency</strong> on a user’s profile, and attach
+        bookings to a customer from{" "}
+        <Link href="/admin/bookings" className="text-teal hover:underline">
+          Bookings
+        </Link>{" "}
+        → open a shipment → link by email and update status.
+      </p>
 
       <AdminCollapsible
         id="admin-create-accounts"

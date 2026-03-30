@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function PricingPage() {
   return (
-    <div>
+    <div className="stack-page content-full">
       <PageHero
         eyebrow="Rates"
         title="Pricing by service type"

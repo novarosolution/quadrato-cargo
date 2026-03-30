@@ -6,6 +6,7 @@ import { notFound, redirect } from "next/navigation";
 import QRCode from "qrcode";
 import { auth } from "@/auth";
 import { PublicCard } from "@/components/public/PublicCard";
+import { AppSurfacePageHeader } from "@/components/layout/AppPageHeader";
 import { Container } from "@/components/Wrap";
 import {
   BOOKING_STATUS_LABELS,
@@ -90,8 +91,10 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
       siteSettings.pdfFooterNote || "Thank you for choosing Quadrato Cargo.",
   };
 
+  const routeLabel = row.routeType === "international" ? "International" : "Domestic";
+
   return (
-    <div>
+    <div className="stack-page content-full">
       <section className="border-b border-border py-8 sm:py-10">
         <Container className="max-w-2xl">
           <Link
@@ -100,17 +103,17 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
           >
             ← Back to profile
           </Link>
-          <h1 className="mt-4 font-display text-2xl font-semibold capitalize tracking-tight text-ink sm:text-3xl">
-            {row.routeType} shipment
-          </h1>
-          <p className="mt-2 text-sm text-muted-soft">
-            Booked {dateFmt.format(row.createdAt)}
-          </p>
+          <div className="mt-4">
+            <AppSurfacePageHeader
+              title={`${routeLabel} shipment`}
+              description={`Booked ${dateFmt.format(row.createdAt)}`}
+            />
+          </div>
         </Container>
       </section>
 
       <section className="py-10 sm:py-14">
-        <Container className="max-w-2xl space-y-8">
+        <Container className="max-w-2xl stack-page gap-8 max-sm:gap-6">
           <PublicCard className="sm:p-8">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-soft">
               Status

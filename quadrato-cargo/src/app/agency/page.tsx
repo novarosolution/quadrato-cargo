@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { fetchAgencyBookingsServer } from "@/lib/api/agency-client";
+import { AppSurfacePageHeader } from "@/components/layout/AppPageHeader";
 import { AgencyHandoverForm } from "./Handover";
 import { AgencyIntakeTable, type AgencyIntakeRow } from "./AgencyIntakeTable";
 
@@ -38,16 +39,17 @@ export default async function AgencyPage() {
     : [];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">Agency intake queue</h1>
-        <p className="mt-1 text-sm text-muted-soft">
-          Use <strong className="font-medium text-muted">Open</strong> to update status and the
-          message shown on tracking. Use{" "}
-          <strong className="font-medium text-muted">{`Accept & open`}</strong> when you need to
-          enter the OTP from the courier first.
-        </p>
-      </div>
+    <div className="stack-page content-wide gap-8 max-sm:gap-6">
+      <AppSurfacePageHeader
+        title="Agency intake queue"
+        description={
+          <>
+            Use <strong className="font-medium text-muted">Open</strong> to update status and the message
+            shown on tracking. Use <strong className="font-medium text-muted">Accept &amp; open</strong> when
+            you need to enter the OTP from the courier first.
+          </>
+        }
+      />
 
       <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-6">
         <h2 className="font-display text-lg font-semibold">Verify courier handover</h2>

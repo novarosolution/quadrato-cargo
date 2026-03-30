@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import {
   BOOKING_STATUS_LABELS,
   normalizeBookingStatus,
@@ -10,7 +11,6 @@ import {
   ClipboardList,
   Mail,
   Package,
-  Sparkles,
   Users,
 } from "lucide-react";
 
@@ -112,7 +112,7 @@ export function AdminDashboardView(data: DashboardSnapshot) {
     userCount === 0 && contactCount === 0 && bookingCount === 0;
 
   return (
-    <div className="space-y-10">
+    <div className="stack-page content-wide gap-10 max-sm:gap-6">
       {isEmptyDb ? (
         <div className="rounded-2xl border border-teal/35 bg-teal/10 p-5 text-sm text-muted">
           <p className="font-medium text-ink">No data in MongoDB yet</p>
@@ -137,30 +137,21 @@ export function AdminDashboardView(data: DashboardSnapshot) {
           </p>
         </div>
       ) : null}
-      <div className="flex flex-col gap-4 border-b border-border-strong pb-8 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="inline-flex items-center gap-2 rounded-full border border-border bg-canvas/40 px-3 py-1 text-xs font-medium text-muted-soft">
-            <Sparkles className="h-3.5 w-3.5 text-teal" strokeWidth={2} />
-            Live overview
-          </p>
-          <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight text-ink">
-            Admin dashboard
-          </h1>
-          <p className="mt-2 max-w-xl text-sm text-muted">
-            Monitor customers, enquiries, and courier bookings. Open any card to
-            view or edit records.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/admin/settings"
-            prefetch={false}
-            className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/50 px-4 py-2.5 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
-          >
-            <ClipboardList className="h-4 w-4 text-teal" strokeWidth={2} />
-            Data &amp; exports
-          </Link>
-        </div>
+      <div className="border-b border-border-strong pb-8">
+        <AdminPageHeader
+          title="Admin dashboard"
+          description="Live overview — monitor customers, enquiries, and courier bookings. Open any card to view or edit records."
+          actions={
+            <Link
+              href="/admin/settings"
+              prefetch={false}
+              className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/50 px-4 py-2.5 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
+            >
+              <ClipboardList className="h-4 w-4 text-teal" strokeWidth={2} />
+              Data &amp; exports
+            </Link>
+          }
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

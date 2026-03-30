@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchAdminContactDetail } from "@/lib/api/admin-server";
+import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminContactEditForm } from "../editcon";
 import { DeleteRowButton } from "@/components/admin/DeleteBtn";
 import { deleteContactSubmission } from "../../dashboard/actions";
@@ -25,7 +26,7 @@ export default async function AdminContactDetailPage({ params }: Props) {
   if (!row) notFound();
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="stack-page content-narrow">
       <Link
         href="/admin/contacts"
         className="text-sm text-teal hover:underline"
@@ -33,19 +34,17 @@ export default async function AdminContactDetailPage({ params }: Props) {
         ← All contacts
       </Link>
 
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-        <div>
-          <h1 className="font-display text-2xl font-semibold">{row.name}</h1>
-          <p className="mt-1 text-sm text-muted-soft">
-            {row.createdAt.toLocaleString()}
-          </p>
-        </div>
-        <DeleteRowButton
-          label="Delete message"
-          action={deleteContactSubmission.bind(null, row.id)}
-          redirectAfter="/admin/contacts"
-        />
-      </div>
+      <AdminPageHeader
+        title={row.name}
+        description={row.createdAt.toLocaleString()}
+        actions={
+          <DeleteRowButton
+            label="Delete message"
+            action={deleteContactSubmission.bind(null, row.id)}
+            redirectAfter="/admin/contacts"
+          />
+        }
+      />
 
       <section className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-6">
         <h2 className="font-display text-lg font-semibold">Edit record</h2>

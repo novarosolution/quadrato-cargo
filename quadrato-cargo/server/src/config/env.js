@@ -35,7 +35,11 @@ function parseBool(value, fallback) {
 const defaultCookieSameSite =
   process.env.NODE_ENV?.trim() === "production" ? "none" : "lax";
 
-const frontendOrigin = normalizeOrigin(required("FRONTEND_ORIGIN"));
+const isProdEnv = process.env.NODE_ENV?.trim() === "production";
+/** Required in production; defaults for local dev so the app boots without a full .env copy. */
+const frontendOrigin = normalizeOrigin(
+  required("FRONTEND_ORIGIN", isProdEnv ? undefined : "http://localhost:3000"),
+);
 const configuredOrigins = parseOrigins(process.env.CORS_ORIGIN);
 const corsOrigins =
   configuredOrigins.length > 0 ? configuredOrigins : [frontendOrigin];

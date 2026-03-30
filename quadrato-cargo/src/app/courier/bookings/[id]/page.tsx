@@ -7,6 +7,7 @@ import {
   normalizeBookingStatus,
 } from "@/lib/booking-status";
 import { fetchCourierBookingDetailServer } from "@/lib/api/courier-client";
+import { AppSurfacePageHeader } from "@/components/layout/AppPageHeader";
 import { CourierStartJobButton } from "../../startjob";
 import { CourierPickupOtpForm } from "../../picotp";
 import { DeliveryCompletePopup } from "./DeliveryCompletePopup";
@@ -71,8 +72,10 @@ export default async function CourierBookingDetailPage({ params }: Props) {
     st === "delivered" ||
     st === "cancelled";
 
+  const routeLabel = row.routeType === "international" ? "International" : "Domestic";
+
   return (
-    <div className="space-y-8">
+    <div className="stack-page content-narrow gap-8 max-sm:gap-6">
       {st === "delivered" ? (
         <DeliveryCompletePopup
           reference={row.consignmentNumber || row.id}
@@ -91,41 +94,39 @@ export default async function CourierBookingDetailPage({ params }: Props) {
         ← All my deliveries
       </Link>
 
-      <div>
-        <h1 className="font-display text-2xl font-semibold capitalize">
-          {row.routeType} shipment
-        </h1>
-        <p className="mt-1 text-sm text-muted-soft">
-          {row.createdAt.toLocaleString()} · ID {row.id}
-        </p>
-        <p className="mt-2 text-sm">
-          <span className="text-muted-soft">Reference: </span>
-          <span className="font-mono text-ink">
-            {row.consignmentNumber || row.id}
-          </span>
-        </p>
-        <p className="mt-1 text-xs text-muted-soft">
-          Share this reference with agency for this booking handover verification.
-        </p>
-        <p className="mt-2 text-sm">
-          <span className="text-muted-soft">Status: </span>
-          <span className="font-medium text-teal">
-            {BOOKING_STATUS_LABELS[st]}
-          </span>
-        </p>
-        {row.assignedAgency ? (
-          <p className="mt-2 text-sm">
-            <span className="text-muted-soft">Agency: </span>
-            <span className="font-medium text-ink">{row.assignedAgency}</span>
-          </p>
-        ) : null}
-        {row.agencyHandoverOtpCode ? (
-          <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">
-            <span className="text-muted-soft">Agency handover OTP: </span>
-            <span className="font-mono">{row.agencyHandoverOtpCode}</span>
-          </p>
-        ) : null}
-      </div>
+      <AppSurfacePageHeader
+        title={`${routeLabel} shipment`}
+        description={
+          <>
+            <span className="block text-sm text-muted-soft">
+              {row.createdAt.toLocaleString()} · ID {row.id}
+            </span>
+            <span className="mt-2 block text-sm">
+              <span className="text-muted-soft">Reference: </span>
+              <span className="font-mono text-ink">{row.consignmentNumber || row.id}</span>
+            </span>
+            <span className="mt-1 block text-xs text-muted-soft">
+              Share this reference with agency for this booking handover verification.
+            </span>
+            <span className="mt-2 block text-sm">
+              <span className="text-muted-soft">Status: </span>
+              <span className="font-medium text-teal">{BOOKING_STATUS_LABELS[st]}</span>
+            </span>
+            {row.assignedAgency ? (
+              <span className="mt-2 block text-sm">
+                <span className="text-muted-soft">Agency: </span>
+                <span className="font-medium text-ink">{row.assignedAgency}</span>
+              </span>
+            ) : null}
+            {row.agencyHandoverOtpCode ? (
+              <span className="mt-2 block text-sm text-amber-700 dark:text-amber-400">
+                <span className="text-muted-soft">Agency handover OTP: </span>
+                <span className="font-mono">{row.agencyHandoverOtpCode}</span>
+              </span>
+            ) : null}
+          </>
+        }
+      />
 
       <div className="grid gap-8 lg:grid-cols-2">
         <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-6 lg:col-span-2">

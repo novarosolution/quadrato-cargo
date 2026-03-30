@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function HowItWorksPage() {
   return (
-    <div>
+    <div className="stack-page content-full">
       <PageHero
         eyebrow="Flow"
         title="From booking to delivery"
@@ -24,7 +24,7 @@ export default function HowItWorksPage() {
 
       <PublicPageSection>
         <Container>
-          <ol className="space-y-8">
+          <ol className="flex flex-col gap-8 max-sm:gap-6">
             {howItWorksSteps.map((step, i) => (
               <li key={step.title} className="flex flex-col gap-4 md:flex-row md:gap-10">
                 <div className="flex shrink-0 items-start md:w-40">

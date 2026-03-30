@@ -182,6 +182,36 @@ details summary:focus-visible {
   padding-block: clamp(2.25rem, 4.4vw, 4.5rem);
 }
 
+/* Vertical rhythm between major blocks (admin, courier, agency, some public) */
+.stack-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+@media (min-width: 640px) {
+  .stack-page {
+    gap: 2rem;
+  }
+}
+
+/* Max-width helpers inside layout shells (use with stack-page) */
+.content-narrow {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 56rem;
+}
+.content-wide {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 72rem;
+}
+.content-full {
+  width: 100%;
+  max-width: none;
+}
+
 .panel-card {
   border-radius: 1rem;
   border: 1px solid var(--color-border);
@@ -274,6 +304,58 @@ html[data-theme="light"] .app-shell {
     inset 0 1px 0 0 rgba(255, 255, 255, 0.98),
     0 0 0 1px rgba(15, 23, 42, 0.08),
     0 0 48px -28px rgba(45, 212, 191, 0.12);
+}
+
+/* Public site: login/register vs marketing — clearer contrast so copy and cards read reliably */
+[data-public-zone="auth"] {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-surface-elevated) 55%, var(--color-canvas)) 0%,
+    var(--color-canvas) 42%,
+    var(--color-canvas) 100%
+  );
+}
+
+[data-public-zone="auth"] .stack-page > section:first-child {
+  border-color: var(--color-border-strong);
+  background: color-mix(in oklab, var(--color-surface-elevated) 35%, transparent);
+}
+
+[data-public-zone="auth"] .panel-card {
+  background: color-mix(in oklab, var(--color-surface-elevated) 88%, transparent);
+  border-color: var(--color-border-strong);
+  box-shadow: 0 18px 48px -28px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="light"] [data-public-zone="auth"] {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-surface-highlight) 80%, var(--color-canvas)) 0%,
+    var(--color-canvas) 38%,
+    var(--color-canvas) 100%
+  );
+}
+
+html[data-theme="light"] [data-public-zone="auth"] .stack-page > section:first-child {
+  background: color-mix(in oklab, var(--color-teal) 8%, var(--color-canvas));
+}
+
+html[data-theme="light"] [data-public-zone="auth"] .panel-card {
+  background: var(--color-surface-elevated);
+  box-shadow:
+    0 16px 40px -20px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+/* Signed-in visitors on marketing pages: subtle rail so the shell differs from guest */
+[data-public-zone="site"][data-signed-in="true"] {
+  box-shadow: inset 3px 0 0 color-mix(in oklab, var(--color-teal) 65%, transparent);
+}
+
+@media (min-width: 1024px) {
+  [data-public-zone="site"][data-signed-in="true"] {
+    box-shadow: inset 4px 0 0 color-mix(in oklab, var(--color-teal) 55%, transparent);
+  }
 }
 
 /* Section eyebrow */
@@ -538,6 +620,26 @@ html[data-theme="light"] .glass-panel {
       rgba(255, 255, 255, 0.92) 0%,
       rgba(248, 250, 252, 0.88) 100%
     );
+  }
+
+  html:not([data-theme]) [data-public-zone="auth"] {
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--color-surface-highlight) 80%, var(--color-canvas)) 0%,
+      var(--color-canvas) 38%,
+      var(--color-canvas) 100%
+    );
+  }
+
+  html:not([data-theme]) [data-public-zone="auth"] .stack-page > section:first-child {
+    background: color-mix(in oklab, var(--color-teal) 8%, var(--color-canvas));
+  }
+
+  html:not([data-theme]) [data-public-zone="auth"] .panel-card {
+    background: var(--color-surface-elevated);
+    box-shadow:
+      0 16px 40px -20px rgba(15, 23, 42, 0.12),
+      0 0 0 1px rgba(15, 23, 42, 0.06);
   }
 }
 

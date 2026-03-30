@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function ServicesPage() {
   return (
-    <div>
+    <div className="stack-page content-full">
       <PageHero
         eyebrow="Services"
         title="International courier at your doorstep"

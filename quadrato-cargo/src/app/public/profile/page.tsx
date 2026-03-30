@@ -6,6 +6,7 @@ import { MessageCircle, Search, Truck, UserRound } from "lucide-react";
 import { auth } from "@/auth";
 import { PublicCard } from "@/components/public/PublicCard";
 import { PublicPageSection } from "@/components/public/PublicPageSection";
+import { PublicPageHeader } from "@/components/layout/AppPageHeader";
 import { Container } from "@/components/Wrap";
 import {
   BOOKING_STATUS_LABELS,
@@ -84,22 +85,24 @@ export default async function ProfilePage() {
   const latestBooking = bookings[0] || null;
 
   return (
-    <div>
+    <div className="stack-page content-full">
       <section className="border-b border-border py-10 sm:py-14">
         <Container className="max-w-2xl">
-          <p className="section-eyebrow">Account</p>
-          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl">
-            Your profile
-          </h1>
-          <p className="mt-3 text-sm text-muted">
-            Signed in as <span className="font-medium text-ink">{user.email}</span>.
-            Manage bookings, tracking, and your profile here.
-          </p>
+          <PublicPageHeader
+            eyebrow="Account"
+            title="Your profile"
+            description={
+              <>
+                Signed in as <span className="font-medium text-ink">{user.email}</span>. Manage bookings,
+                tracking, and your profile here.
+              </>
+            }
+          />
         </Container>
       </section>
 
       <PublicPageSection>
-        <Container className="max-w-4xl space-y-8">
+        <Container className="max-w-4xl stack-page gap-8 max-sm:gap-6">
           <PublicCard className="bg-linear-to-br from-surface-elevated/80 to-canvas/30 sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">

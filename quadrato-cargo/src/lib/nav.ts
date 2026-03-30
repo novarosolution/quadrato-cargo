@@ -7,6 +7,7 @@ export const mainNav: NavItem[] = [
   { href: "/public/tsking", label: "Track Order" },
   { href: "/public/howwork", label: "How It Works" },
   { href: "/public/price", label: "Pricing" },
+  { href: "/public/about", label: "About Us" },
   { href: "/public/contact", label: "Contact" },
 ];
 

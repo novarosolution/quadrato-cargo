@@ -4,6 +4,7 @@ import { AdminListFilters } from "@/components/admin/ListFilters";
 import { AdminPagination } from "@/components/admin/Pager";
 import { fetchAdminContacts } from "@/lib/api/admin-server";
 import { DeleteRowButton } from "@/components/admin/DeleteBtn";
+import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { deleteContactSubmission } from "../dashboard/actions";
 
 const PAGE_SIZE = 25;
@@ -33,18 +34,11 @@ export default async function AdminContactsPage({ searchParams }: Props) {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  const subtitle = `${total} message${total === 1 ? "" : "s"}${q ? ` matching “${q}”` : ""}${totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}`;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">
-          Contact messages
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          {total} message{total === 1 ? "" : "s"}
-          {q ? ` matching “${q}”` : ""}
-          {totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}
-        </p>
-      </div>
+    <div className="stack-page content-wide">
+      <AdminPageHeader title="Contact messages" description={subtitle} />
 
       <AdminListFilters
         basePath="/admin/contacts"
