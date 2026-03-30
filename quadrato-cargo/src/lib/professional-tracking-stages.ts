@@ -1,4 +1,10 @@
 import type { BookingStatusId } from "@/lib/booking-status";
+import {
+  INTERNATIONAL_EXCEPTION_STATUSES,
+  INTERNATIONAL_TRACKING_PHASES,
+  bookingStatusToInternationalStepIndex,
+  legacyInternationalFlatIndexToMacroSub,
+} from "@/lib/international-tracking-flow";
 
 export type TrackingShipmentContext = {
   senderAddress: string | null;
@@ -6,70 +12,66 @@ export type TrackingShipmentContext = {
   agencyName: string | null;
 };
 
+export type ProfessionalSubstepDef = {
+  id: string;
+  label: string;
+};
+
 export type ProfessionalStageDef = {
   id: string;
   title: string;
   hint: string;
+  /** Detailed checklist under each macro stage (international). */
+  substeps?: readonly ProfessionalSubstepDef[];
 };
 
-/** Eleven-stage international professional flow (indices 0–10). */
-export const INTERNATIONAL_PROFESSIONAL_STAGES: ProfessionalStageDef[] = [
-  {
-    id: "intl_s0_pickup",
-    title: "Pickup (Rajkot)",
-    hint: "Collection, scheduling, and confirmation at origin.",
-  },
-  {
-    id: "intl_s1_origin",
-    title: "Origin processing",
-    hint: "Sorting and preparation at the origin hub.",
-  },
-  {
-    id: "intl_s2_domestic",
-    title: "Domestic transit",
-    hint: "Linehaul between origin region and export gateway.",
-  },
-  {
-    id: "intl_s3_export_hub",
-    title: "Export hub",
-    hint: "Gateway screening, documentation, and carrier handoff prep.",
-  },
-  {
-    id: "intl_s4_export_customs",
-    title: "Export customs (India)",
-    hint: "Indian export declarations and clearance.",
-  },
-  {
-    id: "intl_s5_air",
-    title: "Air transit (India → USA)",
-    hint: "International air cargo movement.",
-  },
-  {
-    id: "intl_s6_import_customs",
-    title: "Import customs (USA)",
-    hint: "Destination customs and release.",
-  },
-  {
-    id: "intl_s7_destination",
-    title: "Destination processing",
-    hint: "Regional hub sort before last mile.",
-  },
-  {
-    id: "intl_s8_last_mile",
-    title: "Last mile",
-    hint: "Final routing to the recipient address.",
-  },
-  {
-    id: "intl_s9_exceptions",
-    title: "Exceptions / hold",
-    hint: "Delay, customs hold, or action required — see dispatch notes.",
-  },
-  {
-    id: "intl_s10_delivered",
+/**
+ * Eleven-slot international flow: phases from {@link INTERNATIONAL_TRACKING_PHASES},
+ * plus split last mile / exceptions / delivered — matches professional courier copy (Rajkot → USA).
+ */
+function buildInternationalProfessionalStages(): ProfessionalStageDef[] {
+  const phases = INTERNATIONAL_TRACKING_PHASES;
+  const head = phases.slice(0, -1);
+  const lastPhase = phases[phases.length - 1];
+
+  const out: ProfessionalStageDef[] = head.map((p) => ({
+    id: `intl_${p.key}`,
+    title: p.title,
+    hint: p.steps[0]?.hint ?? "",
+    substeps: p.steps.map((s) => ({ id: s.id, label: s.label })),
+  }));
+
+  out.push({
+    id: "intl_last_mile_active",
+    title: lastPhase.title,
+    hint: lastPhase.steps[0]?.hint ?? "",
+    substeps: lastPhase.steps.slice(0, 2).map((s) => ({ id: s.id, label: s.label })),
+  });
+
+  out.push({
+    id: "intl_exceptions_panel",
+    title: "Exception / problem status",
+    hint: "Weather or operational delay, customs hold, address issues, or rescheduled delivery.",
+    substeps: INTERNATIONAL_EXCEPTION_STATUSES.map((e) => ({
+      id: e.id,
+      label: e.label,
+    })),
+  });
+
+  out.push({
+    id: "intl_delivered_final",
     title: "Delivered",
-    hint: "Proof of delivery completed.",
-  },
-];
+    hint: lastPhase.steps[2]?.hint ?? "Proof of delivery completed.",
+    substeps: [
+      { id: lastPhase.steps[2].id, label: lastPhase.steps[2].label },
+    ],
+  });
+
+  return out;
+}
+
+export const INTERNATIONAL_PROFESSIONAL_STAGES: ProfessionalStageDef[] =
+  buildInternationalProfessionalStages();
 
 /** Domestic journey: five visible stages (same card UI, no India/USA dividers). */
 export const DOMESTIC_PROFESSIONAL_STAGES: ProfessionalStageDef[] = [
@@ -100,24 +102,25 @@ export const DOMESTIC_PROFESSIONAL_STAGES: ProfessionalStageDef[] = [
   },
 ];
 
+/**
+ * Macro stage index (0–10) aligned with {@link bookingStatusToInternationalStepIndex} and
+ * {@link legacyInternationalFlatIndexToMacroSub} so checklist progress matches card position.
+ */
 export function getInternationalProfessionalStageIndex(status: BookingStatusId): number {
-  const map: Record<BookingStatusId, number> = {
-    submitted: 0,
-    confirmed: 0,
-    serviceability_check: 0,
-    serviceable: 0,
-    pickup_scheduled: 0,
-    out_for_pickup: 0,
-    picked_up: 1,
-    agency_processing: 3,
-    in_transit: 5,
-    on_hold: 9,
-    out_for_delivery: 8,
-    delivery_attempted: 8,
-    delivered: 10,
-    cancelled: 0,
-  };
-  return map[status] ?? 0;
+  if (status === "on_hold") return 9;
+  if (status === "cancelled") return 0;
+  const flat = bookingStatusToInternationalStepIndex(status);
+  return legacyInternationalFlatIndexToMacroSub(flat).macro;
+}
+
+/** Sub-step row highlight within the current macro card (international checklist). */
+export function getInternationalTimelineSubstepCursor(
+  status: BookingStatusId,
+): { macro: number; sub: number } {
+  if (status === "on_hold") return { macro: 9, sub: 0 };
+  if (status === "cancelled") return { macro: 0, sub: 0 };
+  const flat = bookingStatusToInternationalStepIndex(status);
+  return legacyInternationalFlatIndexToMacroSub(flat);
 }
 
 export function getDomesticProfessionalStageIndex(status: BookingStatusId): number {

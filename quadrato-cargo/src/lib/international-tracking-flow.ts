@@ -281,6 +281,37 @@ export function bookingStatusToInternationalStepIndex(
   return map[status] ?? 0;
 }
 
+/**
+ * Maps a flat international step index (same space as {@link bookingStatusToInternationalStepIndex})
+ * to the 11-slot professional timeline macro index and sub-step within that card.
+ * Last-mile phase is split: first two rows → macro 8, final "Delivered" → macro 10; macro 9 is exceptions only.
+ */
+export function legacyInternationalFlatIndexToMacroSub(
+  flat: number,
+): { macro: number; sub: number } {
+  const phases = INTERNATIONAL_TRACKING_PHASES;
+  let offset = 0;
+  for (let pi = 0; pi < phases.length; pi++) {
+    const p = phases[pi];
+    const isLast = pi === phases.length - 1;
+    const len = p.steps.length;
+    if (isLast) {
+      if (flat < offset + 2) {
+        return { macro: 8, sub: Math.max(0, flat - offset) };
+      }
+      if (flat < offset + len) {
+        return { macro: 10, sub: 0 };
+      }
+      return { macro: 10, sub: 0 };
+    }
+    if (flat < offset + len) {
+      return { macro: pi, sub: flat - offset };
+    }
+    offset += len;
+  }
+  return { macro: 0, sub: 0 };
+}
+
 export function internationalStepLocationLabel(
   stepIndex: number,
   ctx: {

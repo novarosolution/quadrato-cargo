@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Building2,
   Check,
+  CircleDot,
   Clock,
   MapPin,
   Package,
@@ -19,13 +20,36 @@ import type { PublicTimelineOverrides } from "@/lib/api/public-client";
 import {
   buildProfessionalTimelineSegments,
   DOMESTIC_PROFESSIONAL_STAGES,
+  domesticHubLocation,
   getDomesticProfessionalStageIndex,
   getInternationalProfessionalStageIndex,
+  getInternationalTimelineSubstepCursor,
   internationalHubLocation,
-  domesticHubLocation,
   INTERNATIONAL_PROFESSIONAL_STAGES,
   type TrackingShipmentContext,
 } from "@/lib/professional-tracking-stages";
+
+function internationalSubstepState(
+  stageIndex: number,
+  currentIdx: number,
+  subIndex: number,
+  cursor: { macro: number; sub: number },
+  isCancelled: boolean,
+): "done" | "active" | "pending" {
+  if (isCancelled) {
+    if (stageIndex < currentIdx) return "done";
+    if (stageIndex > currentIdx) return "pending";
+    return subIndex === 0 ? "active" : "pending";
+  }
+  if (stageIndex < currentIdx) return "done";
+  if (stageIndex > currentIdx) return "pending";
+  if (cursor.macro !== stageIndex) {
+    return subIndex === 0 ? "active" : "pending";
+  }
+  if (subIndex < cursor.sub) return "done";
+  if (subIndex === cursor.sub) return "active";
+  return "pending";
+}
 
 function formatTrackingTimestamp(iso: string): string {
   const d = new Date(iso);
@@ -134,6 +158,9 @@ export function ProfessionalTrackingTimeline({
     : getDomesticProfessionalStageIndex(status);
   const isCancelled = status === "cancelled";
   const isOnHold = status === "on_hold";
+  const intlSubCursor = isInternational
+    ? getInternationalTimelineSubstepCursor(status)
+    : { macro: 0, sub: 0 };
   const segments = buildProfessionalTimelineSegments(currentIdx, isInternational ? "international" : "domestic");
 
   return (
@@ -246,6 +273,48 @@ export function ProfessionalTrackingTimeline({
                         <span className="break-words text-muted">{location}</span>
                       </p>
                       <p className="text-xs text-muted-soft">{hintText}</p>
+                      {isInternational && def.substeps && def.substeps.length > 0 ? (
+                        <div className="mt-2 border-t border-border-strong/60 pt-2">
+                          <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-soft">
+                            Status checklist
+                          </p>
+                          <ul className="space-y-1.5" aria-label="Professional status steps for this phase">
+                            {def.substeps.map((sub, si) => {
+                              const row = internationalSubstepState(
+                                stageIndex,
+                                currentIdx,
+                                si,
+                                intlSubCursor,
+                                isCancelled,
+                              );
+                              return (
+                                <li
+                                  key={sub.id}
+                                  className={[
+                                    "flex items-start gap-2 rounded-lg px-2 py-1 text-xs leading-snug",
+                                    row === "active"
+                                      ? "bg-teal-dim/90 font-medium text-ink ring-1 ring-teal/30 dark:bg-teal-dim/50"
+                                      : row === "done"
+                                        ? "text-muted"
+                                        : "text-muted-soft/90",
+                                  ].join(" ")}
+                                >
+                                  <span className="mt-0.5 shrink-0" aria-hidden>
+                                    {row === "done" ? (
+                                      <Check className="size-3.5 text-teal" strokeWidth={2.5} />
+                                    ) : row === "active" ? (
+                                      <CircleDot className="size-3.5 text-teal" strokeWidth={2.5} />
+                                    ) : (
+                                      <span className="block size-3.5 rounded-full border border-border-strong bg-canvas/50" />
+                                    )}
+                                  </span>
+                                  <span className="min-w-0 break-words">{sub.label}</span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      ) : null}
                       {actuallyLatest && latestNote?.trim() ? (
                         <p className="rounded-lg border border-border-strong bg-surface-highlight px-3 py-2 text-xs text-ink">
                           {latestNote.trim()}
