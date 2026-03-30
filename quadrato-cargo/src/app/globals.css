@@ -393,17 +393,6 @@ html[data-theme="light"] [data-public-zone="auth"] .panel-card {
     0 0 0 1px rgba(15, 23, 42, 0.06);
 }
 
-/* Signed-in visitors on marketing pages: subtle rail so the shell differs from guest */
-[data-public-zone="site"][data-signed-in="true"] {
-  box-shadow: inset 3px 0 0 color-mix(in oklab, var(--color-teal) 65%, transparent);
-}
-
-@media (min-width: 1024px) {
-  [data-public-zone="site"][data-signed-in="true"] {
-    box-shadow: inset 4px 0 0 color-mix(in oklab, var(--color-teal) 55%, transparent);
-  }
-}
-
 /* Section eyebrow */
 .section-eyebrow {
   font-family: var(--font-display);
