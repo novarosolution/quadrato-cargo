@@ -1360,6 +1360,25 @@ export async function createPublicBooking(req, res, next) {
   }
 }
 
+function assignedAgencyLooksLikeEmail(value) {
+  const s = String(value ?? "").trim();
+  if (!s) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+
+/** Public tracking: never expose raw agency account email — use partner name when known. */
+async function agencyDisplayNameForPublicTrack(db, assignedAgencyRaw) {
+  const raw = String(assignedAgencyRaw ?? "").trim();
+  if (!raw) return null;
+  if (!assignedAgencyLooksLikeEmail(raw)) return raw;
+  const agencyUser = await db.collection("users").findOne({
+    role: "agency",
+    email: raw.toLowerCase()
+  });
+  const name = String(agencyUser?.name ?? "").trim();
+  return name || "Agency partner";
+}
+
 export async function trackBooking(req, res, next) {
   try {
     const normalizedReference = normalizeTrackingReference(req.params.reference ?? "");
@@ -1384,6 +1403,7 @@ export async function trackBooking(req, res, next) {
       const courier = await findUserById(row.courierId);
       courierName = String(courier?.name || courier?.email || "").trim() || null;
     }
+    const agencyName = await agencyDisplayNameForPublicTrack(db, row.assignedAgency);
     return sendOk(res, {
       trackUi,
       tracking: {
@@ -1399,7 +1419,7 @@ export async function trackBooking(req, res, next) {
         /** Same as public note for customer surfaces (see booking model). */
         customerTrackingNote: row.customerTrackingNote ?? null,
         courierName,
-        agencyName: row.assignedAgency || null,
+        agencyName,
         senderName: row.senderName || null,
         senderAddress: row.senderAddress || null,
         recipientName: row.recipientName || null,
