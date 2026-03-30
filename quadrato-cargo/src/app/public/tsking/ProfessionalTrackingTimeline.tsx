@@ -36,59 +36,62 @@ function formatTrackingTimestamp(iso: string): string {
   }).format(new Date(iso));
 }
 
+/** Icons use site `--teal` token (not Tailwind default teal-* scale). */
+const iconTeal = "size-4 text-teal";
+
 function stageIcon(
   stageIndex: number,
   isInternational: boolean,
   isException: boolean,
 ): ReactNode {
   if (isException) {
-    return <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" aria-hidden />;
+    return <AlertTriangle className="size-4 text-amber-500" aria-hidden />;
   }
   if (isInternational) {
     switch (stageIndex) {
       case 0:
-        return <Package className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+        return <Package className={iconTeal} aria-hidden />;
       case 1:
-        return <Building2 className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+        return <Building2 className={iconTeal} aria-hidden />;
       case 2:
-        return <Truck className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+        return <Truck className={iconTeal} aria-hidden />;
       case 3:
-        return <Building2 className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+        return <Building2 className={iconTeal} aria-hidden />;
       case 4:
-        return <ShieldCheck className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+        return <ShieldCheck className={iconTeal} aria-hidden />;
       case 5:
-        return <Plane className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+        return <Plane className={iconTeal} aria-hidden />;
       case 6:
-        return <ShieldCheck className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+        return <ShieldCheck className={iconTeal} aria-hidden />;
       case 7:
-        return <Building2 className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+        return <Building2 className={iconTeal} aria-hidden />;
       case 8:
-        return <User className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+        return <User className={iconTeal} aria-hidden />;
       case 9:
         return isException ? (
-          <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" aria-hidden />
+          <AlertTriangle className="size-4 text-amber-500" aria-hidden />
         ) : (
-          <Info className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />
+          <Info className={iconTeal} aria-hidden />
         );
       case 10:
-        return <Check className="size-4 text-teal-700 dark:text-teal-300" aria-hidden />;
+        return <Check className={iconTeal} aria-hidden />;
       default:
-        return <Package className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+        return <Package className={iconTeal} aria-hidden />;
     }
   }
   switch (stageIndex) {
     case 0:
-      return <Package className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+      return <Package className={iconTeal} aria-hidden />;
     case 1:
-      return <Building2 className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+      return <Building2 className={iconTeal} aria-hidden />;
     case 2:
-      return <Truck className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+      return <Truck className={iconTeal} aria-hidden />;
     case 3:
-      return <User className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+      return <User className={iconTeal} aria-hidden />;
     case 4:
-      return <Check className="size-4 text-teal-700 dark:text-teal-300" aria-hidden />;
+      return <Check className={iconTeal} aria-hidden />;
     default:
-      return <Package className="size-4 text-violet-700 dark:text-violet-300" aria-hidden />;
+      return <Package className={iconTeal} aria-hidden />;
   }
 }
 
@@ -138,7 +141,7 @@ export function ProfessionalTrackingTimeline({
                   <div className="absolute -left-[21px] top-1/2 z-1 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-canvas text-[10px] font-bold text-muted">
                     ·
                   </div>
-                  <div className="rounded-xl border border-dashed border-teal/40 bg-teal/5 px-3 py-2 text-center text-xs font-semibold text-teal-800 dark:text-teal-200">
+                  <div className="rounded-xl border border-dashed border-teal/35 bg-teal-dim px-3 py-2 text-center text-xs font-semibold text-ink">
                     {seg.label}
                   </div>
                 </li>
@@ -168,7 +171,7 @@ export function ProfessionalTrackingTimeline({
                     isExceptionCard && actuallyLatest
                       ? "border-amber-500 bg-amber-500 text-white"
                       : completed || actuallyLatest
-                        ? "border-teal bg-teal text-white"
+                        ? "border-teal bg-teal text-slate-950"
                         : "border-border bg-canvas text-muted",
                   ].join(" ")}
                   aria-hidden
@@ -186,9 +189,9 @@ export function ProfessionalTrackingTimeline({
                   className={[
                     "rounded-2xl border bg-canvas p-4 shadow-sm transition-colors",
                     actuallyLatest
-                      ? "border-teal/50 bg-linear-to-br from-teal/12 to-canvas ring-1 ring-teal/20"
+                      ? "border-teal/40 bg-linear-to-br from-teal-dim to-canvas ring-1 ring-teal/25"
                       : isExceptionCard
-                        ? "border-amber-500/60 bg-amber-500/5 ring-1 ring-amber-500/25"
+                        ? "border-amber-500/50 bg-amber-500/10 ring-1 ring-amber-500/20"
                         : "border-border",
                   ].join(" ")}
                 >
@@ -196,11 +199,11 @@ export function ProfessionalTrackingTimeline({
                     <div className="mt-0.5 shrink-0">{stageIcon(stageIndex, isInternational, isExceptionCard)}</div>
                     <div className="min-w-0 flex-1 space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-base font-bold text-violet-900 dark:text-violet-100">
+                        <h3 className="font-display text-base font-bold text-ink">
                           {def.title}
                         </h3>
                         {actuallyLatest ? (
-                          <span className="rounded-full bg-teal/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-teal-900 dark:text-teal-100">
+                          <span className="rounded-full bg-teal-dim px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-teal">
                             Latest update
                           </span>
                         ) : completed ? (
@@ -210,7 +213,7 @@ export function ProfessionalTrackingTimeline({
                         ) : null}
                       </div>
                       <p className="flex items-start gap-1.5 text-sm text-muted">
-                        <MapPin className="mt-0.5 size-3.5 shrink-0 text-red-500" aria-hidden />
+                        <MapPin className="mt-0.5 size-3.5 shrink-0 text-accent" aria-hidden />
                         <span className="break-words">{location}</span>
                       </p>
                       <p className="text-xs text-muted">{def.hint}</p>
@@ -222,7 +225,7 @@ export function ProfessionalTrackingTimeline({
                       {showPdf ? (
                         <Link
                           href={pdfHref}
-                          className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-violet-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-500"
+                          className="inline-flex items-center gap-2 rounded-2xl border border-teal/70 bg-teal px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-md transition hover:border-teal hover:brightness-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
                         >
                           <FileText className="size-4" aria-hidden />
                           Download PDF
