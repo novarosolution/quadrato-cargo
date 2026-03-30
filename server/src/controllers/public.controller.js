@@ -402,27 +402,6 @@ async function getPdfBrowser() {
   return sharedPdfBrowser;
 }
 
-function bookingStatusLabel(status) {
-  const value = String(status || "").trim();
-  const labels = {
-    submitted: "Submitted",
-    confirmed: "Confirmed",
-    serviceability_check: "Serviceability check",
-    serviceable: "Serviceable area confirmed",
-    pickup_scheduled: "Pickup scheduled",
-    out_for_pickup: "Out for pickup",
-    picked_up: "Picked up",
-    agency_processing: "At agency processing",
-    in_transit: "In transit",
-    out_for_delivery: "Out for delivery",
-    delivery_attempted: "Delivery attempted",
-    on_hold: "On hold",
-    delivered: "Delivered",
-    cancelled: "Cancelled"
-  };
-  return labels[value] || "Submitted";
-}
-
 function safeDateLabel(raw) {
   const date = new Date(raw);
   if (Number.isNaN(date.getTime())) return String(raw || "-");
@@ -528,7 +507,6 @@ async function buildPdfDataFromBooking(req, parsedData) {
     ...parsedData,
     bookingDateLabel: safeDateLabel(booking.createdAt),
     updatedAtLabel: safeDateLabel(booking.updatedAt || booking.createdAt),
-    statusLabel: bookingStatusLabel(booking.status),
     reference,
     routeTypeLabel: String(booking.routeType || "-"),
     consignmentNumber: String(booking.consignmentNumber || "-"),
@@ -551,7 +529,6 @@ async function buildPdfDataFromBooking(req, parsedData) {
       [booking.publicTrackingNote, booking.customerTrackingNote].find((n) => String(n || "").trim()) ||
         "-"
     ),
-    operationalNotesLabel: String(booking.trackingNotes || "").trim() || null,
     agencyLabel: String(booking.assignedAgency || "-"),
     courierNameLabel: courierName,
     trackUrl,
@@ -903,7 +880,6 @@ function buildPdfHtml(input, barcodeDataUrl) {
           <tr><td>Shipping mode</td><td>${esc(data.routeTypeLabel)}</td></tr>
           <tr><td>Courier company</td><td>${esc(data.agencyLabel)}</td></tr>
           <tr><td>Pickup courier</td><td>${esc(data.courierNameLabel)}</td></tr>
-          <tr><td>Status</td><td>${esc(data.statusLabel)}</td></tr>
           <tr><td>Booked</td><td>${esc(data.bookingDateLabel)}</td></tr>
           <tr><td>Last updated</td><td>${esc(data.updatedAtLabel)}</td></tr>
           <tr><td>Invoice #</td><td><strong>${esc(data.displayInvoiceId)}</strong></td></tr>
@@ -984,12 +960,6 @@ function buildPdfHtml(input, barcodeDataUrl) {
         data.trackingNotesLabel && String(data.trackingNotesLabel).trim() !== "-"
           ? `<div class="terms-title">TRACKING UPDATE</div>
       <div class="terms-text">${esc(data.trackingNotesLabel)}</div>`
-          : ""
-      }
-      ${
-        data.operationalNotesLabel
-          ? `<div class="terms-title">ACTIVITY LOG</div>
-      <div class="terms-text">${esc(data.operationalNotesLabel)}</div>`
           : ""
       }
 
@@ -1274,13 +1244,13 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
       ${
         input.trackingNotesLabel && String(input.trackingNotesLabel).trim() !== "-"
           ? `<div class="line" style="margin-top:10px;text-align:left;max-width:640px;margin-left:auto;margin-right:auto;padding:8px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;font-size:12px;">
-        <strong>Status note:</strong> ${esc(input.trackingNotesLabel)}
+        <strong>Customer update:</strong> ${esc(input.trackingNotesLabel)}
       </div>`
           : ""
       }
 
       <div class="service">
-        <strong>SERVICE REFERENCE</strong> ${esc(input.statusLabel)}
+        <strong>SHIPPING MODE</strong> <span style="text-transform:capitalize;">${esc(input.routeTypeLabel)}</span>
       </div>
 
       <section class="ops">

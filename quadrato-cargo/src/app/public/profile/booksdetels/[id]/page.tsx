@@ -286,7 +286,6 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                       bookingId={row.id}
                       bookingDateLabel={dateFmt.format(row.createdAt)}
                       updatedAtLabel={dateFmt.format(row.updatedAt)}
-                      statusLabel={BOOKING_STATUS_LABELS[st]}
                       reference={reference}
                       routeTypeLabel={row.routeType || "-"}
                       consignmentNumber={row.consignmentNumber || "-"}
@@ -345,7 +344,6 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                       bookingId={row.id}
                       bookingDateLabel={dateFmt.format(row.createdAt)}
                       updatedAtLabel={dateFmt.format(row.updatedAt)}
-                      statusLabel={BOOKING_STATUS_LABELS[st]}
                       reference={reference}
                       routeTypeLabel={row.routeType || "-"}
                       consignmentNumber={row.consignmentNumber || "-"}

@@ -175,6 +175,7 @@ export function ProfessionalTrackingTimeline({
 
             const completed = !actuallyLatest && !isCancelled;
             const showPdf = showPdfLink && actuallyLatest && !isCancelled;
+            const showStageTime = actuallyLatest || completed;
 
             return (
               <li key={`${def.id}-${stageIndex}-${i}`} className="relative">
@@ -256,7 +257,7 @@ export function ProfessionalTrackingTimeline({
                       ) : null}
                       <p className="flex items-center gap-1.5 font-sans text-xs text-muted-soft">
                         <Clock className="size-3.5 shrink-0 text-muted" aria-hidden />
-                        {actuallyLatest ? formatTrackingTimestamp(updatedAt) : "—"}
+                        {showStageTime ? formatTrackingTimestamp(updatedAt) : "—"}
                       </p>
                     </div>
                   </div>

@@ -26,7 +26,6 @@ type Props = {
   bookingId: string;
   bookingDateLabel: string;
   updatedAtLabel: string;
-  statusLabel: string;
   reference: string;
   routeTypeLabel: string;
   consignmentNumber: string;
@@ -58,7 +57,6 @@ export function DownloadBookingPdfButton({
   bookingId,
   bookingDateLabel,
   updatedAtLabel,
-  statusLabel,
   reference,
   routeTypeLabel,
   consignmentNumber,
@@ -145,8 +143,8 @@ export function DownloadBookingPdfButton({
     drawPair("Booked:", bookingDateLabel, 14, y);
     drawPair("Update:", updatedAtLabel, 106, y);
     y += 10;
-    drawPair("Status:", statusLabel, 14, y);
-    drawPair("Route:", routeTypeLabel, 106, y);
+    drawPair("Route:", routeTypeLabel, 14, y);
+    drawPair("Ref:", reference, 106, y);
     y += 10;
     drawPair("From:", fromCity, 14, y);
     drawPair("To:", toCity, 106, y);
