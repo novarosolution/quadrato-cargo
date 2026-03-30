@@ -86,7 +86,6 @@ export function DownloadBookingPdfButton({
   buttonLabel = "Download PDF",
   bookingId,
   bookingDateLabel,
-  updatedAtLabel,
   reference,
   routeTypeLabel,
   consignmentNumber,
@@ -94,38 +93,14 @@ export function DownloadBookingPdfButton({
   toCity,
   senderName,
   senderAddress,
-  senderPhone,
-  senderEmail,
   recipientName,
   recipientAddress,
-  recipientPhone,
-  recipientEmail,
-  amountLabel,
-  weightLabel,
-  dimensionsLabel,
   contentsLabel,
-  instructionsLabel,
   trackingNotesLabel,
-  agencyLabel,
-  courierNameLabel,
   trackUrl,
   settings,
   invoiceDetails = null,
 }: Props) {
-  void (
-    updatedAtLabel,
-    senderPhone,
-    senderEmail,
-    recipientPhone,
-    recipientEmail,
-    amountLabel,
-    weightLabel,
-    dimensionsLabel,
-    instructionsLabel,
-    agencyLabel,
-    courierNameLabel
-  );
-
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
