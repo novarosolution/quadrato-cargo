@@ -6,6 +6,7 @@ import { getDb } from "../db/mongo.js";
 import { requireAdminApi } from "../modules/admin/admin-middleware.js";
 import { createUserDoc, toPublicUser } from "../models/user.model.js";
 import {
+  mergePublicTimelineOverrides,
   normalizePublicTimelineOverrides,
   toPublicBooking
 } from "../models/booking.model.js";
@@ -149,13 +150,14 @@ const bookingDataSchema = z.object({
 });
 
 const timelineStageOverrideSchema = z.object({
-  title: z.string().max(200).optional(),
-  location: z.string().max(500).optional(),
-  hint: z.string().max(2000).optional(),
-  shownAt: z.string().max(64).optional()
+  title: z.union([z.string().max(200), z.null()]).optional(),
+  location: z.union([z.string().max(500), z.null()]).optional(),
+  hint: z.union([z.string().max(2000), z.null()]).optional(),
+  shownAt: z.union([z.string().max(64), z.null()]).optional()
 });
 
 const timelineOverridesBodySchema = z.object({
+  merge: z.boolean().optional(),
   domestic: z.record(z.string(), timelineStageOverrideSchema).optional(),
   international: z.record(z.string(), timelineStageOverrideSchema).optional()
 });
@@ -934,10 +936,21 @@ router.patch("/bookings/:id/timeline-overrides", async (req, res, next) => {
     if (!parsed.success) {
       return sendError(res, "Invalid timeline overrides payload.", 400);
     }
-    const normalized = normalizePublicTimelineOverrides({
-      domestic: parsed.data.domestic,
-      international: parsed.data.international
-    });
+    const { merge, domestic, international } = parsed.data;
+    let rawCombined;
+    if (merge === true) {
+      const booking = await db.collection("bookings").findOne(
+        { _id },
+        { projection: { publicTimelineOverrides: 1 } }
+      );
+      rawCombined = mergePublicTimelineOverrides(booking?.publicTimelineOverrides, {
+        domestic,
+        international
+      });
+    } else {
+      rawCombined = { domestic, international };
+    }
+    const normalized = normalizePublicTimelineOverrides(rawCombined);
     if (normalized) {
       await db.collection("bookings").updateOne(
         { _id },

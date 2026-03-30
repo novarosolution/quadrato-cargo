@@ -9,6 +9,7 @@ import type { PublicTimelineOverrides } from "@/lib/api/public-client";
 import { AdminFormField, adminInputClassName } from "@/components/admin/AdminFormField";
 import {
   saveCustomerTimelineAdmin,
+  saveCustomerTimelineStepAdmin,
   type BookingAdminUpdateState,
 } from "@/app/admin/dashboard/actions";
 
@@ -92,6 +93,11 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
     FormData
   >(saveCustomerTimelineAdmin, undefined);
 
+  const [stepState, stepFormAction, stepPending] = useActionState<
+    BookingAdminUpdateState | undefined,
+    FormData
+  >(saveCustomerTimelineStepAdmin, undefined);
+
   const updateField = useCallback(
     (idx: number, field: keyof StageFields, value: string) => {
       const k = String(idx);
@@ -117,6 +123,17 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
     shownAt: "",
   };
 
+  const stepPayloadJson = useMemo(
+    () =>
+      JSON.stringify({
+        title: row.title,
+        location: row.location,
+        hint: row.hint,
+        shownAt: row.shownAt,
+      }),
+    [row.title, row.location, row.hint, row.shownAt],
+  );
+
   return (
     <div className="space-y-5">
       <p className="text-xs leading-relaxed text-muted-soft">
@@ -124,7 +141,11 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
         public tracking (title, location line, description, and optional time per step). Leave a field empty to
         keep the automatic default. This booking is{" "}
         <strong className="font-medium text-ink capitalize">{routeType}</strong> — you edit{" "}
-        {stages.length} steps; the other route&apos;s overrides stay stored if you set them later.
+        {stages.length} steps; the other route&apos;s overrides stay stored if you set them later. Use{" "}
+        <strong className="font-medium text-ink">Save this step only</strong> to update just the current step
+        without affecting others.{" "}
+        <strong className="font-medium text-ink">Save full timeline (replace snapshot)</strong> replaces the
+        entire saved snapshot for both domestic and international (built from the form state below).
       </p>
 
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border-strong bg-canvas/30 px-3 py-2 text-xs text-muted-soft">
@@ -206,6 +227,20 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
               onChange={(e) => updateField(step, "shownAt", e.target.value)}
             />
           </AdminFormField>
+
+          <form action={stepFormAction} className="pt-1">
+            <input type="hidden" name="bookingId" value={bookingId} />
+            <input type="hidden" name="modeKey" value={modeKey} />
+            <input type="hidden" name="stepIndex" value={String(step)} />
+            <input type="hidden" name="stepPayloadJson" value={stepPayloadJson} />
+            <button
+              type="submit"
+              disabled={stepPending || pending}
+              className="rounded-xl border border-border-strong bg-canvas px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-teal/40 disabled:opacity-60"
+            >
+              {stepPending ? "Saving step…" : "Save this step only"}
+            </button>
+          </form>
         </div>
       ) : null}
 
@@ -218,7 +253,7 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
             disabled={pending}
             className="rounded-xl border border-teal/70 bg-teal px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-60"
           >
-            {pending ? "Saving…" : "Save timeline for customers"}
+            {pending ? "Saving…" : "Save full timeline (replace snapshot)"}
           </button>
           <button
             type="button"
@@ -234,6 +269,20 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
           </button>
         </div>
       </form>
+
+      {stepState?.ok === false ? (
+        <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-200">
+          {stepState.error}
+        </p>
+      ) : null}
+      {stepState?.ok === true ? (
+        <p className="rounded-lg border border-teal/30 bg-teal-dim/50 px-3 py-2 text-sm text-ink">
+          {stepState.message}
+          {stepState.warning ? (
+            <span className="mt-1 block text-xs text-amber-800 dark:text-amber-200">{stepState.warning}</span>
+          ) : null}
+        </p>
+      ) : null}
 
       {state?.ok === false ? (
         <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-200">

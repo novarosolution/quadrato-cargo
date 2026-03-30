@@ -211,7 +211,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
         <AdminCollapsible
           id="booking-customer-timeline"
           title="Customer shipment timeline (step by step)"
-          description="Optional overrides for each timeline card (title, location, description, time). Status and main messages are in Customer tracking above. Save once after editing steps."
+          description="Optional overrides per timeline card (title, location, description, time). Use Save this step only to merge one step, or save the full snapshot to replace both domestic and international stored overrides. Status and main messages are in Customer tracking above."
         >
           <AdminCustomerTimelineForm
             bookingId={row.id}

@@ -325,6 +325,51 @@ export async function saveCustomerTimelineAdmin(
   };
 }
 
+/** Merges one timeline step into existing `publicTimelineOverrides` (does not replace other steps or the other route). */
+export async function saveCustomerTimelineStepAdmin(
+  _prev: BookingAdminUpdateState | undefined,
+  formData: FormData,
+): Promise<BookingAdminUpdateState> {
+  const bookingId = String(formData.get("bookingId") ?? "").trim();
+  const modeKey = String(formData.get("modeKey") ?? "").trim();
+  const stepIndex = String(formData.get("stepIndex") ?? "").trim();
+  const raw = String(formData.get("stepPayloadJson") ?? "").trim();
+  if (!bookingId) return { ok: false, error: "Missing booking." };
+  if (modeKey !== "domestic" && modeKey !== "international") {
+    return { ok: false, error: "Invalid timeline route." };
+  }
+  if (!/^\d+$/.test(stepIndex)) {
+    return { ok: false, error: "Invalid step index." };
+  }
+  let stage: Record<string, unknown>;
+  try {
+    stage = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+  } catch {
+    return { ok: false, error: "Step data is not valid JSON." };
+  }
+  if (!stage || typeof stage !== "object" || Array.isArray(stage)) {
+    return { ok: false, error: "Invalid step payload." };
+  }
+  const body: Record<string, unknown> = {
+    merge: true,
+    [modeKey]: { [stepIndex]: stage },
+  };
+  const result = await adminMutation(
+    `/api/admin/bookings/${encodeURIComponent(bookingId)}/timeline-overrides`,
+    body,
+  );
+  if (!result.ok) {
+    return { ok: false, error: result.message || "Failed to save this timeline step." };
+  }
+  revalidatePath("/admin/bookings");
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/public/tsking");
+  return {
+    ok: true,
+    message: "This step was saved. Other steps and the full timeline snapshot were left unchanged.",
+  };
+}
+
 export async function updateCourierBookingDataAdmin(
   _prev: DataManageState | undefined,
   formData: FormData,

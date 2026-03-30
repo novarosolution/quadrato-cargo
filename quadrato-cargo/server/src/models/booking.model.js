@@ -18,6 +18,57 @@ function buildCustomerTrackingNote(status, row) {
   return cleanText(row?.publicTrackingNote);
 }
 
+const TIMELINE_STAGE_FIELDS = ["title", "location", "hint", "shownAt"];
+
+/**
+ * Deep-merge a partial timeline patch into existing overrides (per mode / stage / field).
+ * Only keys present on each patch stage are applied; null or "" removes that field.
+ * A stage patch of null removes the whole stage override.
+ */
+export function mergePublicTimelineOverrides(existingRaw, patchRaw) {
+  const patch = patchRaw && typeof patchRaw === "object" ? patchRaw : {};
+  const existing = existingRaw && typeof existingRaw === "object" ? existingRaw : {};
+
+  const base = { domestic: {}, international: {} };
+  for (const mode of ["domestic", "international"]) {
+    const src = existing[mode];
+    if (!src || typeof src !== "object") continue;
+    for (const [k, v] of Object.entries(src)) {
+      if (!/^\d+$/.test(k)) continue;
+      if (!v || typeof v !== "object") continue;
+      base[mode][k] = { ...v };
+    }
+  }
+
+  for (const mode of ["domestic", "international"]) {
+    const p = patch[mode];
+    if (!p || typeof p !== "object") continue;
+    for (const [k, v] of Object.entries(p)) {
+      if (!/^\d+$/.test(k)) continue;
+      if (v === null) {
+        delete base[mode][k];
+        continue;
+      }
+      if (!v || typeof v !== "object") continue;
+      const prev =
+        base[mode][k] && typeof base[mode][k] === "object" ? { ...base[mode][k] } : {};
+      for (const field of TIMELINE_STAGE_FIELDS) {
+        if (!Object.prototype.hasOwnProperty.call(v, field)) continue;
+        const val = v[field];
+        if (val === null || val === "") {
+          delete prev[field];
+        } else {
+          prev[field] = String(val);
+        }
+      }
+      if (Object.keys(prev).length) base[mode][k] = prev;
+      else delete base[mode][k];
+    }
+  }
+
+  return base;
+}
+
 export function normalizePublicTimelineOverrides(raw) {
   if (!raw || typeof raw !== "object") return null;
   const out = {};
