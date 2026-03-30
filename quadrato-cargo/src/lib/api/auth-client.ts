@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "@/lib/api/base-url";
+import { csrfHeaderRecord } from "@/lib/api/csrf-headers";
 
 export type ApiUser = {
   id: string;
@@ -118,7 +119,10 @@ export async function postLogoutApi(): Promise<void> {
     await fetch(`${getApiBaseUrl()}/api/auth/logout`, {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...csrfHeaderRecord(),
+      },
     });
   } catch {
     return;

@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "@/lib/api/base-url";
+import { csrfHeaderRecord } from "@/lib/api/csrf-headers";
 
 export type AgencyBooking = {
   id: string;
@@ -52,7 +53,10 @@ export async function verifyAgencyHandoverApi(args: {
     const res = await fetch(`${getApiBaseUrl()}/api/agency/verify-handover`, {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...csrfHeaderRecord(),
+      },
       body: JSON.stringify({
         reference: args.reference,
         otpCode: args.otpCode,
@@ -90,7 +94,10 @@ export async function updateAgencyBookingApi(args: {
       {
         method: "PATCH",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...csrfHeaderRecord(),
+        },
         body: JSON.stringify({
           status: args.status,
           publicTrackingNote: args.publicTrackingNote,

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getApiBaseUrl } from "@/lib/api/base-url";
+import { csrfHeaderRecord } from "@/lib/api/csrf-headers";
 
 export function AdminLogoutButton() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -12,6 +13,11 @@ export function AdminLogoutButton() {
       await fetch(`${getApiBaseUrl()}/api/admin/auth/logout`, {
         method: "POST",
         credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...csrfHeaderRecord(),
+        },
+        body: "{}",
       });
     } finally {
       setIsLoggingOut(false);

@@ -18,25 +18,47 @@ function parseOrigins(value) {
     .filter(Boolean);
 }
 
-const defaultOrigin = normalizeOrigin(
-  process.env.FRONTEND_ORIGIN || "http://localhost:3000",
-);
-const configuredOrigins = parseOrigins(process.env.CORS_ORIGIN || defaultOrigin);
+function parseSameSite(value, fallback) {
+  const raw = String(value ?? fallback ?? "").trim().toLowerCase();
+  if (raw === "lax" || raw === "strict" || raw === "none") return raw;
+  return fallback;
+}
+
+function parseBool(value, fallback) {
+  const raw = String(value ?? "").trim().toLowerCase();
+  if (!raw) return fallback;
+  if (raw === "1" || raw === "true" || raw === "yes" || raw === "on") return true;
+  if (raw === "0" || raw === "false" || raw === "no" || raw === "off") return false;
+  return fallback;
+}
+
+const defaultCookieSameSite =
+  process.env.NODE_ENV?.trim() === "production" ? "none" : "lax";
+
+const frontendOrigin = normalizeOrigin(required("FRONTEND_ORIGIN"));
+const configuredOrigins = parseOrigins(process.env.CORS_ORIGIN);
+const corsOrigins =
+  configuredOrigins.length > 0 ? configuredOrigins : [frontendOrigin];
 
 export const env = {
   nodeEnv: process.env.NODE_ENV?.trim() || "development",
   port: Number.parseInt(process.env.PORT?.trim() || "4000", 10),
   mongoUri: required("MONGODB_URI"),
-  mongoDb: required("MONGODB_DB", "quadrato_cargo"),
+  mongoDb: required("MONGODB_DB"),
   jwtSecret: required("JWT_SECRET"),
   jwtTtl: required("JWT_TTL", "7d"),
   authCookieName: required("AUTH_COOKIE_NAME", "qc_auth"),
   adminCookieName: required("ADMIN_COOKIE_NAME", "qc_admin_auth"),
-  frontendOrigin: normalizeOrigin(required("FRONTEND_ORIGIN", defaultOrigin)),
-  corsOrigins: configuredOrigins.length > 0 ? configuredOrigins : [defaultOrigin],
-  adminApiSecret: required("ADMIN_API_SECRET", "dev-admin-secret"),
-  adminEmail: required("ADMIN_EMAIL", "admin@example.com").toLowerCase(),
-  adminPassword: required("ADMIN_PASSWORD", "change-this-admin-password")
+  frontendOrigin,
+  corsOrigins,
+  cookieSameSite: parseSameSite(process.env.COOKIE_SAMESITE, defaultCookieSameSite),
+  cookieSecure: parseBool(
+    process.env.COOKIE_SECURE,
+    process.env.NODE_ENV?.trim() === "production",
+  ),
+  adminApiSecret: required("ADMIN_API_SECRET"),
+  adminEmail: required("ADMIN_EMAIL").toLowerCase(),
+  adminPassword: required("ADMIN_PASSWORD")
 };
 
 export const isProd = env.nodeEnv === "production";

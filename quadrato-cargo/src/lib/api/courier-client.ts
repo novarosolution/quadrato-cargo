@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "@/lib/api/base-url";
+import { csrfHeaderRecord } from "@/lib/api/csrf-headers";
 
 export type CourierBooking = {
   id: string;
@@ -86,7 +87,10 @@ export async function verifyCourierPickupOtpApi(args: {
       {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...csrfHeaderRecord(),
+        },
         body: JSON.stringify({ otpCode: args.otpCode }),
       },
     );
@@ -122,8 +126,11 @@ export async function startCourierJobApi(args: {
       {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" }
-      }
+        headers: {
+          "Content-Type": "application/json",
+          ...csrfHeaderRecord(),
+        },
+      },
     );
     const data = (await res.json().catch(() => ({}))) as {
       ok?: boolean;
@@ -148,8 +155,11 @@ export async function updateCourierDutyStatusApi(args: {
     const res = await fetch(`${getApiBaseUrl()}/api/courier/me/status`, {
       method: "PATCH",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isOnDuty: args.isOnDuty })
+      headers: {
+        "Content-Type": "application/json",
+        ...csrfHeaderRecord(),
+      },
+      body: JSON.stringify({ isOnDuty: args.isOnDuty }),
     });
     const data = (await res.json().catch(() => ({}))) as {
       ok?: boolean;

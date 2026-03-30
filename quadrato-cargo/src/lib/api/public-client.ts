@@ -2,6 +2,7 @@
  * Public backend client (no auth required).
  */
 import { getApiBaseUrl } from "@/lib/api/base-url";
+import { csrfHeaderRecord } from "@/lib/api/csrf-headers";
 
 const JSON_HEADERS = { "Content-Type": "application/json" } as const;
 
@@ -64,7 +65,7 @@ export async function postBookCourierApi(
     const res = await fetch(`${getApiBaseUrl()}/api/public/bookings`, {
       method: "POST",
       credentials: "include",
-      headers: JSON_HEADERS,
+      headers: { ...JSON_HEADERS, ...csrfHeaderRecord() },
       body: JSON.stringify(body),
     });
     const data = (await res.json().catch(() => ({}))) as BookCourierFormResult;

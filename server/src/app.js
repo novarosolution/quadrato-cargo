@@ -6,6 +6,8 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import morgan from "morgan";
 import { env } from "./config/env.js";
+import { csrfDoubleSubmit } from "./middleware/csrf-double-submit.js";
+import { crossSiteMutationGuard } from "./middleware/cross-site-mutation-guard.js";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler.js";
 import adminRoutes from "./routes/admin.routes.js";
 import adminAuthRoutes from "./routes/admin-auth.routes.js";
@@ -16,6 +18,10 @@ import profileRoutes from "./routes/profile.routes.js";
 import publicRoutes from "./routes/public.routes.js";
 import courierRoutes from "./routes/courier.routes.js";
 
+/**
+ * Express app: CSRF mitigated via double-submit cookie (csrfDoubleSubmit), Origin /
+ * Sec-Fetch-Site guard (crossSiteMutationGuard), SameSite session cookies, and CORS.
+ */
 export function createApp() {
   const app = express();
   app.set("trust proxy", 1);
@@ -59,6 +65,12 @@ export function createApp() {
   );
   app.use(express.json({ limit: "1mb" }));
   app.use(cookieParser());
+  app.use(csrfDoubleSubmit(env));
+  app.use(
+    crossSiteMutationGuard(env.corsOrigins, {
+      sensitiveCookieNames: [env.authCookieName, env.adminCookieName],
+    }),
+  );
 
   app.use("/api", healthRoutes);
   app.use("/api/public", publicRoutes);

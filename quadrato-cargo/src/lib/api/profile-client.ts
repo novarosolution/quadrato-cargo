@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "@/lib/api/base-url";
+import { csrfHeaderRecord } from "@/lib/api/csrf-headers";
 
 export type ProfileUser = {
   id: string;
@@ -55,7 +56,10 @@ export async function updateProfileNameApi(
     const res = await fetch(`${getApiBaseUrl()}/api/users/me`, {
       method: "PATCH",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...csrfHeaderRecord(),
+      },
       body: JSON.stringify({ name }),
     });
 
@@ -83,7 +87,10 @@ export async function updateProfilePasswordApi(args: {
     const res = await fetch(`${getApiBaseUrl()}/api/users/me/password`, {
       method: "PATCH",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...csrfHeaderRecord(),
+      },
       body: JSON.stringify(args),
     });
 
@@ -143,8 +150,11 @@ export async function updateAddressBookApi(args: {
     const res = await fetch(`${getApiBaseUrl()}/api/users/me/address-book`, {
       method: "PATCH",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(args)
+      headers: {
+        "Content-Type": "application/json",
+        ...csrfHeaderRecord(),
+      },
+      body: JSON.stringify(args),
     });
     const data = (await res.json().catch(() => ({}))) as {
       ok?: boolean;

@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Boxes, Globe2, Truck } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Container } from "@/components/Wrap";
 import { SectionHeading } from "@/components/Heading";
 import { easeOutExpo, scaleIn, springSoft } from "@/lib/motion";
@@ -12,7 +13,7 @@ import { getApiBaseUrl } from "@/lib/api/base-url";
 import {
   homeHeroCallToActionData,
   homeHeroStatData,
-  homeValueStoryData
+  homeValueStoryData,
 } from "@/lib/site-content";
 import { HeroVisual } from "./HeroCards";
 
@@ -65,7 +66,63 @@ const cardReveal = {
 const secondaryCtaClass =
   "inline-flex items-center justify-center rounded-2xl border border-ghost-border bg-ghost-fill px-7 py-4 text-center text-sm font-semibold text-ink backdrop-blur-sm transition hover:border-teal/35 hover:bg-pill-hover";
 
+type HeroCta = (typeof homeHeroCallToActionData)[number];
+
+/** Literal `href` per route so static analysis does not treat CTA targets as untrusted URLs. */
+function HeroCtaLink({
+  cta,
+  isLoggedIn,
+}: {
+  cta: HeroCta;
+  isLoggedIn: boolean;
+}) {
+  const highlightLoggedInCta =
+    isLoggedIn &&
+    (cta.href === "/public/book" || cta.href === "/public/contact");
+  const usePrimaryStyle =
+    cta.kind === "primary" || highlightLoggedInCta;
+  const className = `${
+    usePrimaryStyle
+      ? "btn-primary inline-flex items-center justify-center rounded-2xl border border-teal/70 bg-teal px-7 py-4 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25"
+      : secondaryCtaClass
+  } w-full`;
+
+  switch (cta.href) {
+    case "/public/register":
+      return (
+        <Link href="/public/register" prefetch={false} className={className}>
+          {cta.label}
+        </Link>
+      );
+    case "/public/book":
+      return (
+        <Link href="/public/book" prefetch={false} className={className}>
+          {cta.label}
+        </Link>
+      );
+    case "/public/contact":
+      return (
+        <Link href="/public/contact" prefetch={false} className={className}>
+          {cta.label}
+        </Link>
+      );
+    case "/public/service":
+      return (
+        <Link href="/public/service" prefetch={false} className={className}>
+          {cta.label}
+        </Link>
+      );
+    default:
+      return (
+        <Link href="/public/book" prefetch={false} className={className}>
+          {cta.label}
+        </Link>
+      );
+  }
+}
+
 export function HomeView() {
+  const router = useRouter();
   const reduce = useReducedMotion();
   const { allowHoverMotion } = useMotionPreferences();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -136,7 +193,9 @@ export function HomeView() {
       return;
     }
     setTrackingError("");
-    window.location.assign(`/public/tsking?reference=${encodeURIComponent(value)}`);
+    const search = new URLSearchParams();
+    search.set("reference", value);
+    router.push("/public/tsking?" + search.toString());
   }
 
   return (
@@ -234,27 +293,7 @@ export function HomeView() {
                     whileTap={ctaTapScale}
                     transition={springSoft}
                   >
-                    {(() => {
-                      const highlightLoggedInCta =
-                        isLoggedIn &&
-                        (heroCallToAction.href === "/public/book" ||
-                          heroCallToAction.href === "/public/contact");
-                      const usePrimaryStyle =
-                        heroCallToAction.kind === "primary" || highlightLoggedInCta;
-                      return (
-                    <Link
-                      href={heroCallToAction.href}
-                      prefetch={false}
-                      className={`${
-                        usePrimaryStyle
-                          ? "btn-primary inline-flex items-center justify-center rounded-2xl border border-teal/70 bg-teal px-7 py-4 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25"
-                          : secondaryCtaClass
-                      } w-full`}
-                    >
-                      {heroCallToAction.label}
-                    </Link>
-                      );
-                    })()}
+                    <HeroCtaLink cta={heroCallToAction} isLoggedIn={isLoggedIn} />
                   </motion.div>
                 ))}
               </motion.div>

@@ -2,8 +2,15 @@
 
 import { useState } from "react";
 import { getApiBaseUrl } from "@/lib/api/base-url";
+import { csrfHeaderRecord } from "@/lib/api/csrf-headers";
 import { drawBrandedPdfHeader } from "@/lib/pdf-brand-logo";
 import { fetchInvoiceLogoAsPng } from "@/lib/pdf-invoice-logo";
+import {
+  sanitizeHttpUrlForQr,
+  sanitizePdfFileStem,
+  saveBlobAsFile,
+  stripPdfControlChars,
+} from "@/lib/sanitize-url";
 
 type PdfSettings = {
   companyName: string;
@@ -91,17 +98,20 @@ export function DownloadBookingPdfButton({
       fetchInvoiceLogoAsPng(),
     ]);
     const QRCode = QRCodeModule.default;
+    const trackFallback = `${window.location.origin}/public/tsking`;
+    const trackUrlSafe = sanitizeHttpUrlForQr(trackUrl, trackFallback);
     const safe = (value: string) => {
-      const v = String(value ?? "").trim();
+      const v = stripPdfControlChars(String(value ?? "")).trim();
       return v.length ? v : "-";
     };
 
     /** Offline fallback: delivery receipt matches server A6 (105×148 mm). */
     if (template === "tracking") {
       const doc = new jsPDF({ unit: "mm", format: "a6" });
-      const qrDataUrl = await QRCode.toDataURL(trackUrl, { width: 180, margin: 1 }).catch(
-        () => null,
-      );
+      const qrDataUrl = await QRCode.toDataURL(trackUrlSafe, {
+        width: 180,
+        margin: 1,
+      }).catch(() => null);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(9);
       doc.text(safe(settings.companyName).slice(0, 44), 5, 7);
@@ -161,8 +171,8 @@ export function DownloadBookingPdfButton({
       doc.setFont("helvetica", "normal");
       doc.setFontSize(6);
       doc.text(safe(settings.footerNote).slice(0, 72), 52.5, 143, { align: "center" });
-      const fileStem = safe(reference || bookingId).replace(/[^a-zA-Z0-9-_]/g, "-");
-      doc.save(`tracking-${fileStem || "booking"}.pdf`);
+      const fileStem = sanitizePdfFileStem(reference || bookingId);
+      doc.save(`tracking-${fileStem}.pdf`);
       return;
     }
 
@@ -170,9 +180,10 @@ export function DownloadBookingPdfButton({
     const wrapped = (value: string, width: number) =>
       doc.splitTextToSize(safe(value), width);
 
-    const qrDataUrl = await QRCode.toDataURL(trackUrl, { width: 240, margin: 1 }).catch(
-      () => null,
-    );
+    const qrDataUrl = await QRCode.toDataURL(trackUrlSafe, {
+      width: 240,
+      margin: 1,
+    }).catch(() => null);
 
     drawBrandedPdfHeader(
       doc,
@@ -241,7 +252,7 @@ export function DownloadBookingPdfButton({
     drawPair("Sender Email:", senderEmail, 14, y);
     drawPair("Recipient Email:", recipientEmail, 106, y);
     y += 10;
-    drawPair("Track URL:", trackUrl, 14, y);
+    drawPair("Track URL:", trackUrlSafe, 14, y);
 
     y += 20;
     drawPair("Contents:", contentsLabel, 14, y);
@@ -257,9 +268,9 @@ export function DownloadBookingPdfButton({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.text(safe(settings.footerNote), 105, 286, { align: "center" });
-    const fileStem = safe(reference || bookingId).replace(/[^a-zA-Z0-9-_]/g, "-");
+    const fileStem = sanitizePdfFileStem(reference || bookingId);
     const prefix = template === "invoice" ? "invoice" : "tracking";
-    doc.save(`${prefix}-${fileStem || "booking"}.pdf`);
+    doc.save(`${prefix}-${fileStem}.pdf`);
   };
 
   const onDownload = async () => {
@@ -271,6 +282,7 @@ export function DownloadBookingPdfButton({
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          ...csrfHeaderRecord(),
         },
         body: JSON.stringify({
           template,
@@ -287,17 +299,8 @@ export function DownloadBookingPdfButton({
       }
 
       const blob = await response.blob();
-      const fileNameSafe = (reference || bookingId)
-        .replace(/[^a-zA-Z0-9-_]/g, "-")
-        .trim();
-      const downloadUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = downloadUrl;
-      anchor.download = `courier-details-${fileNameSafe || "booking"}.pdf`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(downloadUrl);
+      const stem = sanitizePdfFileStem(reference || bookingId);
+      saveBlobAsFile(blob, `courier-details-${stem}`);
     } catch (error) {
       try {
         await runFallbackPdf();
