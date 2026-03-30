@@ -461,10 +461,13 @@ async function buildPdfDataFromBooking(req, parsedData) {
   const recipientCity = payloadValue(payload, ["recipient", "city"], "");
   const recipientPostal = payloadValue(payload, ["recipient", "postal"], "");
   const recipientCountry = payloadValue(payload, ["recipient", "country"], "");
-  const senderAddress = [senderStreet, senderCity, senderPostal, senderCountry]
+  let senderAddress = [senderStreet, senderCity, senderPostal, senderCountry]
     .map((v) => String(v || "").trim())
     .filter(Boolean)
     .join(", ") || "-";
+  if (senderAddress === "-") {
+    senderAddress = String(booking.senderAddress || "").trim() || "-";
+  }
   const recipientAddress = [recipientStreet, recipientCity, recipientPostal, recipientCountry]
     .map((v) => String(v || "").trim())
     .filter(Boolean)
@@ -515,7 +518,11 @@ async function buildPdfDataFromBooking(req, parsedData) {
     consignmentNumber: String(booking.consignmentNumber || "-"),
     fromCity: senderCity || "-",
     toCity: recipientCity || "-",
-    senderName: payloadValue(payload, ["sender", "name"], "-"),
+    senderName: (() => {
+      const fromPayload = payloadValue(payload, ["sender", "name"], "");
+      if (fromPayload && fromPayload !== "-") return fromPayload;
+      return String(booking.senderName || "").trim() || "-";
+    })(),
     senderAddress,
     senderPhone: payloadValue(payload, ["sender", "phone"], "-"),
     senderEmail: payloadValue(payload, ["sender", "email"], "-"),
@@ -727,8 +734,11 @@ function buildPdfHtml(input, barcodeDataUrl) {
       }
       .meta-grid {
         display: grid;
-        grid-template-columns: 1.2fr 1fr;
+        grid-template-columns: 1fr 1fr;
         gap: 14px;
+      }
+      .meta-grid .mini-table-wrap {
+        grid-column: 1 / -1;
       }
       .billto {
         font-size: 14px;
@@ -873,12 +883,20 @@ function buildPdfHtml(input, barcodeDataUrl) {
 
       <section class="meta-grid">
         <div class="billto">
+          <div class="title">Sender</div>
+          <div><strong>${esc(data.senderName)}</strong></div>
+          <div>${esc(data.senderAddress || data.fromCity)}</div>
+          <div>${esc(data.senderPhone)}</div>
+          <div>${esc(data.senderEmail)}</div>
+        </div>
+        <div class="billto">
           <div class="title">Bill to</div>
           <div><strong>${esc(data.recipientName)}</strong></div>
           <div>${esc(data.recipientAddress || data.toCity)}</div>
           <div>${esc(data.recipientPhone)}</div>
           <div>${esc(data.recipientEmail)}</div>
         </div>
+        <div class="mini-table-wrap">
         <table class="mini-table">
           <tr><td>Booking ID</td><td><span style="font-family:monospace">${esc(data.bookingId)}</span></td></tr>
           <tr><td>Consignment / scan</td><td><strong>${esc(data.scanCode)}</strong></td></tr>
@@ -889,6 +907,7 @@ function buildPdfHtml(input, barcodeDataUrl) {
           <tr><td>Last updated</td><td>${esc(data.updatedAtLabel)}</td></tr>
           <tr><td>Invoice #</td><td><strong>${esc(data.displayInvoiceId)}</strong></td></tr>
         </table>
+        </div>
       </section>
 
       <table class="detail-table">
