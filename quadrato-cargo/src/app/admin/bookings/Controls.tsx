@@ -11,13 +11,23 @@ import {
   adminInputClassName,
 } from "@/components/admin/AdminFormField";
 import {
-  updateCourierBookingAdmin,
+  saveManualTrackingAdmin,
   type BookingAdminUpdateState,
 } from "../dashboard/actions";
 
 export type AgencyOption = {
   email: string;
   name: string | null;
+};
+
+export type AdminBookingCourierOption = {
+  id: string;
+  name: string | null;
+  email: string;
+  isActive: boolean;
+  isOnDuty: boolean;
+  readyForJob?: boolean;
+  courierActiveJobCount?: number;
 };
 
 type Props = {
@@ -32,9 +42,12 @@ type Props = {
   /** Operational activity log (DB `trackingNotes`); may be shown on public tracking when enabled. */
   operationalTrackingNotes: string | null;
   internalNotes: string | null;
+  couriers: AdminBookingCourierOption[];
+  assignedCourierId: string | null;
 };
 
 const inputClass = adminInputClassName();
+const selectClass = adminInputClassName();
 
 export function AdminBookingControls({
   bookingId,
@@ -47,6 +60,8 @@ export function AdminBookingControls({
   publicTrackingNote,
   operationalTrackingNotes,
   internalNotes,
+  couriers,
+  assignedCourierId,
 }: Props) {
   const uid = useId().replace(/:/g, "");
   const agencyDatalistId = `admin-agency-dl-${uid}`;
@@ -57,7 +72,7 @@ export function AdminBookingControls({
   const [state, formAction, pending] = useActionState<
     BookingAdminUpdateState | undefined,
     FormData
-  >(updateCourierBookingAdmin, undefined);
+  >(saveManualTrackingAdmin, undefined);
   const nowLabel = new Date().toLocaleString();
 
   const quickStatuses = useMemo(
@@ -277,15 +292,56 @@ export function AdminBookingControls({
         />
       </AdminFormField>
 
+      <div className="border-t border-border-strong pt-4">
+        <p className="mb-3 text-sm text-muted-soft">
+          Couriers use <span className="font-mono text-[11px]">/courier</span> for jobs. Inactive or
+          off-duty couriers cannot be newly assigned (current assignment stays selectable).
+        </p>
+        <AdminFormField label="Assigned courier" htmlFor="admin-booking-courier">
+          <select
+            id="admin-booking-courier"
+            name="courierUserId"
+            defaultValue={assignedCourierId ?? "__unassigned"}
+            className={selectClass}
+          >
+            <option value="__unassigned">— Unassigned —</option>
+            {couriers.map((c) => (
+              <option
+                key={c.id}
+                value={c.id}
+                disabled={
+                  (!c.isActive || !c.isOnDuty || c.readyForJob === false) &&
+                  assignedCourierId !== c.id
+                }
+              >
+                {c.name ?? c.email} ({c.email})
+                {!c.isActive
+                  ? " — Inactive"
+                  : !c.isOnDuty
+                    ? " — Off duty"
+                    : c.readyForJob === false
+                      ? ` — Busy (${c.courierActiveJobCount ?? 1} open)`
+                      : " — Ready"}
+              </option>
+            ))}
+          </select>
+        </AdminFormField>
+      </div>
+
       {state?.ok === false && state.error ? (
         <p className="text-sm text-rose-400" role="alert">
           {state.error}
         </p>
       ) : null}
       {state?.ok === true ? (
-        <p className="text-sm text-teal" role="status">
-          {state.message}
-        </p>
+        <div className="space-y-1" role="status">
+          <p className="text-sm text-teal">{state.message}</p>
+          {state.warning ? (
+            <p className="text-sm text-amber-800 dark:text-amber-200" role="alert">
+              {state.warning}
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       <button
@@ -293,7 +349,7 @@ export function AdminBookingControls({
         disabled={pending}
         className="inline-flex rounded-xl border border-teal/70 bg-teal px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-teal/90 disabled:opacity-50"
       >
-        {pending ? "Saving…" : "Save booking controls"}
+        {pending ? "Saving…" : "Save tracking updates"}
       </button>
     </form>
   );

@@ -13,7 +13,7 @@ import { AdminCollapsible } from "@/components/admin/AdminCollapsible";
 import { DeleteRowButton } from "@/components/admin/DeleteBtn";
 import { deleteCourierBooking } from "../../dashboard/actions";
 import { AdminBookingControls } from "../Controls";
-import { AdminBookingCourierAssign } from "../asingtocuriyarboy";
+import { ManualTrackingQuickLinks } from "../ManualTrackingQuickLinks";
 import { AdminBookingCustomerLink } from "../linkcustomer";
 import { AdminBookingDataForm } from "../booking";
 import { AdminBookingInvoiceForm } from "../AdminBookingInvoiceForm";
@@ -65,6 +65,11 @@ export default async function AdminBookingDetailPage({ params }: Props) {
     row.invoice && typeof row.invoice === "object"
       ? (row.invoice as Record<string, string | null | undefined>)
       : {};
+  const trackReference =
+    (row.consignmentNumber && String(row.consignmentNumber).trim()) ||
+    (row.publicBarcodeCode && String(row.publicBarcodeCode).trim()) ||
+    row.id;
+
   const invoiceInitial = {
     number: String(inv.number ?? ""),
     currency: String(inv.currency ?? "INR"),
@@ -187,24 +192,34 @@ export default async function AdminBookingDetailPage({ params }: Props) {
 
       <div className="space-y-4">
         <AdminCollapsible
-          id="booking-dispatch"
-          title="Dispatch & tracking"
-          description="Status, agency, Tracking ID, customer update, operational log, and internal notes — all keyed to this booking ID."
+          id="booking-manual-tracking"
+          title="Manual tracking updates"
+          description="All fields below apply to this booking ID and affect /public/tsking (per site settings), PDFs, and courier tools where relevant."
           defaultOpen
         >
-          <AdminBookingControls
-            key={row.id}
-            bookingId={row.id}
-            routeType={row.routeType}
-            pickupPin={pickupPin}
-            assignedAgency={row.assignedAgency ?? null}
-            agencyOptions={agencyOptions}
-            currentStatus={row.status}
-            consignmentNumber={row.consignmentNumber}
-            publicTrackingNote={row.publicTrackingNote ?? row.customerTrackingNote ?? null}
-            operationalTrackingNotes={row.trackingNotes}
-            internalNotes={row.internalNotes}
-          />
+          <div className="space-y-6">
+            <ManualTrackingQuickLinks bookingId={row.id} trackReference={trackReference} />
+            <AdminBookingControls
+              key={row.id}
+              bookingId={row.id}
+              routeType={row.routeType}
+              pickupPin={pickupPin}
+              assignedAgency={row.assignedAgency ?? null}
+              agencyOptions={agencyOptions}
+              currentStatus={row.status}
+              consignmentNumber={row.consignmentNumber}
+              publicTrackingNote={row.publicTrackingNote ?? row.customerTrackingNote ?? null}
+              operationalTrackingNotes={row.trackingNotes}
+              internalNotes={row.internalNotes}
+              couriers={couriers}
+              assignedCourierId={row.courierId}
+            />
+            <p className="text-xs leading-relaxed text-muted-soft">
+              Sender and recipient lines on the public tracking page come from{" "}
+              <strong className="font-medium text-muted">Booking data (JSON)</strong> below — edit
+              route type and payload there if addresses or shipment summary are wrong.
+            </p>
+          </div>
         </AdminCollapsible>
 
         <AdminCollapsible
@@ -232,22 +247,9 @@ export default async function AdminBookingDetailPage({ params }: Props) {
         </AdminCollapsible>
 
         <AdminCollapsible
-          id="booking-courier"
-          title="Courier assignment"
-          description="Assign or change the courier for pickup and delivery."
-        >
-          <AdminBookingCourierAssign
-            bookingId={row.id}
-            couriers={couriers}
-            assignedCourierId={row.courierId}
-            embedded
-          />
-        </AdminCollapsible>
-
-        <AdminCollapsible
           id="booking-ops"
           title="Operations snapshot"
-          description="Collection mode, pickup PIN, and pickup window from the booking payload."
+          description="Collection mode, pickup PIN, and pickup window from the booking payload (read-only; change values via Booking data JSON if needed)."
         >
           <dl className="grid gap-3 text-sm sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-canvas/30 p-3">
@@ -274,7 +276,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
         <AdminCollapsible
           id="booking-data"
           title="Booking data (JSON)"
-          description="Route type and raw payload. Customer profile reflects this; edit carefully."
+          description="Route type and raw payload — drives sender/recipient addresses and shipment details on public tracking. Customer profile reflects this; edit carefully."
         >
           <AdminBookingDataForm
             bookingId={row.id}

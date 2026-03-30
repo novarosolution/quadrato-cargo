@@ -10,7 +10,7 @@ export type DataManageState =
   | { ok: false; error: string };
 
 export type BookingAdminUpdateState =
-  | { ok: true; message: string }
+  | { ok: true; message: string; warning?: string }
   | { ok: false; error: string };
 
 export type OpenBookingByRefState = { ok: false; error: string };
@@ -239,6 +239,55 @@ export async function updateCourierBookingAdmin(
   revalidatePath(`/admin/bookings/${bookingId}`);
   revalidatePath("/public/tsking");
   return { ok: true, message: "Booking controls updated." };
+}
+
+/** Saves dispatch fields and courier assignment in one submit (controls first, then assign-courier). */
+export async function saveManualTrackingAdmin(
+  _prev: BookingAdminUpdateState | undefined,
+  formData: FormData,
+): Promise<BookingAdminUpdateState> {
+  const bookingId = String(formData.get("bookingId") ?? "");
+  const controlsResult = await adminMutation(
+    `/api/admin/bookings/${encodeURIComponent(bookingId)}/controls`,
+    {
+      status: String(formData.get("status") ?? ""),
+      consignmentNumber: String(formData.get("consignmentNumber") ?? ""),
+      publicTrackingNote: String(
+        formData.get("publicTrackingNote") ?? formData.get("trackingNotes") ?? "",
+      ),
+      operationalTrackingNotes: String(formData.get("operationalTrackingNotes") ?? ""),
+      internalNotes: String(formData.get("internalNotes") ?? ""),
+      assignedAgency: String(formData.get("assignedAgency") ?? ""),
+    },
+  );
+  if (!controlsResult.ok) {
+    return {
+      ok: false,
+      error: controlsResult.message || "Failed to update booking controls.",
+    };
+  }
+
+  const assignResult = await adminMutation(
+    `/api/admin/bookings/${encodeURIComponent(bookingId)}/assign-courier`,
+    {
+      courierUserId: String(formData.get("courierUserId") ?? "__unassigned"),
+    },
+  );
+
+  revalidatePath("/admin/bookings");
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/public/tsking");
+
+  if (!assignResult.ok) {
+    return {
+      ok: true,
+      message: "Status, agency, tracking IDs, and notes saved.",
+      warning:
+        assignResult.message ||
+        "Courier assignment could not be updated. Check the courier is active, on duty, and not busy with another open job.",
+    };
+  }
+  return { ok: true, message: "All tracking updates saved (including courier assignment)." };
 }
 
 export async function updateCourierBookingDataAdmin(
