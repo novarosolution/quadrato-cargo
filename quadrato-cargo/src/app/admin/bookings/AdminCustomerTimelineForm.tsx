@@ -176,17 +176,23 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
 
   return (
     <div className="space-y-5">
-      <p className="text-xs leading-relaxed text-muted-soft">
-        Override the <strong className="font-medium text-ink">shipment timeline</strong> cards customers see on
-        public tracking (title, location line, description, and optional time per step). Leave a field empty to
-        keep the automatic default. This booking is{" "}
-        <strong className="font-medium text-ink capitalize">{routeType}</strong> — you edit{" "}
-        {stages.length} steps; the other route&apos;s overrides stay stored if you set them later. Use{" "}
-        <strong className="font-medium text-ink">Save this step only</strong> to update just the current step
-        without affecting others.{" "}
-        <strong className="font-medium text-ink">Save full timeline (replace snapshot)</strong> replaces the
-        entire saved snapshot for both domestic and international (built from the form state below).
-      </p>
+      <div className="rounded-xl border border-border-strong bg-canvas/25 px-4 py-3 text-xs leading-relaxed text-muted-soft">
+        <p className="font-semibold text-ink">When to use this section</p>
+        <ul className="mt-2 list-inside list-disc space-y-1">
+          <li>
+            <strong className="font-medium text-ink">Current tracking card</strong> (above) — edit only the
+            step that matches today&apos;s booking status.
+          </li>
+          <li>
+            <strong className="font-medium text-ink">Here</strong> — edit any step, bulk-update location lines,
+            or replace the entire saved timeline for both domestic and international.
+          </li>
+        </ul>
+        <p className="mt-2">
+          This booking is <span className="font-medium capitalize text-ink">{routeType}</span> ({stages.length}{" "}
+          steps). Empty fields use automatic defaults on the public page.
+        </p>
+      </div>
 
       <div className="space-y-3 rounded-xl border border-border-strong bg-surface-elevated/30 p-4">
         <div>
@@ -374,7 +380,7 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
               disabled={stepPending || pending || locPending}
               className="rounded-xl border border-border-strong bg-canvas px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-teal/40 disabled:opacity-60"
             >
-              {stepPending ? "Saving step…" : "Save this step only"}
+              {stepPending ? "Saving…" : "Save this timeline step"}
             </button>
           </form>
         </div>
@@ -389,7 +395,7 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
             disabled={pending || locPending}
             className="rounded-xl border border-teal/70 bg-teal px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-60"
           >
-            {pending ? "Saving…" : "Save full timeline (replace snapshot)"}
+            {pending ? "Saving…" : "Save all timeline overrides"}
           </button>
           <button
             type="button"

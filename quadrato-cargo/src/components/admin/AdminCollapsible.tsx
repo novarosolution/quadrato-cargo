@@ -25,11 +25,16 @@ export function AdminCollapsible({
   const baseId = idProp ?? `admin-panel-${reactId.replace(/:/g, "")}`;
   const regionId = `${baseId}-region`;
   const [open, setOpen] = useState(defaultOpen);
+  const outerClass = [
+    "rounded-2xl border border-border-strong bg-surface-elevated/50",
+    idProp ? "scroll-mt-24" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <div
-      className={`rounded-2xl border border-border-strong bg-surface-elevated/50 ${className}`.trim()}
-    >
+    <div id={idProp} className={outerClass.trim()}>
       <button
         type="button"
         id={`${baseId}-trigger`}

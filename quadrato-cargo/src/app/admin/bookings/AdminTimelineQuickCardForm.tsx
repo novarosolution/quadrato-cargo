@@ -95,10 +95,10 @@ export function AdminTimelineQuickCardForm({
   return (
     <div className="space-y-4">
       <p className="text-xs text-muted-soft">
-        Matches <span className="font-medium capitalize text-ink">{routeType}</span> timeline{" "}
-        <span className="font-mono text-ink">#{stageIndex}</span> —{" "}
-        <span className="text-ink">{stageDef?.title ?? "Stage"}</span>. Empty fields clear your override
-        for that line and the public page falls back to defaults.
+        Step <span className="font-mono text-ink">{stageIndex}</span> —{" "}
+        <span className="font-medium text-ink">{stageDef?.title ?? "Stage"}</span> (
+        <span className="capitalize">{routeType}</span>). Empty fields remove your text and the site uses
+        defaults.
       </p>
 
       <form action={formAction} className="grid gap-4 sm:grid-cols-2">
@@ -188,7 +188,7 @@ export function AdminTimelineQuickCardForm({
             disabled={pending}
             className="inline-flex w-full justify-center rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50 sm:w-auto"
           >
-            {pending ? "Saving…" : "Save this tracking card"}
+            {pending ? "Saving…" : "Save tracking card"}
           </button>
         </div>
       </form>

@@ -49,14 +49,6 @@ type Props = {
 const inputClass = adminInputClassName();
 const selectClass = adminInputClassName();
 
-function DbHint({ field }: { field: string }) {
-  return (
-    <p className="mt-1 text-[10px] font-mono text-muted-soft/90">
-      DB field: <span className="text-muted">{field}</span>
-    </p>
-  );
-}
-
 export function AdminBookingDispatchSplit({
   bookingId,
   trackReference,
@@ -172,20 +164,20 @@ export function AdminBookingDispatchSplit({
     <div className="space-y-4">
       <AdminCollapsible
         id="booking-customer-tracking"
-        title="Customer tracking"
-        description="Status, tracking ID, customer message, activity log, and internal notes — stored on the booking document. Saves the same data as Assignment (one record in MongoDB)."
+        title="Dispatch & customer updates"
+        description="Status, tracking number, customer-visible message, activity log, and staff-only notes."
         defaultOpen
       >
         <div className="space-y-6">
           <ManualTrackingQuickLinks bookingId={bookingId} trackReference={trackReference} />
 
           <div className="rounded-xl border border-teal/20 bg-teal-dim/20 px-4 py-3 text-xs leading-relaxed text-muted-soft">
-            <p className="font-semibold text-ink">What you are editing</p>
+            <p className="font-semibold text-ink">What saves here</p>
             <p className="mt-1">
-              These inputs map <strong className="font-medium text-muted">directly</strong> to the
-              booking row in the database (same fields as the API <code className="text-[11px]">PATCH …/controls</code>
-              ). Empty optional text is stored as null. Saving here also keeps your current agency and courier
-              selection — open <strong className="font-medium text-muted">Assignment</strong> below to change those.
+              One save updates status, tracking ID, public message, operational log, and internal notes on this
+              booking. Your agency and courier choices stay as they are unless you change them under{" "}
+              <strong className="font-medium text-ink">Assignment</strong> below (that save uses the same button
+              data).
             </p>
           </div>
 
@@ -213,7 +205,6 @@ export function AdminBookingDispatchSplit({
                         </option>
                       ))}
                     </select>
-                    <DbHint field="status" />
                     <div className="mt-2 flex flex-wrap gap-2">
                       <span className="w-full text-[11px] font-medium uppercase tracking-wide text-muted-soft">
                         Quick picks
@@ -245,7 +236,6 @@ export function AdminBookingDispatchSplit({
                       placeholder="e.g. QC-2025-001234"
                       autoComplete="off"
                     />
-                    <DbHint field="consignmentNumber" />
                   </AdminFormField>
                 </div>
               </div>
@@ -268,7 +258,6 @@ export function AdminBookingDispatchSplit({
                       onChange={(e) => setPublicNote(e.target.value)}
                       placeholder="Example: Picked up today. Expected delivery Thursday."
                     />
-                    <DbHint field="publicTrackingNote" />
                     <div className="mt-3 rounded-xl border border-border bg-canvas/30 p-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
                         Ready-made lines
@@ -331,7 +320,6 @@ export function AdminBookingDispatchSplit({
                       onChange={(e) => setOperationalLog(e.target.value)}
                       placeholder="Timestamped lines, hub updates, courier notes…"
                     />
-                    <DbHint field="trackingNotes" />
                   </AdminFormField>
                   <AdminFormField
                     label="Internal notes (staff only)"
@@ -346,7 +334,6 @@ export function AdminBookingDispatchSplit({
                       onChange={(e) => setInternal(e.target.value)}
                       placeholder="Billing flags, call notes…"
                     />
-                    <DbHint field="internalNotes" />
                   </AdminFormField>
                 </div>
               </div>
@@ -354,10 +341,21 @@ export function AdminBookingDispatchSplit({
           </div>
 
           <p className="text-xs leading-relaxed text-muted-soft">
-            <strong className="font-medium text-ink">Addresses &amp; parcel details</strong> on Track come
-            from <strong className="font-medium text-muted">Booking data (JSON)</strong> further down this
-            page.
+            <strong className="font-medium text-ink">Addresses and parcel details</strong> on the public track
+            page come from <strong className="font-medium text-ink">Booking data (JSON)</strong> in Account
+            &amp; advanced.
           </p>
+
+          <details className="rounded-lg border border-border-strong bg-canvas/30 px-3 py-2 text-xs text-muted-soft">
+            <summary className="cursor-pointer font-medium text-ink">Database field names</summary>
+            <ul className="mt-2 space-y-1 font-mono text-[10px] text-muted">
+              <li>Shipment status → status</li>
+              <li>Tracking / consignment number → consignmentNumber</li>
+              <li>Public note → publicTrackingNote</li>
+              <li>Operational activity log → trackingNotes</li>
+              <li>Internal notes → internalNotes</li>
+            </ul>
+          </details>
 
           {state?.ok === false && state.error ? (
             <p className="text-sm text-rose-400" role="alert">
@@ -379,7 +377,7 @@ export function AdminBookingDispatchSplit({
             onClick={submitDispatch}
             className="inline-flex rounded-xl border border-teal/70 bg-teal px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-teal/90 disabled:opacity-50"
           >
-            {pending ? "Saving…" : "Save customer tracking"}
+            {pending ? "Saving…" : "Save dispatch updates"}
           </button>
         </div>
       </AdminCollapsible>
@@ -387,13 +385,12 @@ export function AdminBookingDispatchSplit({
       <AdminCollapsible
         id="booking-assignment"
         title="Assignment"
-        description="Agency partner email and courier on the job. Uses the same save pipeline as Customer tracking (booking document + courier link)."
+        description="Agency partner and courier. Saving keeps your dispatch fields above — nothing is cleared."
       >
         <div className="space-y-5">
           <p className="rounded-lg border border-border-strong/80 bg-canvas/40 px-3 py-2.5 text-sm leading-relaxed text-muted">
-            Partner and driver fields map to <code className="text-xs">assignedAgency</code> and{" "}
-            <code className="text-xs">courierId</code> on the booking. Saving here sends your current
-            tracking fields too, so nothing is cleared.
+            Use the agency email they log in with. Customers see that partner&apos;s display name on tracking
+            when applicable. Courier must be active and available unless they are already assigned to this job.
           </p>
 
           <AdminFormField
@@ -425,7 +422,6 @@ export function AdminBookingDispatchSplit({
               autoComplete="off"
               list={agencyOptions.length > 0 ? agencyDatalistId : undefined}
             />
-            <DbHint field="assignedAgency" />
           </AdminFormField>
 
           <div className="rounded-xl border border-border-strong bg-canvas/25 p-4">
@@ -463,10 +459,17 @@ export function AdminBookingDispatchSplit({
                     </option>
                   ))}
                 </select>
-                <DbHint field="courierId (via assign-courier)" />
               </AdminFormField>
             </div>
           </div>
+
+          <details className="rounded-lg border border-border-strong bg-canvas/30 px-3 py-2 text-xs text-muted-soft">
+            <summary className="cursor-pointer font-medium text-ink">Database field names</summary>
+            <ul className="mt-2 space-y-1 font-mono text-[10px] text-muted">
+              <li>Agency partner → assignedAgency</li>
+              <li>Courier on this job → courierId</li>
+            </ul>
+          </details>
 
           {state?.ok === false && state.error ? (
             <p className="text-sm text-rose-400" role="alert">
