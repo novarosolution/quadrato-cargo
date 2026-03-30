@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { QuadratoBrandLogo } from "@/components/QuadratoBrandLogo";
 
 export const metadata: Metadata = {
   title: "Page not found",
@@ -11,15 +11,8 @@ export default function NotFound() {
   return (
     <div className="relative flex min-h-full flex-col items-center justify-center px-4 py-16 text-center">
       <div className="panel-card max-w-md border border-border bg-surface-elevated/90 px-8 py-10 shadow-lg shadow-black/10 backdrop-blur-sm">
-        <div className="relative mx-auto mb-6 h-14 w-14 shrink-0 overflow-hidden">
-          <Image
-            src="/quadrato-logo-icon.png"
-            alt=""
-            fill
-            sizes="56px"
-            className="object-cover rounded-none"
-            priority
-          />
+        <div className="mx-auto mb-6 flex h-14 w-14 shrink-0 items-center justify-center text-ink">
+          <QuadratoBrandLogo variant="mark" className="h-full w-full" decorative />
         </div>
         <p className="font-display text-xs font-semibold uppercase tracking-wider text-muted-soft">
           Error 404

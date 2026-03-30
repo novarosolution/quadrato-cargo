@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { PublicCard } from "@/components/public/PublicCard";
+import { PublicPageSection } from "@/components/public/PublicPageSection";
 import { Container } from "@/components/Wrap";
 import { safeRedirectPath } from "@/lib/auth-redirect";
 import { RegisterForm } from "./Register";
@@ -46,26 +48,24 @@ export default async function RegisterPage({ searchParams }: PageProps) {
             Register
           </h1>
           <p className="mt-3 text-sm text-muted">
-            You create your own customer account here — dispatch does not need to
-            invite you. Use the same email to log in, open your profile anytime,
-            and attach courier bookings to this account so status and shipment
-            details stay in one place.
+            Create your customer account in seconds. Book while logged in to keep
+            all shipments and tracking in one place.
           </p>
         </Container>
       </section>
 
-      <section className="py-12 sm:py-16">
+      <PublicPageSection>
         <Container className="max-w-lg">
-          <div className="rounded-[1.5rem] border border-border bg-surface-elevated/70 p-6 shadow-2xl shadow-black/40 backdrop-blur-md sm:p-8">
+          <PublicCard className="shadow-2xl shadow-black/40 sm:p-8">
             <RegisterForm redirectTo={redirectAfterRegister} />
-          </div>
+          </PublicCard>
           <p className="mt-8 text-center text-xs text-muted-soft">
             <Link href="/public" className="underline-offset-2 hover:underline">
               Back to home
             </Link>
           </p>
         </Container>
-      </section>
+      </PublicPageSection>
     </div>
   );
 }

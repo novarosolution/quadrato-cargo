@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { PublicCard } from "@/components/public/PublicCard";
+import { PublicPageSection } from "@/components/public/PublicPageSection";
 import { Container } from "@/components/Wrap";
 import { formatAuthCallbackError } from "@/lib/auth-callback-errors";
 import { safeRedirectPath } from "@/lib/auth-redirect";
@@ -67,21 +69,21 @@ export default async function LoginPage({ searchParams }: PageProps) {
         </Container>
       </section>
 
-      <section className="py-12 sm:py-16">
+      <PublicPageSection>
         <Container className="max-w-lg">
-          <div className="rounded-[1.5rem] border border-border bg-surface-elevated/70 p-6 shadow-2xl shadow-black/40 backdrop-blur-md sm:p-8">
+          <PublicCard className="shadow-2xl shadow-black/40 sm:p-8">
             <LoginForm
               callbackError={callbackError}
               redirectTo={redirectAfterLogin}
             />
-          </div>
+          </PublicCard>
           <p className="mt-8 text-center text-xs text-muted-soft">
             <Link href="/public" className="underline-offset-2 hover:underline">
               Back to home
             </Link>
           </p>
         </Container>
-      </section>
+      </PublicPageSection>
     </div>
   );
 }

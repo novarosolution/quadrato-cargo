@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="42 232 84 82" role="img" aria-label="Quadrato Cargo">
+  <title>Quadrato Cargo</title>
+  <path
+    d="m 44.4526,234.8898 v 37.0378 H 82.472 v -37.0378 z"
+    fill="#3ed5c2"
+    fill-rule="evenodd"
+  />
+  <path
+    d="m 44.4532,276.359 v 37.0378 H 82.4726 V 276.359 Z"
+    fill="#3ed5c2"
+    fill-rule="evenodd"
+  />
+  <path
+    d="m 86.5687,276.3147 v 37.0379 h 38.0194 v -37.0379 z"
+    fill="#3ed5c2"
+    fill-rule="evenodd"
+  />
+  <path
+    d="m 86.3844,234.8904 v 37.0378 h 38.0194 v -37.0378 z"
+    fill="#ed7304"
+    fill-rule="evenodd"
+  />
+</svg>

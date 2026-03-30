@@ -5,6 +5,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import QRCode from "qrcode";
 import { auth } from "@/auth";
+import { PublicCard } from "@/components/public/PublicCard";
 import { Container } from "@/components/Wrap";
 import {
   BOOKING_STATUS_LABELS,
@@ -110,7 +111,7 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
 
       <section className="py-10 sm:py-14">
         <Container className="max-w-2xl space-y-8">
-          <div className="rounded-2xl border border-border bg-surface-elevated/70 p-6 backdrop-blur-md sm:p-8">
+          <PublicCard className="sm:p-8">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-soft">
               Status
             </h2>
@@ -130,24 +131,6 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                 </p>
               </div>
             ) : null}
-            <div className="mt-4 grid gap-2 text-xs text-muted sm:grid-cols-2">
-              <p>
-                <span className="font-semibold text-ink">Pickup courier:</span>{" "}
-                {row.courierName || "Pending assignment"}
-              </p>
-              <p>
-                <span className="font-semibold text-ink">Agency:</span>{" "}
-                {row.assignedAgency || "Pending assignment"}
-              </p>
-              <p>
-                <span className="font-semibold text-ink">Pickup address:</span>{" "}
-                {row.senderAddress || "-"}
-              </p>
-              <p>
-                <span className="font-semibold text-ink">Delivery address:</span>{" "}
-                {row.recipientAddress || "-"}
-              </p>
-            </div>
             {row.customerTrackingNote ? (
               <div className="mt-6">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-soft">
@@ -159,15 +142,15 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
               </div>
             ) : (
               <p className="mt-6 text-sm text-muted">
-                No public tracking notes yet. When dispatch adds updates or a
-                Tracking ID, they will show here.
+                No updates from dispatch yet. When there is news or a Tracking ID,
+                it will appear here.
               </p>
             )}
-          </div>
+          </PublicCard>
 
-          <div className="rounded-2xl border border-border bg-surface-elevated/70 p-6 backdrop-blur-md sm:p-8">
+          <PublicCard className="sm:p-8">
             <h2 className="font-display text-lg font-semibold text-ink">
-              Shipment summary (all booking details)
+              Shipment summary
             </h2>
             <dl className="mt-4 space-y-4 text-sm">
               {preview.collectionMode ? (
@@ -184,6 +167,14 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                   <dd className="mt-0.5 text-ink">{preview.pickupPreference}</dd>
                 </div>
               ) : null}
+              <div>
+                <dt className="text-muted-soft">Pickup courier</dt>
+                <dd className="mt-0.5 text-ink">{row.courierName || "Pending assignment"}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-soft">Agency</dt>
+                <dd className="mt-0.5 text-ink">{row.assignedAgency || "Pending assignment"}</dd>
+              </div>
               {preview.senderName ? (
                 <div>
                   <dt className="text-muted-soft">Sender</dt>
@@ -243,20 +234,22 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                 </div>
               ) : null}
             </dl>
-            <p className="mt-6 text-xs text-muted-soft">
-              Reference ID:{" "}
-              <span className="font-mono text-muted">{row.id}</span>
-            </p>
-          </div>
+            <details className="mt-6 border-t border-border pt-4">
+              <summary className="cursor-pointer text-sm font-medium text-teal hover:underline">
+                Technical reference
+              </summary>
+              <p className="mt-3 break-all font-mono text-xs text-muted-soft">{row.id}</p>
+              <p className="mt-2 text-xs text-muted-soft">
+                For support only — use Tracking ID or QC code when contacting us.
+              </p>
+            </details>
+          </PublicCard>
 
-          <div className="rounded-2xl border border-border bg-surface-elevated/70 p-6 backdrop-blur-md sm:p-8">
+          <PublicCard className="sm:p-8">
             <h2 className="font-display text-lg font-semibold text-ink">
-              Delivery receipt (QR status slip)
+              Delivery receipt (QR)
             </h2>
-            <p className="mt-2 text-sm text-muted">
-              Scan this QR to open tracking directly. This supports your
-              QR-oriented receipt flow.
-            </p>
+            <p className="mt-2 text-sm text-muted">Scan to open your tracking page.</p>
             <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-center">
               {qrDataUrl ? (
                 <Image
@@ -403,9 +396,9 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                 )}
               </div>
             </div>
-          </div>
+          </PublicCard>
 
-          <div className="rounded-2xl border border-border bg-surface-elevated/70 p-6 backdrop-blur-md sm:p-8">
+          <PublicCard className="sm:p-8">
             <h2 className="font-display text-lg font-semibold text-ink">
               Pickup OTP (share only at pickup)
             </h2>
@@ -429,7 +422,7 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                 ) : null}
               </>
             )}
-          </div>
+          </PublicCard>
 
           <Link
             href="/public/book"

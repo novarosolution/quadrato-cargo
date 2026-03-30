@@ -2,11 +2,11 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Menu, X } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { authNav, mainNav } from "@/lib/nav";
+import { QuadratoBrandLogo } from "@/components/QuadratoBrandLogo";
 import { siteName } from "@/lib/site";
 import { ThemeToggle } from "@/components/ThemeBtn";
 import { postLogoutApi, type ApiUser } from "@/lib/api/auth-client";
@@ -279,28 +279,19 @@ export function Header() {
       <div className="mx-auto grid h-[4.25rem] max-w-7xl grid-cols-[minmax(0,auto)_minmax(0,1fr)_auto] items-center gap-2 px-3 sm:gap-3 sm:px-6 lg:px-8">
         <Link
           href="/public"
-          className="group flex min-w-0 max-w-full items-center gap-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal sm:gap-2"
+          aria-label={`${siteName} — home`}
+          className="group flex min-w-0 max-w-full items-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal"
         >
           <motion.span
-            className="relative flex h-10 w-10 shrink-0 overflow-hidden bg-transparent lg:h-11 lg:w-11"
+            className="relative flex h-8 w-auto max-w-[min(260px,calc(100vw-6.5rem))] shrink-0 items-center overflow-visible bg-transparent sm:h-10 lg:h-11"
             initial={reduce ? false : { scale: 0.88, opacity: 0, rotate: -10 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 380, damping: 22, delay: 0.02 }}
             whileHover={reduce ? undefined : { scale: 1.04 }}
             whileTap={{ scale: 0.94 }}
           >
-            <Image
-              src="/quadrato-logo-icon.png"
-              alt=""
-              fill
-              sizes="(max-width: 1023px) 40px, 44px"
-              className="object-cover rounded-none"
-              priority
-            />
+            <QuadratoBrandLogo variant="wordmark" className="h-full w-auto text-ink" />
           </motion.span>
-          <span className="font-display min-w-0 max-w-[7.5rem] truncate text-sm font-semibold leading-tight tracking-tight text-ink sm:max-w-[10rem] md:max-w-[12rem] lg:max-w-none">
-            {siteName}
-          </span>
         </Link>
 
         <motion.nav

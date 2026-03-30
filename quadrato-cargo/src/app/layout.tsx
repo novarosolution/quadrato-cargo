@@ -1,17 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
+import { Manrope, Outfit } from "next/font/google";
 import { ThemeInit } from "@/components/ThemeBoot";
 import { siteDescription, siteName, getSiteUrl } from "@/lib/site";
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
   display: "swap",
 });
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     siteName,
     title: siteName,
     description: siteDescription,
-    images: [{ url: "/quadrato-logo-full.png" }],
+    images: [{ url: "/quadrato-logo-full.png", alt: siteName }],
   },
   twitter: {
     card: "summary_large_image",
@@ -52,12 +52,16 @@ export const metadata: Metadata = {
     description: siteDescription,
     images: ["/quadrato-logo-full.png"],
   },
+  /**
+   * Browser tab icon: Next injects `src/app/icon.svg` (brand grid) automatically.
+   * PNG + ICO here as fallbacks; Apple uses PNG for home-screen / bookmarks.
+   */
   icons: {
     icon: [
-      { url: "/favicon.ico", type: "image/x-icon" },
-      { url: "/quadrato-logo-icon.png", sizes: "512x512", type: "image/png" },
+      { url: "/quadrato-logo-icon.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
     ],
-    apple: [{ url: "/quadrato-logo-icon.png", sizes: "512x512", type: "image/png" }],
+    apple: [{ url: "/quadrato-logo-icon.png", sizes: "180x180", type: "image/png" }],
     shortcut: ["/favicon.ico"],
   },
 };
@@ -72,14 +76,15 @@ export default function RootLayout({
       lang="en"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${jakarta.variable} ${spaceGrotesk.variable} h-full scroll-smooth antialiased`}
+      className={`${manrope.variable} ${outfit.variable} h-full scroll-smooth antialiased`}
     >
       <body className="min-h-full font-sans">
         <ThemeInit />
         <div className="body-gradient" aria-hidden />
         <div className="body-grid" aria-hidden />
         <div className="body-noise" aria-hidden />
-        {children}
+        {/* Keep all routes above fixed background layers (avoids rare clipping). */}
+        <div className="relative z-10 min-h-full">{children}</div>
       </body>
     </html>
   );

@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { PublicCard } from "@/components/public/PublicCard";
+import { PublicPageSection } from "@/components/public/PublicPageSection";
 import { Container } from "@/components/Wrap";
 import { BookCourierForm } from "./Courierftsx";
 
 function BookFormFallback() {
   return (
-    <div
-      className="panel-card animate-pulse space-y-4 border border-border p-6"
-      aria-hidden
-    >
+    <div aria-hidden>
+      <PublicCard className="animate-pulse space-y-4">
       <div className="h-4 w-1/3 rounded bg-pill" />
       <div className="h-10 w-full rounded-xl bg-pill" />
       <div className="h-10 w-full rounded-xl bg-pill" />
       <div className="h-12 w-40 rounded-full bg-pill" />
+      </PublicCard>
     </div>
   );
 }
@@ -27,7 +28,10 @@ export const metadata: Metadata = {
 export default function BookCourierPage() {
   return (
     <div>
-      <section className="relative overflow-hidden border-b border-border page-section-compact">
+      <PublicPageSection
+        compact
+        className="relative overflow-hidden border-b border-border !py-12 sm:!py-16"
+      >
         <div
           className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-teal/10 blur-[80px]"
           aria-hidden
@@ -41,12 +45,14 @@ export default function BookCourierPage() {
             Domestic or international — instant or scheduled pickup in a few steps.
           </p>
         </Container>
-      </section>
+      </PublicPageSection>
 
-      <section className="page-section-compact">
+      <PublicPageSection compact>
         <Container className="max-w-3xl">
           <Suspense fallback={<BookFormFallback />}>
-            <BookCourierForm />
+            <PublicCard className="sm:p-6 md:p-7">
+              <BookCourierForm />
+            </PublicCard>
           </Suspense>
           <p className="mt-8 text-center text-sm text-muted">
             <Link href="/public/contact" className="font-medium text-teal hover:underline">
@@ -54,7 +60,7 @@ export default function BookCourierPage() {
             </Link>
           </p>
         </Container>
-      </section>
+      </PublicPageSection>
     </div>
   );
 }

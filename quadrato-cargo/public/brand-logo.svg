@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="40 224 378 96" fill="none" role="img" aria-labelledby="brandTitle">
+  <title id="brandTitle">Quadrato Cargo</title>
+  <g id="mark">
+    <path d="m 44.4526,234.8898 v 37.0378 H 82.472 v -37.0378 z" fill="#3ed5c2" fill-rule="evenodd"/>
+    <path d="m 44.4532,276.359 v 37.0378 H 82.4726 V 276.359 Z" fill="#3ed5c2" fill-rule="evenodd"/>
+    <path d="m 86.5687,276.3147 v 37.0379 h 38.0194 v -37.0379 z" fill="#3ed5c2" fill-rule="evenodd"/>
+    <path d="m 86.3844,234.8904 v 37.0378 h 38.0194 v -37.0378 z" fill="#ed7304" fill-rule="evenodd"/>
+  </g>
+  <text x="131" y="279.5" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="26" font-weight="700" fill="#0f172a">
+    Quadrato Cargo
+  </text>
+  <text x="171.5" y="298" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" font-weight="600" fill="#ee5f10">
+    Fast Forward Rapid Reach
+  </text>
+</svg>

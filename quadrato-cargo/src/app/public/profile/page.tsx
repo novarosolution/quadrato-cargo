@@ -4,6 +4,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MessageCircle, Search, Truck, UserRound } from "lucide-react";
 import { auth } from "@/auth";
+import { PublicCard } from "@/components/public/PublicCard";
+import { PublicPageSection } from "@/components/public/PublicPageSection";
 import { Container } from "@/components/Wrap";
 import {
   BOOKING_STATUS_LABELS,
@@ -90,18 +92,15 @@ export default async function ProfilePage() {
             Your profile
           </h1>
           <p className="mt-3 text-sm text-muted">
-            Signed in as{" "}
-            <span className="font-medium text-ink">{user.email}</span>. This is
-            your customer hub: edit your name, see every booking you made while
-            logged in, and read live status, Tracking IDs, and tracking
-            notes from dispatch — all in one place.
+            Signed in as <span className="font-medium text-ink">{user.email}</span>.
+            Manage bookings, tracking, and your profile here.
           </p>
         </Container>
       </section>
 
-      <section className="py-12 sm:py-16">
+      <PublicPageSection>
         <Container className="max-w-4xl space-y-8">
-          <div className="rounded-3xl border border-border bg-linear-to-br from-surface-elevated/80 to-canvas/30 p-6 sm:p-8">
+          <PublicCard className="bg-linear-to-br from-surface-elevated/80 to-canvas/30 sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-teal/15 text-teal">
@@ -116,28 +115,26 @@ export default async function ProfilePage() {
               </div>
               <p className="text-xs text-muted-soft">Member since {dateFmt.format(user.createdAt)}</p>
             </div>
-          </div>
+          </PublicCard>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-border bg-surface-elevated/70 p-4">
+            <PublicCard className="p-4">
               <p className="text-xs uppercase tracking-wide text-muted-soft">Total bookings</p>
               <p className="mt-2 text-2xl font-semibold text-ink">{bookings.length}</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-surface-elevated/70 p-4">
+            </PublicCard>
+            <PublicCard className="p-4">
               <p className="text-xs uppercase tracking-wide text-muted-soft">Active</p>
               <p className="mt-2 text-2xl font-semibold text-teal">{activeCount}</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-surface-elevated/70 p-4">
+            </PublicCard>
+            <PublicCard className="p-4">
               <p className="text-xs uppercase tracking-wide text-muted-soft">Delivered</p>
               <p className="mt-2 text-2xl font-semibold text-ink">{deliveredCount}</p>
-            </div>
+            </PublicCard>
           </div>
 
-          <div className="rounded-2xl border border-border bg-surface-elevated/70 p-6 sm:p-8">
+          <PublicCard className="sm:p-8">
             <h2 className="font-display text-xl font-semibold text-ink">Quick actions</h2>
-            <p className="mt-1 text-sm text-muted">
-              Faster shortcuts for common account tasks.
-            </p>
+            <p className="mt-1 text-sm text-muted">Shortcuts for bookings and support.</p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <Link
                 href="/public/book"
@@ -173,9 +170,9 @@ export default async function ProfilePage() {
                 </span>
               )}
             </div>
-          </div>
+          </PublicCard>
 
-          <div className="rounded-3xl border border-border bg-surface-elevated/70 p-6 sm:p-8">
+          <PublicCard className="sm:p-8">
             <h2 className="font-display text-xl font-semibold text-ink">
               Edit profile
             </h2>
@@ -185,17 +182,16 @@ export default async function ProfilePage() {
             <div className="mt-6 border-t border-border pt-6">
               <ProfileEditForm key={user.id} initialName={user.name} />
             </div>
-          </div>
+          </PublicCard>
 
-          <div className="rounded-3xl border border-border bg-surface-elevated/70 p-6 sm:p-8">
+          <PublicCard className="sm:p-8">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h2 className="font-display text-xl font-semibold text-ink">
                   Your courier bookings
                 </h2>
                 <p className="mt-1 text-sm text-muted">
-                  Bookings you make while signed in appear here with live status
-                  and Tracking ID details from dispatch.
+                  Status and Tracking ID updates from dispatch.
                 </p>
               </div>
               <Link
@@ -222,7 +218,7 @@ export default async function ProfilePage() {
                     <li key={b.id}>
                       <Link
                         href={`/public/profile/booksdetels/${b.id}`}
-                        className="block rounded-2xl border border-border bg-canvas/30 px-4 py-4 transition hover:border-teal/30 hover:bg-pill-hover"
+                        className="panel-card card-interactive block transition hover:border-teal/30"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="font-medium capitalize text-ink">
@@ -249,9 +245,9 @@ export default async function ProfilePage() {
                 })}
               </ul>
             )}
-          </div>
+          </PublicCard>
 
-          <div className="rounded-3xl border border-border bg-surface-elevated/70 p-6 sm:p-8">
+          <PublicCard className="sm:p-8">
             <h2 className="font-display text-xl font-semibold text-ink">
               Account details
             </h2>
@@ -270,15 +266,13 @@ export default async function ProfilePage() {
                   {dateFmt.format(user.createdAt)}
                 </dd>
               </div>
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-wider text-muted-soft">
-                  Account ID
-                </dt>
-                <dd className="mt-1 break-all font-mono text-xs text-muted-soft">
-                  {user.id}
-                </dd>
-              </div>
             </dl>
+            <details className="mt-6 border-t border-border pt-4">
+              <summary className="cursor-pointer text-sm font-medium text-teal hover:underline">
+                Technical reference
+              </summary>
+              <p className="mt-3 break-all font-mono text-xs text-muted-soft">{user.id}</p>
+            </details>
 
             <div className="mt-8 flex flex-col gap-3 border-t border-border pt-8 sm:flex-row sm:flex-wrap">
               <Link
@@ -288,7 +282,7 @@ export default async function ProfilePage() {
                 Home
               </Link>
             </div>
-          </div>
+          </PublicCard>
 
           <p className="text-center text-xs text-muted-soft">
             To change your password or delete your account, contact{" "}
@@ -301,7 +295,7 @@ export default async function ProfilePage() {
             .
           </p>
         </Container>
-      </section>
+      </PublicPageSection>
     </div>
   );
 }

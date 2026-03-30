@@ -1,11 +1,11 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { fetchHealth } from "@/lib/api/public-client";
 import { useMotionPreferences } from "@/lib/motion-preferences";
+import { QuadratoBrandLogo } from "@/components/QuadratoBrandLogo";
 import { authNav, mainNav } from "@/lib/nav";
 
 function ApiHealthLine() {
@@ -76,19 +76,17 @@ export function Footer() {
           >
             <div className="flex items-center gap-3">
               <motion.div
-                className="relative h-16 w-[320px] max-w-full overflow-hidden bg-transparent"
+                className="relative w-full max-w-[260px] text-ink sm:max-w-[300px]"
                 initial={reduce ? false : { scale: 0.9, opacity: 0 }}
                 whileInView={{ scale: 1, opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ type: "spring", stiffness: 360, damping: 24 }}
                 whileHover={canHoverMotion ? { scale: 1.02 } : undefined}
               >
-                <Image
-                  src="/quadrato-logo-full.png"
-                  alt="Quadrato Cargo full logo"
-                  fill
-                  sizes="320px"
-                  className="object-cover object-left rounded-none"
+                <QuadratoBrandLogo
+                  variant="full"
+                  className="h-12 w-auto max-w-full sm:h-14"
+                  decorative={false}
                 />
               </motion.div>
             </div>

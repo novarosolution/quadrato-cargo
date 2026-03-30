@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getApiBaseUrl } from "@/lib/api/base-url";
+import { drawBrandedPdfHeader } from "@/lib/pdf-brand-logo";
 
 type PdfSettings = {
   companyName: string;
@@ -98,31 +99,30 @@ export function DownloadBookingPdfButton({
     const wrapped = (value: string, width: number) =>
       doc.splitTextToSize(safe(value), width);
 
-    doc.setFillColor(15, 118, 110);
-    doc.rect(0, 0, 210, 32, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text(safe(settings.companyName), 14, 13);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text(safe(settings.headerSubtitle), 14, 19);
-    doc.text(`Ref: ${safe(reference)}`, 14, 25);
-
     const qrDataUrl = await QRCode.toDataURL(trackUrl, { width: 240, margin: 1 }).catch(
       () => null,
     );
-    if (qrDataUrl) {
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(164, 6, 38, 24, 2, 2, "F");
-      doc.addImage(qrDataUrl, "PNG", 170, 8, 18, 18);
-      doc.setTextColor(15, 118, 110);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(7.5);
-      doc.text("SCAN", 190, 27, { align: "center" });
-    }
+
+    drawBrandedPdfHeader(
+      doc,
+      {
+        companyName: settings.companyName,
+        headerSubtitle: settings.headerSubtitle,
+        reference: safe(reference),
+        primaryColorHex: settings.primaryColor,
+        accentColorHex: settings.accentColor,
+      },
+      qrDataUrl,
+    );
 
     let y = 40;
+    if (template === "invoice") {
+      doc.setTextColor(55, 65, 81);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text("Invoice", 14, 38);
+      y = 46;
+    }
     const drawPair = (label: string, value: string, x: number, yy: number) => {
       doc.setTextColor(55, 65, 81);
       doc.setFont("helvetica", "bold");
@@ -180,7 +180,9 @@ export function DownloadBookingPdfButton({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.text(safe(settings.footerNote), 105, 286, { align: "center" });
-    doc.save(`courier-details-${safe(reference || bookingId).replace(/[^a-zA-Z0-9-_]/g, "-")}.pdf`);
+    const fileStem = safe(reference || bookingId).replace(/[^a-zA-Z0-9-_]/g, "-");
+    const prefix = template === "invoice" ? "invoice" : "tracking";
+    doc.save(`${prefix}-${fileStem || "booking"}.pdf`);
   };
 
   const onDownload = async () => {

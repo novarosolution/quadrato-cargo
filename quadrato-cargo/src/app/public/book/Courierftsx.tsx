@@ -397,7 +397,7 @@ export function BookCourierForm() {
   }
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} className="rounded-2xl border border-border bg-canvas/10 p-4 shadow-sm backdrop-blur-md sm:p-5" noValidate>
+    <form ref={formRef} onSubmit={onSubmit} className="space-y-4 sm:space-y-5" noValidate>
       <div className="rounded-xl border border-teal/25 bg-linear-to-r from-teal/10 to-canvas/20 p-3 sm:p-4">
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-soft">
@@ -431,7 +431,6 @@ export function BookCourierForm() {
         <legend className="font-display text-base font-semibold text-ink px-1">
           Step 1: Shipment route
         </legend>
-        <p className="text-sm text-muted">Domestic or international; choose pickup mode next.</p>
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-strong bg-ghost-fill px-4 py-3 has-checked:border-teal/40 has-checked:bg-teal/5">
             <input

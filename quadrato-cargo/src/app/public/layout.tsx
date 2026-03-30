@@ -20,7 +20,7 @@ export default async function SiteLayout({
       <div className="app-shell flex min-h-full flex-col">
         {showAnnouncement ? (
           <div className="border-b border-teal/20 bg-teal/10 px-4 py-2 text-center text-sm text-ink">
-            <span>{siteSettings.announcementText}</span>
+            <span className="inline-block max-w-full break-words">{siteSettings.announcementText}</span>
             {siteSettings.announcementCtaLabel && siteSettings.announcementCtaHref ? (
               <Link
                 href={siteSettings.announcementCtaHref}
@@ -32,7 +32,7 @@ export default async function SiteLayout({
           </div>
         ) : null}
         <Header />
-        <main className="flex-1 pb-20 lg:pb-0">{children}</main>
+        <main className="min-w-0 flex-1 pb-20 lg:pb-0">{children}</main>
         <PublicSpeedButtons />
         <PublicBottomNav />
         <Footer />

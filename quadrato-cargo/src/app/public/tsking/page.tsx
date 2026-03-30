@@ -7,6 +7,8 @@ import {
   normalizeBookingStatus,
 } from "@/lib/booking-status";
 import { fetchProfileBookingsServer } from "@/lib/api/profile-client";
+import { PublicCard } from "@/components/public/PublicCard";
+import { PublicPageSection } from "@/components/public/PublicPageSection";
 import { Container } from "@/components/Wrap";
 import { PageHero } from "@/components/Hero";
 import { TrackOrderForm } from "./trakindfom";
@@ -42,10 +44,10 @@ export default async function TrackOrderPage({
         title="Track your order in real time"
         description="Enter your booking ID or Tracking ID to see the latest status."
       />
-      <section className="page-section-compact">
+      <PublicPageSection compact>
         <Container className="max-w-2xl">
           {userBookings.length > 0 ? (
-            <div className="panel-card mb-5">
+            <PublicCard className="mb-5">
               <h2 className="font-display text-lg font-semibold text-ink">
                 Your recent orders
               </h2>
@@ -57,7 +59,10 @@ export default async function TrackOrderPage({
                   const reference =
                     b.publicBarcodeCode || b.consignmentNumber || b.id;
                   return (
-                    <li key={b.id} className="panel-card-soft flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <li
+                      key={b.id}
+                      className="panel-card-soft flex flex-wrap items-center justify-between gap-2 text-sm"
+                    >
                       <span className="text-muted-soft">
                         {BOOKING_STATUS_LABELS[normalizeBookingStatus(b.status)]}
                       </span>
@@ -71,13 +76,11 @@ export default async function TrackOrderPage({
                   );
                 })}
               </ul>
-            </div>
+            </PublicCard>
           ) : null}
-          <div className="panel-card">
-            <TrackOrderForm initialReference={initialReference} />
-          </div>
+          <TrackOrderForm initialReference={initialReference} />
         </Container>
-      </section>
+      </PublicPageSection>
     </div>
   );
 }
