@@ -318,6 +318,15 @@ export async function updateSiteSettingsAdmin(
     pdfWebsite: String(formData.get("pdfWebsite") ?? "").trim(),
     pdfWatermarkText: String(formData.get("pdfWatermarkText") ?? "").trim(),
     pdfFooterNote: String(formData.get("pdfFooterNote") ?? "").trim(),
+    trackShowStatusBadge: String(formData.get("trackShowStatusBadge") ?? "").trim() === "on",
+    trackShowRouteAndDates: String(formData.get("trackShowRouteAndDates") ?? "").trim() === "on",
+    trackShowOperationalLog: String(formData.get("trackShowOperationalLog") ?? "").trim() === "on",
+    trackShowAssignmentSection: String(formData.get("trackShowAssignmentSection") ?? "").trim() === "on",
+    trackShowShipmentCard: String(formData.get("trackShowShipmentCard") ?? "").trim() === "on",
+    trackShowTimeline: String(formData.get("trackShowTimeline") ?? "").trim() === "on",
+    trackShowPdfButton: String(formData.get("trackShowPdfButton") ?? "").trim() === "on",
+    trackShowInternationalHelp: String(formData.get("trackShowInternationalHelp") ?? "").trim() === "on",
+    trackShowOnHoldBanner: String(formData.get("trackShowOnHoldBanner") ?? "").trim() === "on",
   });
 
   if (!result.ok) {
@@ -326,6 +335,7 @@ export async function updateSiteSettingsAdmin(
 
   revalidatePath("/admin/settings");
   revalidatePath("/");
+  revalidatePath("/public/tsking");
   return { ok: true, message: "Website settings updated." };
 }
 

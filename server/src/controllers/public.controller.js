@@ -5,7 +5,10 @@ import bwipjs from "bwip-js";
 import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
 import { env } from "../config/env.js";
 import { getDb } from "../db/mongo.js";
-import { normalizeSiteSettings } from "../models/site-settings.model.js";
+import {
+  normalizeSiteSettings,
+  publicTrackUiFromSettings
+} from "../models/site-settings.model.js";
 import {
   createBooking,
   findBookingByReference,
@@ -1402,12 +1405,17 @@ export async function trackBooking(req, res, next) {
     if (!row) {
       return sendNotFound(res, "Tracking not found.");
     }
+    const db = await getDb();
+    const siteRow = await db.collection("settings").findOne({ key: "site" });
+    const siteNorm = normalizeSiteSettings(siteRow);
+    const trackUi = publicTrackUiFromSettings(siteNorm);
     let courierName = null;
     if (row.courierId) {
       const courier = await findUserById(row.courierId);
       courierName = String(courier?.name || courier?.email || "").trim() || null;
     }
     return sendOk(res, {
+      trackUi,
       tracking: {
         id: row.id,
         routeType: row.routeType,

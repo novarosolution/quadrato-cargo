@@ -296,6 +296,99 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
           />
         </div>
 
+        <div className="mt-2 border-t border-border-strong pt-5 md:col-span-2">
+          <h3 className="font-display text-base font-semibold text-ink">
+            Public tracking page (/track)
+          </h3>
+          <p className="mt-1 text-sm text-muted">
+            Choose what customers see after they enter a booking or tracking ID. Uncheck to hide.
+            Booking-level updates (status, public note) still apply; this only controls layout and
+            extra sections.
+          </p>
+        </div>
+
+        <label className="flex items-center gap-3 text-sm md:col-span-2">
+          <input
+            name="trackShowStatusBadge"
+            type="checkbox"
+            defaultChecked={initialSettings.trackShowStatusBadge}
+            className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
+          />
+          Show status pill (e.g. In transit, Delivered)
+        </label>
+        <label className="flex items-center gap-3 text-sm md:col-span-2">
+          <input
+            name="trackShowRouteAndDates"
+            type="checkbox"
+            defaultChecked={initialSettings.trackShowRouteAndDates}
+            className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
+          />
+          Show route, created date, last updated, and international EDD
+        </label>
+        <label className="flex items-center gap-3 text-sm md:col-span-2">
+          <input
+            name="trackShowOperationalLog"
+            type="checkbox"
+            defaultChecked={initialSettings.trackShowOperationalLog}
+            className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
+          />
+          Show operational activity log (when it differs from the public note)
+        </label>
+        <label className="flex items-center gap-3 text-sm md:col-span-2">
+          <input
+            name="trackShowAssignmentSection"
+            type="checkbox"
+            defaultChecked={initialSettings.trackShowAssignmentSection}
+            className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
+          />
+          Show assignment block (barcode, courier, agency, pickup &amp; delivery addresses)
+        </label>
+        <label className="flex items-center gap-3 text-sm md:col-span-2">
+          <input
+            name="trackShowShipmentCard"
+            type="checkbox"
+            defaultChecked={initialSettings.trackShowShipmentCard}
+            className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
+          />
+          Show shipment details card (weight, dimensions, declared value, contents)
+        </label>
+        <label className="flex items-center gap-3 text-sm md:col-span-2">
+          <input
+            name="trackShowTimeline"
+            type="checkbox"
+            defaultChecked={initialSettings.trackShowTimeline}
+            className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
+          />
+          Show shipment timeline (stages / progress)
+        </label>
+        <label className="flex items-center gap-3 text-sm md:col-span-2">
+          <input
+            name="trackShowPdfButton"
+            type="checkbox"
+            defaultChecked={initialSettings.trackShowPdfButton}
+            className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
+          />
+          Show “Download PDF” on the latest timeline step (when timeline is on)
+        </label>
+        <label className="flex items-center gap-3 text-sm md:col-span-2">
+          <input
+            name="trackShowInternationalHelp"
+            type="checkbox"
+            defaultChecked={initialSettings.trackShowInternationalHelp}
+            className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
+          />
+          Show international “common delays &amp; customs” help panel
+        </label>
+        <label className="flex items-center gap-3 text-sm md:col-span-2">
+          <input
+            name="trackShowOnHoldBanner"
+            type="checkbox"
+            defaultChecked={initialSettings.trackShowOnHoldBanner}
+            className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
+          />
+          Show on-hold notice for international shipments
+        </label>
+
         {state?.ok === false ? (
           <p className="text-sm text-rose-400 md:col-span-2" role="alert">
             {state.error}

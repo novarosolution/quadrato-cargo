@@ -118,9 +118,41 @@ export type PublicTrackingShipment = {
   dimensionsCm: { l: string | null; w: string | null; h: string | null } | null;
 };
 
+/** What customers see on /public/tsking (from admin site settings). */
+export type PublicTrackUiSettings = {
+  showStatusBadge: boolean;
+  showRouteAndDates: boolean;
+  showOperationalLog: boolean;
+  showAssignmentSection: boolean;
+  showShipmentCard: boolean;
+  showTimeline: boolean;
+  showPdfButton: boolean;
+  showInternationalHelp: boolean;
+  showOnHoldBanner: boolean;
+};
+
+export const DEFAULT_PUBLIC_TRACK_UI: PublicTrackUiSettings = {
+  showStatusBadge: true,
+  showRouteAndDates: true,
+  showOperationalLog: true,
+  showAssignmentSection: true,
+  showShipmentCard: true,
+  showTimeline: true,
+  showPdfButton: true,
+  showInternationalHelp: true,
+  showOnHoldBanner: true,
+};
+
+export function mergePublicTrackUi(
+  partial?: Partial<PublicTrackUiSettings> | null,
+): PublicTrackUiSettings {
+  return { ...DEFAULT_PUBLIC_TRACK_UI, ...partial };
+}
+
 export type PublicTrackingResponse =
   | {
       ok: true;
+      trackUi?: Partial<PublicTrackUiSettings> | null;
       tracking: {
         id: string;
         routeType: string;
@@ -191,6 +223,43 @@ export type SiteSettings = {
   pdfWebsite: string;
   pdfWatermarkText: string;
   pdfFooterNote: string;
+  trackShowStatusBadge: boolean;
+  trackShowRouteAndDates: boolean;
+  trackShowOperationalLog: boolean;
+  trackShowAssignmentSection: boolean;
+  trackShowShipmentCard: boolean;
+  trackShowTimeline: boolean;
+  trackShowPdfButton: boolean;
+  trackShowInternationalHelp: boolean;
+  trackShowOnHoldBanner: boolean;
+};
+
+const SITE_SETTINGS_FALLBACK: SiteSettings = {
+  announcementEnabled: false,
+  announcementText: "",
+  announcementCtaLabel: "",
+  announcementCtaHref: "",
+  pdfCompanyName: "Quadrato Cargo",
+  pdfCompanyAddress: "",
+  pdfLogoText: "QR",
+  pdfPrimaryColor: "#0f766e",
+  pdfAccentColor: "#f97316",
+  pdfCardColor: "#f8fafc",
+  pdfHeaderSubtitle: "International courier service",
+  pdfSupportEmail: "support@quadratocargo.com",
+  pdfSupportPhone: "+1 (555) 010-0199",
+  pdfWebsite: "https://quadratocargo.com",
+  pdfWatermarkText: "Quadrato Cargo",
+  pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
+  trackShowStatusBadge: true,
+  trackShowRouteAndDates: true,
+  trackShowOperationalLog: true,
+  trackShowAssignmentSection: true,
+  trackShowShipmentCard: true,
+  trackShowTimeline: true,
+  trackShowPdfButton: true,
+  trackShowInternationalHelp: true,
+  trackShowOnHoldBanner: true,
 };
 
 export async function fetchSiteSettings(): Promise<SiteSettings> {
@@ -199,64 +268,11 @@ export async function fetchSiteSettings(): Promise<SiteSettings> {
       next: { revalidate: 30 },
     });
     if (!res.ok) {
-      return {
-        announcementEnabled: false,
-        announcementText: "",
-        announcementCtaLabel: "",
-        announcementCtaHref: "",
-        pdfCompanyName: "Quadrato Cargo",
-        pdfCompanyAddress: "",
-        pdfLogoText: "QR",
-        pdfPrimaryColor: "#0f766e",
-        pdfAccentColor: "#f97316",
-        pdfCardColor: "#f8fafc",
-        pdfHeaderSubtitle: "International courier service",
-        pdfSupportEmail: "support@quadratocargo.com",
-        pdfSupportPhone: "+1 (555) 010-0199",
-        pdfWebsite: "https://quadratocargo.com",
-        pdfWatermarkText: "Quadrato Cargo",
-        pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
-      };
+      return { ...SITE_SETTINGS_FALLBACK };
     }
     const data = (await res.json()) as { ok?: boolean; settings?: SiteSettings };
-    return (
-      data.settings || {
-        announcementEnabled: false,
-        announcementText: "",
-        announcementCtaLabel: "",
-        announcementCtaHref: "",
-        pdfCompanyName: "Quadrato Cargo",
-        pdfCompanyAddress: "",
-        pdfLogoText: "QR",
-        pdfPrimaryColor: "#0f766e",
-        pdfAccentColor: "#f97316",
-        pdfCardColor: "#f8fafc",
-        pdfHeaderSubtitle: "International courier service",
-        pdfSupportEmail: "support@quadratocargo.com",
-        pdfSupportPhone: "+1 (555) 010-0199",
-        pdfWebsite: "https://quadratocargo.com",
-        pdfWatermarkText: "Quadrato Cargo",
-        pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
-      }
-    );
+    return data.settings ? { ...SITE_SETTINGS_FALLBACK, ...data.settings } : { ...SITE_SETTINGS_FALLBACK };
   } catch {
-    return {
-      announcementEnabled: false,
-      announcementText: "",
-      announcementCtaLabel: "",
-      announcementCtaHref: "",
-      pdfCompanyName: "Quadrato Cargo",
-      pdfCompanyAddress: "",
-      pdfLogoText: "QR",
-      pdfPrimaryColor: "#0f766e",
-      pdfAccentColor: "#f97316",
-      pdfCardColor: "#f8fafc",
-      pdfHeaderSubtitle: "International courier service",
-      pdfSupportEmail: "support@quadratocargo.com",
-      pdfSupportPhone: "+1 (555) 010-0199",
-      pdfWebsite: "https://quadratocargo.com",
-      pdfWatermarkText: "Quadrato Cargo",
-      pdfFooterNote: "Thank you for choosing Quadrato Cargo.",
-    };
+    return { ...SITE_SETTINGS_FALLBACK };
   }
 }

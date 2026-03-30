@@ -93,6 +93,15 @@ export type AdminSiteSettings = {
   pdfWebsite: string;
   pdfWatermarkText: string;
   pdfFooterNote: string;
+  trackShowStatusBadge: boolean;
+  trackShowRouteAndDates: boolean;
+  trackShowOperationalLog: boolean;
+  trackShowAssignmentSection: boolean;
+  trackShowShipmentCard: boolean;
+  trackShowTimeline: boolean;
+  trackShowPdfButton: boolean;
+  trackShowInternationalHelp: boolean;
+  trackShowOnHoldBanner: boolean;
 };
 
 export type AdminMonthlyReport = {
