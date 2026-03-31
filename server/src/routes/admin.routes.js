@@ -15,6 +15,7 @@ import { normalizeSiteSettings } from "../models/site-settings.model.js";
 import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
 import { MIN_PASSWORD_LENGTH } from "../shared/constants.js";
 import { findBookingByReference } from "../modules/bookings/booking-repo.js";
+import { computeNextPublicTimelineStatusPath } from "../lib/public-timeline-status-path.js";
 
 const router = Router();
 const PAGE_SIZE = 25;
@@ -951,6 +952,8 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
     if (!ALLOWED_BOOKING_STATUSES.has(status)) {
       return sendError(res, "Invalid booking status.");
     }
+    const bookingRow = await db.collection("bookings").findOne({ _id });
+    if (!bookingRow) return sendNotFound(res, "Booking not found.");
     const now = new Date();
     const $set = {
       status,
@@ -982,6 +985,14 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
     }
     if (!applyDisplayDate("estimatedDeliveryAt", parsed.data.estimatedDeliveryAt)) {
       return sendError(res, "Invalid estimated delivery date. Use a valid ISO date-time.");
+    }
+    const nextPath = computeNextPublicTimelineStatusPath(
+      bookingRow.publicTimelineStatusPath,
+      bookingRow.status,
+      status
+    );
+    if (nextPath) {
+      $set.publicTimelineStatusPath = nextPath;
     }
     const update =
       Object.keys($unset).length > 0 ? { $set, $unset } : { $set };

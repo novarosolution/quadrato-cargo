@@ -162,6 +162,8 @@ export type PublicTrackingResponse =
         publicTimelineOverrides?: PublicTimelineOverrides | null;
         /** Admin-set EDD (ISO); international track still falls back to +10d from created if unset. */
         estimatedDeliveryAt?: string | null;
+        /** Status history for progressive timeline; omit/null = show full milestone ladder (legacy). */
+        publicTimelineStatusPath?: string[] | null;
       };
     }
   | { ok: false; message: string };

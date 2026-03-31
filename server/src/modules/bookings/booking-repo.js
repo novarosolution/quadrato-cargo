@@ -10,6 +10,7 @@ import {
   computePublicBarcodeCode,
   isPublicBarcodeCodeFormat
 } from "../../shared/public-barcode-code.js";
+import { computeNextPublicTimelineStatusPath } from "../../lib/public-timeline-status-path.js";
 
 const BOOKINGS = "bookings";
 
@@ -342,20 +343,25 @@ export async function verifyPickupOtpByCourier(courierId, bookingId, code) {
   const agencyOtpCode = await generateUniqueAgencyOtpCode(db, row._id);
   const line = `[${now.toLocaleString()}] Pickup OTP verified by courier; parcel marked picked up.`;
   const nextNotes = row.trackingNotes ? `${row.trackingNotes}\n${line}` : line;
+  const pickedPath = computeNextPublicTimelineStatusPath(
+    row.publicTimelineStatusPath,
+    row.status,
+    "picked_up"
+  );
+  const setPicked = {
+    status: "picked_up",
+    pickupOtpVerifiedAt: now,
+    agencyHandoverOtpCode: agencyOtpCode,
+    agencyHandoverOtpHash: hashOtp(agencyOtpCode),
+    agencyHandoverOtpExpiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+    agencyHandoverVerifiedAt: null,
+    trackingNotes: nextNotes,
+    updatedAt: now
+  };
+  if (pickedPath) setPicked.publicTimelineStatusPath = pickedPath;
   const result = await db.collection(BOOKINGS).findOneAndUpdate(
     { _id: row._id, courierId: row.courierId },
-    {
-      $set: {
-        status: "picked_up",
-        pickupOtpVerifiedAt: now,
-        agencyHandoverOtpCode: agencyOtpCode,
-        agencyHandoverOtpHash: hashOtp(agencyOtpCode),
-        agencyHandoverOtpExpiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
-        agencyHandoverVerifiedAt: null,
-        trackingNotes: nextNotes,
-        updatedAt: now
-      }
-    },
+    { $set: setPicked },
     { returnDocument: "after" }
   );
   const updated = result?.value ?? result;
@@ -393,15 +399,20 @@ export async function startCourierJob(courierId, bookingId) {
   const now = new Date();
   const line = `[${now.toLocaleString()}] Courier started job and is now out for pickup.`;
   const nextNotes = row.trackingNotes ? `${row.trackingNotes}\n${line}` : line;
+  const outPath = computeNextPublicTimelineStatusPath(
+    row.publicTimelineStatusPath,
+    row.status,
+    "out_for_pickup"
+  );
+  const setOut = {
+    status: "out_for_pickup",
+    trackingNotes: nextNotes,
+    updatedAt: now
+  };
+  if (outPath) setOut.publicTimelineStatusPath = outPath;
   const result = await db.collection(BOOKINGS).findOneAndUpdate(
     { _id: row._id, courierId: row.courierId },
-    {
-      $set: {
-        status: "out_for_pickup",
-        trackingNotes: nextNotes,
-        updatedAt: now
-      }
-    },
+    { $set: setOut },
     { returnDocument: "after" }
   );
   const updated = result?.value ?? result;
@@ -453,16 +464,21 @@ export async function verifyAgencyHandoverOtp(agencyUser, reference, otpCode) {
   const now = new Date();
   const line = `[${now.toLocaleString()}] Agency handover OTP verified; agency processing started.`;
   const nextNotes = row.trackingNotes ? `${row.trackingNotes}\n${line}` : line;
+  const agencyPath = computeNextPublicTimelineStatusPath(
+    row.publicTimelineStatusPath,
+    row.status,
+    "agency_processing"
+  );
+  const setAgency = {
+    status: "agency_processing",
+    agencyHandoverVerifiedAt: now,
+    trackingNotes: nextNotes,
+    updatedAt: now
+  };
+  if (agencyPath) setAgency.publicTimelineStatusPath = agencyPath;
   const result = await db.collection(BOOKINGS).findOneAndUpdate(
     { _id: row._id },
-    {
-      $set: {
-        status: "agency_processing",
-        agencyHandoverVerifiedAt: now,
-        trackingNotes: nextNotes,
-        updatedAt: now
-      }
-    },
+    { $set: setAgency },
     { returnDocument: "after" }
   );
   const updated = result?.value ?? result;
@@ -480,15 +496,22 @@ export async function updateBookingByAgency(agencyUser, bookingId, update) {
   const status = String(update?.status ?? "").trim();
   const publicTrackingNote =
     String(update?.publicTrackingNote ?? update?.trackingNotes ?? "").trim() || null;
+  const row = await db.collection(BOOKINGS).findOne({ _id, ...agencyFilter });
+  if (!row) return null;
+  const agencyUpdatePath = computeNextPublicTimelineStatusPath(
+    row.publicTimelineStatusPath,
+    row.status,
+    status
+  );
+  const agencySet = {
+    status,
+    publicTrackingNote,
+    updatedAt: new Date()
+  };
+  if (agencyUpdatePath) agencySet.publicTimelineStatusPath = agencyUpdatePath;
   const result = await db.collection(BOOKINGS).findOneAndUpdate(
     { _id, ...agencyFilter },
-    {
-      $set: {
-        status,
-        publicTrackingNote,
-        updatedAt: new Date()
-      }
-    },
+    { $set: agencySet },
     { returnDocument: "after" }
   );
   const row = result?.value ?? result;

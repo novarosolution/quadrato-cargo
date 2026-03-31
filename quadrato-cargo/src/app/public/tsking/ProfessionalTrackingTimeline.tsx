@@ -18,6 +18,7 @@ import type { BookingStatusId } from "@/lib/booking-status";
 import type { PublicTimelineOverrides } from "@/lib/api/public-client";
 import {
   buildProfessionalTimelineSegments,
+  buildProfessionalTimelineSegmentsFromStatusPath,
   DOMESTIC_PROFESSIONAL_STAGES,
   domesticHubLocation,
   getDomesticProfessionalStageIndex,
@@ -117,6 +118,8 @@ export type ProfessionalTrackingTimelineProps = {
   latestNote?: string | null;
   /** When set, overrides default stage title, location line, hint, and optional per-card time. */
   timelineOverrides?: PublicTimelineOverrides | null;
+  /** Recorded status transitions; when present, timeline shows only those steps (not a filled ladder). */
+  publicTimelineStatusPath?: string[] | null;
 };
 
 export function ProfessionalTrackingTimeline({
@@ -126,6 +129,7 @@ export function ProfessionalTrackingTimeline({
   ctx,
   latestNote = null,
   timelineOverrides = null,
+  publicTimelineStatusPath = null,
 }: ProfessionalTrackingTimelineProps) {
   const isInternational = routeType === "international";
   const stages = isInternational ? INTERNATIONAL_PROFESSIONAL_STAGES : DOMESTIC_PROFESSIONAL_STAGES;
@@ -136,7 +140,13 @@ export function ProfessionalTrackingTimeline({
     : getDomesticProfessionalStageIndex(status);
   const isCancelled = status === "cancelled";
   const isOnHold = status === "on_hold";
-  const segments = buildProfessionalTimelineSegments(currentIdx, isInternational ? "international" : "domestic");
+  const mode = isInternational ? "international" : "domestic";
+  const fromPath = buildProfessionalTimelineSegmentsFromStatusPath(publicTimelineStatusPath, mode);
+  const ladder = buildProfessionalTimelineSegments(currentIdx, mode);
+  let segments = fromPath ?? ladder;
+  if (fromPath && !fromPath.some((s) => s.index === currentIdx)) {
+    segments = [{ kind: "stage" as const, index: currentIdx }, ...fromPath];
+  }
 
   return (
     <div className="space-y-4">

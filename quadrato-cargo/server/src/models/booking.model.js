@@ -172,7 +172,11 @@ export function toPublicBooking(row) {
       ? String(row.publicBarcodeCode).trim().toUpperCase()
       : null,
     publicTimelineOverrides: normalizePublicTimelineOverrides(row?.publicTimelineOverrides),
-    estimatedDeliveryAt: row.estimatedDeliveryAt ?? null
+    estimatedDeliveryAt: row.estimatedDeliveryAt ?? null,
+    /** Status transition history for public timeline (omit = legacy full ladder). */
+    publicTimelineStatusPath: Array.isArray(row?.publicTimelineStatusPath)
+      ? row.publicTimelineStatusPath.map((s) => String(s ?? "").trim()).filter(Boolean)
+      : null
   };
 }
 
@@ -207,7 +211,10 @@ export function toPublicBookingSummary(row) {
     publicBarcodeCode: row.publicBarcodeCode
       ? String(row.publicBarcodeCode).trim().toUpperCase()
       : null,
-    estimatedDeliveryAt: row.estimatedDeliveryAt ?? null
+    estimatedDeliveryAt: row.estimatedDeliveryAt ?? null,
+    publicTimelineStatusPath: Array.isArray(row?.publicTimelineStatusPath)
+      ? row.publicTimelineStatusPath.map((s) => String(s ?? "").trim()).filter(Boolean)
+      : null
   };
 }
 
@@ -241,6 +248,7 @@ export function createBookingDoc({ routeType, payload, userId }) {
     courierId: null,
     invoicePdfReady: false,
     invoice: null,
+    publicTimelineStatusPath: ["submitted"],
     createdAt: now,
     updatedAt: now
   };

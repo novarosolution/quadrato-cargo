@@ -1,4 +1,4 @@
-import type { BookingStatusId } from "@/lib/booking-status";
+import { normalizeBookingStatus, type BookingStatusId } from "@/lib/booking-status";
 import {
   INTERNATIONAL_TRACKING_PHASES,
   bookingStatusToInternationalStepIndex,
@@ -187,4 +187,27 @@ export function buildProfessionalTimelineSegments(
   void mode;
   const forward = Array.from({ length: currentStageIndex + 1 }, (_, i) => i);
   return forward.reverse().map((idx) => ({ kind: "stage", index: idx }));
+}
+
+/**
+ * Timeline from recorded status transitions (admin/agency/courier). Skips “filled in” milestones
+ * when ops jumps status. Returns null to fall back to {@link buildProfessionalTimelineSegments}.
+ */
+export function buildProfessionalTimelineSegmentsFromStatusPath(
+  statusPath: string[] | null | undefined,
+  mode: "international" | "domestic",
+): TimelineSegment[] | null {
+  if (!statusPath || statusPath.length === 0) return null;
+  const isInternational = mode === "international";
+  const macros: number[] = [];
+  for (const raw of statusPath) {
+    const s = normalizeBookingStatus(raw);
+    const idx = isInternational
+      ? getInternationalProfessionalStageIndex(s)
+      : getDomesticProfessionalStageIndex(s);
+    if (macros.length === 0 || macros[macros.length - 1] !== idx) {
+      macros.push(idx);
+    }
+  }
+  return macros.reverse().map((index) => ({ kind: "stage" as const, index }));
 }

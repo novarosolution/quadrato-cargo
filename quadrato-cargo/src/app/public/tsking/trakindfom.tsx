@@ -63,6 +63,8 @@ type State =
         shipment: PublicTrackingShipment | null;
         publicTimelineOverrides?: PublicTimelineOverrides | null;
         estimatedDeliveryAt?: string | null;
+        /** Recorded status steps for timeline; absent = legacy full ladder. */
+        publicTimelineStatusPath?: string[] | null;
       };
     };
 
@@ -381,6 +383,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                       agencyName: data.agencyName,
                     }}
                     timelineOverrides={data.publicTimelineOverrides ?? null}
+                    publicTimelineStatusPath={data.publicTimelineStatusPath ?? null}
                   />
                 );
               }
@@ -397,6 +400,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                     agencyName: data.agencyName,
                   }}
                   timelineOverrides={data.publicTimelineOverrides ?? null}
+                  publicTimelineStatusPath={data.publicTimelineStatusPath ?? null}
                 />
               );
             })()
