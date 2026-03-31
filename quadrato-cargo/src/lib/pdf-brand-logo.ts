@@ -60,7 +60,7 @@ export function drawBrandedPdfHeader(
 ) {
   const primary = parseHexRgb(branding.primaryColorHex, [15, 118, 110]);
   const accent = parseHexRgb(branding.accentColorHex, [249, 115, 22]);
-  const headerH = 34;
+  const headerH = 38;
 
   const name = String(branding.companyName || "").trim() || "Quadrato Cargo";
   const sub = String(branding.headerSubtitle || "").trim();
@@ -78,7 +78,7 @@ export function drawBrandedPdfHeader(
   doc.line(0, headerH, 210, headerH);
 
   if (logoPng) {
-    const logoW = 96;
+    const logoW = 108;
     const logoH = logoW / aspect;
     const yLogo = Math.max(3, (headerH - logoH) / 2);
     doc.addImage(logoPng, "PNG", 10, yLogo, logoW, logoH);

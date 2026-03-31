@@ -685,7 +685,7 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
         gap: 6px;
         align-items: start;
       }
-      .brand-lockup img { display: block; height: 30px; width: auto; max-width: 100%; object-fit: contain; }
+      .brand-lockup img { display: block; height: 38px; width: auto; max-width: 100%; object-fit: contain; }
       .brand {
         color: ${p};
         font-weight: 700;
@@ -834,7 +834,7 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
 
       <div class="inv-title">Invoice · ${esc(data.displayInvoiceId).slice(0, 28)}</div>
       <div class="inv-sub">
-        Booked ${esc(data.bookingDateLabel)} · Updated ${esc(data.updatedAtLabel)} ·
+        Booked ${esc(data.bookingDateLabel)} ·
         ID <span style="font-family:monospace">${esc(data.bookingId)}</span> ·
         ${esc(data.routeTypeLabel)} · ${esc(data.agencyLabel).slice(0, 22)}
       </div>
@@ -934,11 +934,11 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
         align-items: center;
         background: transparent;
         padding: 0;
-        min-height: 32px;
+        min-height: 38px;
       }
       .brand-lockup img {
         display: block;
-        height: 31px;
+        height: 38px;
         width: auto;
         max-width: 100%;
         object-fit: contain;
@@ -1156,7 +1156,6 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
       <div class="package-ref">PACKAGE REFERENCE</div>
       <div class="line" style="font-size:12px;margin-top:4px;">
         Booking ID: <strong>${esc(input.bookingId)}</strong>
-        · Last updated: <strong>${esc(input.updatedAtLabel)}</strong>
       </div>
       <div class="line">
         Booked: ${esc(input.bookingDateLabel)} | Amount: ${esc(input.amountLabel)} | Weight: ${esc(input.weightLabel)}
