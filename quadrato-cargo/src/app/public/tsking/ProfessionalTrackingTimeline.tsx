@@ -148,19 +148,6 @@ export function ProfessionalTrackingTimeline({
 
         <ol className="space-y-4">
           {segments.map((seg, i) => {
-            if (seg.kind === "divider") {
-              return (
-                <li key={`div-${seg.key}-${i}`} className="relative">
-                  <div className="absolute -left-[21px] top-1/2 z-1 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-canvas text-[10px] font-bold text-muted">
-                    ·
-                  </div>
-                  <div className="rounded-xl border border-dashed border-teal/40 bg-teal-dim px-3 py-2 text-center text-xs font-semibold text-ink dark:border-teal/30">
-                    {seg.label}
-                  </div>
-                </li>
-              );
-            }
-
             const stageIndex = seg.index;
             const def = stages[stageIndex];
             if (!def) return null;

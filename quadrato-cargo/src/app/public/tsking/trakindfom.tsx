@@ -139,10 +139,14 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
   const routeLabel = String(data.routeType || "").toLowerCase();
   const isInternational = routeLabel === "international";
   const edd = isInternational ? estimateInternationalEdd(data.createdAt) : null;
-  const tn = String(data.trackingNotes ?? "").trim();
-  const pub = String(data.publicTrackingNote ?? "").trim();
-  const showActivityLog = Boolean(tn && tn !== pub);
   const normalized = normalizeBookingStatus(data.status);
+  const shipment = data.shipment;
+  const showShipmentDetailRows =
+    shipment != null &&
+    (shipment.weightKg != null ||
+      (shipment.dimensionsCm &&
+        (shipment.dimensionsCm.l || shipment.dimensionsCm.w || shipment.dimensionsCm.h)) ||
+      String(shipment.declaredValue ?? "").trim());
   const onHoldIntl = normalized === "on_hold" && isInternational;
   const showThirdCard =
     ui.showTimeline ||
@@ -203,14 +207,6 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
             This booking has been cancelled. Contact support if you need more information.
           </p>
         ) : null}
-        {ui.showOperationalLog && showActivityLog ? (
-          <details className="mt-4 rounded-lg border border-border-strong bg-surface-highlight/40 px-3 py-2">
-            <summary className="cursor-pointer text-xs font-medium text-ink hover:text-teal">
-              Operational activity log
-            </summary>
-            <p className="mt-2 whitespace-pre-wrap text-xs text-muted-soft">{data.trackingNotes}</p>
-          </details>
-        ) : null}
         {ui.showAssignmentSection ? (
           <details className="mt-4 border-t border-border pt-4">
             <summary className="cursor-pointer text-sm font-medium text-teal hover:underline">
@@ -247,40 +243,30 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
         ) : null}
       </PublicCard>
 
-      {ui.showShipmentCard && data.shipment ? (
+      {ui.showShipmentCard && shipment && showShipmentDetailRows ? (
         <PublicCard>
           <h3 className="text-sm font-semibold text-ink">Shipment details</h3>
           <dl className="mt-3 space-y-2 text-sm text-muted">
-            {data.shipment.contentsDescription ? (
-              <div>
-                <dt className="text-xs font-medium text-muted-soft">Contents</dt>
-                <dd className="mt-0.5 whitespace-pre-wrap text-ink">
-                  {data.shipment.contentsDescription}
-                </dd>
-              </div>
-            ) : null}
-            {data.shipment.weightKg != null ? (
+            {shipment.weightKg != null ? (
               <div>
                 <dt className="text-xs font-medium text-muted-soft">Weight</dt>
-                <dd className="mt-0.5 text-ink">{data.shipment.weightKg} kg</dd>
+                <dd className="mt-0.5 text-ink">{shipment.weightKg} kg</dd>
               </div>
             ) : null}
-            {data.shipment.dimensionsCm &&
-            (data.shipment.dimensionsCm.l ||
-              data.shipment.dimensionsCm.w ||
-              data.shipment.dimensionsCm.h) ? (
+            {shipment.dimensionsCm &&
+            (shipment.dimensionsCm.l || shipment.dimensionsCm.w || shipment.dimensionsCm.h) ? (
               <div>
                 <dt className="text-xs font-medium text-muted-soft">Dimensions (cm)</dt>
                 <dd className="mt-0.5 text-ink">
-                  {data.shipment.dimensionsCm.l ?? "?"} × {data.shipment.dimensionsCm.w ?? "?"} ×{" "}
-                  {data.shipment.dimensionsCm.h ?? "?"}
+                  {shipment.dimensionsCm.l ?? "?"} × {shipment.dimensionsCm.w ?? "?"} ×{" "}
+                  {shipment.dimensionsCm.h ?? "?"}
                 </dd>
               </div>
             ) : null}
-            {data.shipment.declaredValue ? (
+            {shipment.declaredValue ? (
               <div>
                 <dt className="text-xs font-medium text-muted-soft">Declared value</dt>
-                <dd className="mt-0.5 text-ink">{data.shipment.declaredValue}</dd>
+                <dd className="mt-0.5 text-ink">{shipment.declaredValue}</dd>
               </div>
             ) : null}
           </dl>

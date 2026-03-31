@@ -175,33 +175,16 @@ export function domesticHubLocation(stageIndex: number, ctx: TrackingShipmentCon
   }
 }
 
-export type TimelineSegment =
-  | { kind: "stage"; index: number }
-  | { kind: "divider"; key: string; label: string };
+export type TimelineSegment = { kind: "stage"; index: number };
 
 /**
- * Newest-first stage list with optional India → USA transition markers (international only).
+ * Newest-first stage list (no divider rows; international and domestic use the same shape).
  */
 export function buildProfessionalTimelineSegments(
   currentStageIndex: number,
   mode: "international" | "domestic",
 ): TimelineSegment[] {
+  void mode;
   const forward = Array.from({ length: currentStageIndex + 1 }, (_, i) => i);
-  const rev = forward.reverse();
-  const out: TimelineSegment[] = [];
-  for (let j = 0; j < rev.length; j++) {
-    const idx = rev[j];
-    out.push({ kind: "stage", index: idx });
-    if (mode !== "international") continue;
-    const next = rev[j + 1];
-    if (next === undefined) continue;
-    if (idx === 5 && next === 4) {
-      out.push({
-        kind: "divider",
-        key: "india-air",
-        label: "International departure · air cargo (India)",
-      });
-    }
-  }
-  return out;
+  return forward.reverse().map((idx) => ({ kind: "stage", index: idx }));
 }
