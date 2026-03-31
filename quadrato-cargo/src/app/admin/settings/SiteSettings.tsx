@@ -378,7 +378,7 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
                 defaultChecked={initialSettings.trackShowRouteAndDates}
                 className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
               />
-              Show route, created date, last updated, and international EDD
+              Show route, created date, last updated, and EDD (admin-set or intl. default)
             </label>
             <label className="flex items-center gap-3 text-sm">
               <input

@@ -63,6 +63,8 @@ export type AdminBooking = {
   /** Effective instants shown to customers (track, profile, PDF). */
   customerFacingCreatedAt?: string | null;
   customerFacingUpdatedAt?: string | null;
+  /** Optional; shown as EDD on track & profile (domestic only when set). */
+  estimatedDeliveryAt?: string | null;
   /** When false, customer invoice PDF is blocked until admin re-enables. Omitted/undefined treated as allowed (legacy rows). */
   invoicePdfReady?: boolean;
   invoice?: AdminBookingInvoice | null;

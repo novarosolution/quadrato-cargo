@@ -22,6 +22,10 @@ import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminTimelineQuickCardForm } from "../AdminTimelineQuickCardForm";
 import { AdminBookingPickupForm } from "../AdminBookingPickupForm";
 import { AdminBookingShipmentForm } from "../AdminBookingShipmentForm";
+import {
+  formatEddDisplay,
+  resolveEstimatedDeliveryDate,
+} from "@/lib/estimated-delivery";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -137,6 +141,13 @@ export default async function AdminBookingDetailPage({ params }: Props) {
   const jumpLinkClass =
     "text-sm font-medium text-teal underline-offset-2 transition hover:underline";
 
+  const adminEddResolved = resolveEstimatedDeliveryDate({
+    routeType: row.routeType,
+    createdAtIso: row.createdAt.toISOString(),
+    estimatedDeliveryAt: row.estimatedDeliveryAt ?? null,
+  });
+  const hasCustomEdd = Boolean(row.estimatedDeliveryAt);
+
   return (
     <div className="stack-page content-narrow">
       <Link href="/admin/bookings" prefetch={false} className="text-sm text-teal hover:underline">
@@ -173,6 +184,11 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           <li>
             <a href="#booking-dispatch-panel" className={jumpLinkClass}>
               Status, dates &amp; messages
+            </a>
+          </li>
+          <li>
+            <a href="#booking-estimated-delivery" className={jumpLinkClass}>
+              Est. delivery (EDD)
             </a>
           </li>
           <li>
@@ -294,6 +310,29 @@ export default async function AdminBookingDetailPage({ params }: Props) {
               {row.publicBarcodeCode || "—"}
             </dd>
           </div>
+          <div className="min-w-0 sm:col-span-2">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
+              Est. delivery (EDD)
+            </dt>
+            <dd className="mt-1 flex flex-wrap items-center gap-2 text-ink">
+              <span className="text-lg font-bold text-teal">
+                {formatEddDisplay(adminEddResolved)}
+              </span>
+              {hasCustomEdd ? (
+                <span className="rounded-full border border-teal/35 bg-teal/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-teal">
+                  Custom
+                </span>
+              ) : row.routeType === "international" ? (
+                <span className="text-xs text-muted-soft">
+                  Default +10 day estimate (set a date in dispatch to override)
+                </span>
+              ) : (
+                <span className="text-xs text-muted-soft">
+                  Not set — optional for domestic; set below to show customers
+                </span>
+              )}
+            </dd>
+          </div>
         </dl>
       </section>
 
@@ -303,7 +342,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           <p className="mt-1 text-sm text-muted">Status, notes, agency, courier, and the public timeline.</p>
         </div>
         <AdminBookingDispatchSplit
-          key={`${row.id}-${String(row.customerFacingCreatedAt ?? "")}-${String(row.customerFacingUpdatedAt ?? "")}`}
+          key={`${row.id}-${String(row.customerFacingCreatedAt ?? "")}-${String(row.customerFacingUpdatedAt ?? "")}-${String(row.estimatedDeliveryAt ?? "")}`}
           bookingId={row.id}
           trackReference={trackReference}
           routeType={row.routeType}
@@ -326,6 +365,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
                 ? row.updatedAt
                 : row.createdAt.toISOString()),
           )}
+          estimatedDeliveryAtIso={row.estimatedDeliveryAt ?? null}
         />
 
         <section

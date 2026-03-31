@@ -171,7 +171,8 @@ export function toPublicBooking(row) {
     publicBarcodeCode: row.publicBarcodeCode
       ? String(row.publicBarcodeCode).trim().toUpperCase()
       : null,
-    publicTimelineOverrides: normalizePublicTimelineOverrides(row?.publicTimelineOverrides)
+    publicTimelineOverrides: normalizePublicTimelineOverrides(row?.publicTimelineOverrides),
+    estimatedDeliveryAt: row.estimatedDeliveryAt ?? null
   };
 }
 
@@ -205,7 +206,8 @@ export function toPublicBookingSummary(row) {
     courierId: row.courierId ? String(row.courierId) : null,
     publicBarcodeCode: row.publicBarcodeCode
       ? String(row.publicBarcodeCode).trim().toUpperCase()
-      : null
+      : null,
+    estimatedDeliveryAt: row.estimatedDeliveryAt ?? null
   };
 }
 

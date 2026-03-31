@@ -19,6 +19,11 @@ import {
 } from "@/lib/api/profile-client";
 import { fetchSiteSettings } from "@/lib/api/public-client";
 import { getSiteUrl } from "@/lib/site";
+import {
+  formatEddDisplay,
+  resolveEstimatedDeliveryDate,
+} from "@/lib/estimated-delivery";
+import { CalendarDays } from "lucide-react";
 import { DownloadBookingPdfButton } from "./DownloadBookingPdfButton";
 
 type Props = { params: Promise<{ id: string }> };
@@ -95,6 +100,13 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
 
   const inv = row.invoice && typeof row.invoice === "object" ? row.invoice : null;
 
+  const profileEdd = resolveEstimatedDeliveryDate({
+    routeType: row.routeType,
+    createdAtIso: row.createdAt.toISOString(),
+    estimatedDeliveryAt:
+      typeof row.estimatedDeliveryAt === "string" ? row.estimatedDeliveryAt : null,
+  });
+
   return (
     <div className="stack-page content-full">
       <section className="border-b border-border py-8 sm:py-10">
@@ -126,6 +138,31 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
             <p className="mt-3 text-xs text-muted-soft">
               Last update: {dateFmt.format(row.updatedAt)}
             </p>
+            {profileEdd ? (
+              <div className="mt-5 rounded-xl border border-teal/25 bg-linear-to-br from-teal/10 to-canvas/60 px-4 py-3 ring-1 ring-teal/10 dark:from-teal/15">
+                <div className="flex items-start gap-3">
+                  <CalendarDays
+                    className="mt-0.5 size-5 shrink-0 text-teal"
+                    aria-hidden
+                  />
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-muted-soft">
+                      Est. delivery (EDD)
+                    </p>
+                    <p className="mt-1 font-display text-lg font-bold text-ink">
+                      {formatEddDisplay(profileEdd)}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-soft">
+                      {row.estimatedDeliveryAt
+                        ? "Set by dispatch for this shipment."
+                        : row.routeType === "international"
+                          ? "Indicative estimate; may change as your parcel moves."
+                          : null}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             {row.consignmentNumber ? (
               <div className="mt-6">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-soft">

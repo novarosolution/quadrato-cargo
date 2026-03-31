@@ -140,7 +140,9 @@ const bookingControlsSchema = z.object({
   assignedAgency: z.string().trim().max(320).optional().default(""),
   /** ISO 8601 or empty string to clear. Omit to leave unchanged. */
   customerDisplayCreatedAt: z.string().max(64).optional(),
-  customerDisplayUpdatedAt: z.string().max(64).optional()
+  customerDisplayUpdatedAt: z.string().max(64).optional(),
+  /** Customer-visible estimated delivery date (ISO); empty clears. */
+  estimatedDeliveryAt: z.string().max(64).optional()
 });
 
 const bookingContactPartyPatchSchema = z
@@ -977,6 +979,9 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
     }
     if (!applyDisplayDate("customerDisplayUpdatedAt", parsed.data.customerDisplayUpdatedAt)) {
       return sendError(res, "Invalid customer-facing last-updated date. Use a valid ISO date-time.");
+    }
+    if (!applyDisplayDate("estimatedDeliveryAt", parsed.data.estimatedDeliveryAt)) {
+      return sendError(res, "Invalid estimated delivery date. Use a valid ISO date-time.");
     }
     const update =
       Object.keys($unset).length > 0 ? { $set, $unset } : { $set };

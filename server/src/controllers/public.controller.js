@@ -1331,7 +1331,8 @@ export async function trackBooking(req, res, next) {
         createdAt: row.customerFacingCreatedAt ?? row.createdAt,
         updatedAt: row.customerFacingUpdatedAt ?? row.updatedAt ?? row.createdAt,
         shipment: buildShipmentSummaryForPublicTrack(row.payload),
-        publicTimelineOverrides: row.publicTimelineOverrides ?? null
+        publicTimelineOverrides: row.publicTimelineOverrides ?? null,
+        estimatedDeliveryAt: row.estimatedDeliveryAt ?? null
       }
     });
   } catch (error) {

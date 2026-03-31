@@ -47,6 +47,7 @@ export type ProfileBooking = {
   invoice?: Record<string, string | null> | null;
   publicBarcodeCode?: string | null;
   payload?: unknown;
+  estimatedDeliveryAt?: string | null;
 };
 
 export async function updateProfileNameApi(

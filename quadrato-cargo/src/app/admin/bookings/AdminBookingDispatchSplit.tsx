@@ -24,6 +24,8 @@ import {
   saveManualTrackingAdmin,
   type BookingAdminUpdateState,
 } from "../dashboard/actions";
+import { CalendarDays } from "lucide-react";
+import { dateInputToIso, isoToDateInputValue } from "@/lib/estimated-delivery";
 
 export type AgencyOption = { email: string; name: string | null };
 
@@ -54,6 +56,7 @@ type Props = {
   /** ISO strings for customer-facing labels (track, profile, PDF). */
   customerFacingBookedIso: string;
   customerFacingUpdatedIso: string;
+  estimatedDeliveryAtIso: string | null;
 };
 
 const inputClass = adminInputClassName();
@@ -75,6 +78,7 @@ export function AdminBookingDispatchSplit({
   assignedCourierId,
   customerFacingBookedIso,
   customerFacingUpdatedIso,
+  estimatedDeliveryAtIso,
 }: Props) {
   const router = useRouter();
   const uid = useId().replace(/:/g, "");
@@ -93,6 +97,9 @@ export function AdminBookingDispatchSplit({
   );
   const [displayUpdatedLocal, setDisplayUpdatedLocal] = useState(() =>
     isoToDatetimeLocalValue(customerFacingUpdatedIso),
+  );
+  const [eddDateLocal, setEddDateLocal] = useState(() =>
+    isoToDateInputValue(estimatedDeliveryAtIso ?? ""),
   );
 
   const [selectedTemplate, setSelectedTemplate] = useState("");
@@ -180,6 +187,10 @@ export function AdminBookingDispatchSplit({
     fd.set(
       "customerDisplayUpdatedAt",
       updatedRaw ? new Date(updatedRaw).toISOString() : "",
+    );
+    fd.set(
+      "estimatedDeliveryAt",
+      eddDateLocal.trim() ? dateInputToIso(eddDateLocal.trim()) : "",
     );
     return fd;
   }
@@ -283,6 +294,42 @@ export function AdminBookingDispatchSplit({
                           onChange={(e) => setDisplayUpdatedLocal(e.target.value)}
                         />
                       </AdminFormField>
+                    </div>
+                  </div>
+
+                  <div
+                    id="booking-estimated-delivery"
+                    className="sm:col-span-2 mt-2 rounded-xl border border-teal/25 bg-linear-to-br from-teal/8 to-canvas/40 p-4 ring-1 ring-teal/10 dark:from-teal/15 dark:ring-teal/20"
+                  >
+                    <div className="flex flex-wrap items-start gap-3">
+                      <CalendarDays
+                        className="mt-0.5 size-5 shrink-0 text-teal"
+                        aria-hidden
+                      />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted-soft">
+                          Est. delivery (EDD)
+                        </p>
+                        <p className="text-[11px] leading-relaxed text-muted-soft">
+                          Shown on public track and profile.{" "}
+                          <span className="font-medium text-ink">
+                            International
+                          </span>{" "}
+                          bookings use a +10 day default until you set a date here.{" "}
+                          <span className="font-medium text-ink">Domestic</span>{" "}
+                          only shows EDD when a date is set. Clear the field and save to remove a
+                          custom date.
+                        </p>
+                        <AdminFormField label="Delivery date" htmlFor={`${uid}-edd`}>
+                          <input
+                            id={`${uid}-edd`}
+                            type="date"
+                            className={`${inputClass} max-w-[11.5rem]`}
+                            value={eddDateLocal}
+                            onChange={(e) => setEddDateLocal(e.target.value)}
+                          />
+                        </AdminFormField>
+                      </div>
                     </div>
                   </div>
                 </div>

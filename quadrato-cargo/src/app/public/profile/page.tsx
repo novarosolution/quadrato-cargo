@@ -20,6 +20,10 @@ import {
 } from "@/lib/api/profile-client";
 import { normalizeUserRole } from "@/lib/user-role";
 import { ProfileEditForm } from "./editpro";
+import {
+  formatEddDisplay,
+  resolveEstimatedDeliveryDate,
+} from "@/lib/estimated-delivery";
 
 export const metadata: Metadata = {
   title: "Your profile",
@@ -217,6 +221,11 @@ export default async function ProfilePage() {
               <ul className="mt-8 space-y-3">
                 {bookings.map((b) => {
                   const st = normalizeBookingStatus(b.status);
+                  const listEdd = resolveEstimatedDeliveryDate({
+                    routeType: b.routeType,
+                    createdAtIso: b.createdAt.toISOString(),
+                    estimatedDeliveryAt: b.estimatedDeliveryAt ?? null,
+                  });
                   return (
                     <li key={b.id}>
                       <Link
@@ -237,6 +246,11 @@ export default async function ProfilePage() {
                             ? ` · Tracking ID ${b.consignmentNumber}`
                             : ""}
                         </p>
+                        {listEdd ? (
+                          <p className="mt-2 text-xs font-bold text-teal">
+                            EDD {formatEddDisplay(listEdd)}
+                          </p>
+                        ) : null}
                         {b.customerTrackingNote ? (
                           <p className="mt-2 line-clamp-2 text-sm text-muted">
                             {b.customerTrackingNote}

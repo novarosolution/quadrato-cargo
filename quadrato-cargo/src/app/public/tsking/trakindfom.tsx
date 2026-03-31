@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import {
   BadgeCheck,
+  CalendarDays,
   CircleDot,
   Clock3,
   Home,
@@ -27,7 +28,10 @@ import {
   type PublicTrackUiSettings,
   type PublicTrackingShipment,
 } from "@/lib/api/public-client";
-import { estimateInternationalEdd } from "@/lib/international-tracking-flow";
+import {
+  formatEddDisplay,
+  resolveEstimatedDeliveryDate,
+} from "@/lib/estimated-delivery";
 import { PublicCard } from "@/components/public/PublicCard";
 import { ProfessionalTrackingTimeline } from "@/app/public/tsking/ProfessionalTrackingTimeline";
 
@@ -58,6 +62,7 @@ type State =
         updatedAt?: string;
         shipment: PublicTrackingShipment | null;
         publicTimelineOverrides?: PublicTimelineOverrides | null;
+        estimatedDeliveryAt?: string | null;
       };
     };
 
@@ -138,7 +143,11 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
   const lastTouch = data.updatedAt ?? data.createdAt;
   const routeLabel = String(data.routeType || "").toLowerCase();
   const isInternational = routeLabel === "international";
-  const edd = isInternational ? estimateInternationalEdd(data.createdAt) : null;
+  const eddResolved = resolveEstimatedDeliveryDate({
+    routeType: data.routeType,
+    createdAtIso: data.createdAt,
+    estimatedDeliveryAt: data.estimatedDeliveryAt ?? null,
+  });
   const normalized = normalizeBookingStatus(data.status);
   const shipment = data.shipment;
   const showShipmentDetailRows =
@@ -172,6 +181,39 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
               </span>
             ) : null}
           </div>
+          {eddResolved && ui.showRouteAndDates ? (
+            <div className="mt-4 rounded-xl border border-teal/30 bg-linear-to-br from-teal/12 via-canvas/80 to-accent/5 px-4 py-3.5 shadow-sm shadow-teal/10 ring-1 ring-teal/15 dark:from-teal/20 dark:ring-teal/25">
+              <div className="flex items-start gap-3">
+                <CalendarDays
+                  className="mt-0.5 size-6 shrink-0 text-teal"
+                  strokeWidth={2}
+                  aria-hidden
+                />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-soft">
+                    Est. delivery (EDD)
+                  </p>
+                  <p className="mt-1 font-display text-xl font-bold tracking-tight text-ink sm:text-2xl">
+                    {formatEddDisplay(eddResolved)}
+                  </p>
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-muted-soft">
+                    {data.estimatedDeliveryAt?.trim() ? (
+                      <>
+                        <span className="font-semibold text-ink">Confirmed by dispatch.</span> This
+                        date is set by our team for your shipment.
+                      </>
+                    ) : isInternational ? (
+                      <>
+                        <span className="font-semibold text-ink">Indicative estimate</span> (booking
+                        date + 10 days). It may shift as the parcel moves; dispatch can set a firm
+                        date on your record.
+                      </>
+                    ) : null}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {ui.showRouteAndDates ? (
             <dl className="mt-4 grid gap-3 border-t border-border-strong/60 pt-4 text-sm sm:grid-cols-2">
               <div>
@@ -186,19 +228,6 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                 <dt className="text-xs font-medium text-muted-soft">Last updated</dt>
                 <dd className="mt-0.5 text-ink">{prettyDate(lastTouch)}</dd>
               </div>
-              {isInternational ? (
-                <div className="sm:col-span-2">
-                  <dt className="text-xs font-medium text-muted-soft">Est. delivery (EDD)</dt>
-                  <dd className="mt-0.5 font-medium text-ink">
-                    {edd
-                      ? new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(edd)
-                      : "—"}
-                    <span className="ml-1 text-xs font-normal text-muted-soft">
-                      (indicative; updates as the shipment moves)
-                    </span>
-                  </dd>
-                </div>
-              ) : null}
             </dl>
           ) : null}
         </div>

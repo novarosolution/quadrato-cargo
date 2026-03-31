@@ -160,6 +160,8 @@ export type PublicTrackingResponse =
         updatedAt?: string;
         shipment: PublicTrackingShipment | null;
         publicTimelineOverrides?: PublicTimelineOverrides | null;
+        /** Admin-set EDD (ISO); international track still falls back to +10d from created if unset. */
+        estimatedDeliveryAt?: string | null;
       };
     }
   | { ok: false; message: string };
