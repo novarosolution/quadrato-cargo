@@ -255,12 +255,6 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                   <dd className="mt-0.5 text-ink">{preview.weightKg} kg</dd>
                 </div>
               ) : null}
-              {preview.declaredValue ? (
-                <div>
-                  <dt className="text-muted-soft">Declared value</dt>
-                  <dd className="mt-0.5 text-ink">{preview.declaredValue}</dd>
-                </div>
-              ) : null}
               {preview.dimensionsCm ? (
                 <div>
                   <dt className="text-muted-soft">Dimensions (cm)</dt>

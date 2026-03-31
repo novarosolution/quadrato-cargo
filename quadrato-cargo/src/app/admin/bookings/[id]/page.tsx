@@ -413,7 +413,8 @@ export default async function AdminBookingDetailPage({ params }: Props) {
         <div className="rounded-xl border border-border-strong/80 bg-canvas/20 px-4 py-3">
           <h2 className="font-display text-lg font-semibold text-ink">Shipment details</h2>
           <p className="mt-1 text-sm text-muted">
-            Weight, dimensions, contents, and declared value (shown on track and profile when enabled).
+            Weight, dimensions, and contents appear on track and profile when enabled. Declared value
+            is stored for operations but not shown publicly.
           </p>
         </div>
         <AdminCollapsible id="booking-shipment-form" title="Parcel &amp; declared value" defaultOpen>

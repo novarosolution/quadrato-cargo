@@ -685,7 +685,7 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
         gap: 6px;
         align-items: start;
       }
-      .brand-lockup img { display: block; height: 22px; width: auto; max-width: 100%; object-fit: contain; }
+      .brand-lockup img { display: block; height: 30px; width: auto; max-width: 100%; object-fit: contain; }
       .brand {
         color: ${p};
         font-weight: 700;
@@ -861,7 +861,7 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
 
       <div class="ship">
         <strong>Shipment</strong> ${esc(data.contentsLabel).slice(0, 200)} · Wt ${esc(String(data.weight))} ·
-        ${esc(data.length)}×${esc(data.width)}×${esc(data.height)} cm · Amt ${esc(data.amount)} · Decl. ${esc(data.declaredValue)}
+        ${esc(data.length)}×${esc(data.width)}×${esc(data.height)} cm · Amt ${esc(data.amount)}
       </div>
 
       <div class="chg-grid">
@@ -934,11 +934,11 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
         align-items: center;
         background: transparent;
         padding: 0;
-        min-height: 26px;
+        min-height: 32px;
       }
       .brand-lockup img {
         display: block;
-        height: 24px;
+        height: 31px;
         width: auto;
         max-width: 100%;
         object-fit: contain;

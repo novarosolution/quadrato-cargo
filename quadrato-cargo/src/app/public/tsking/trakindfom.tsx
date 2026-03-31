@@ -154,8 +154,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
     shipment != null &&
     (shipment.weightKg != null ||
       (shipment.dimensionsCm &&
-        (shipment.dimensionsCm.l || shipment.dimensionsCm.w || shipment.dimensionsCm.h)) ||
-      String(shipment.declaredValue ?? "").trim());
+        (shipment.dimensionsCm.l || shipment.dimensionsCm.w || shipment.dimensionsCm.h)));
   const onHoldIntl = normalized === "on_hold" && isInternational;
   const showThirdCard =
     ui.showTimeline ||
@@ -196,20 +195,13 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                   <p className="mt-1 font-display text-xl font-bold tracking-tight text-ink sm:text-2xl">
                     {formatEddDisplay(eddResolved)}
                   </p>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-muted-soft">
-                    {data.estimatedDeliveryAt?.trim() ? (
-                      <>
-                        <span className="font-semibold text-ink">Confirmed by dispatch.</span> This
-                        date is set by our team for your shipment.
-                      </>
-                    ) : isInternational ? (
-                      <>
-                        <span className="font-semibold text-ink">Indicative estimate</span> (booking
-                        date + 10 days). It may shift as the parcel moves; dispatch can set a firm
-                        date on your record.
-                      </>
-                    ) : null}
-                  </p>
+                  {isInternational && !data.estimatedDeliveryAt?.trim() ? (
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-muted-soft">
+                      <span className="font-semibold text-ink">Indicative estimate</span> (booking date
+                      + 10 days). It may shift as the parcel moves; dispatch can set a firm date on
+                      your record.
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -292,12 +284,6 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                 </dd>
               </div>
             ) : null}
-            {shipment.declaredValue ? (
-              <div>
-                <dt className="text-xs font-medium text-muted-soft">Declared value</dt>
-                <dd className="mt-0.5 text-ink">{shipment.declaredValue}</dd>
-              </div>
-            ) : null}
           </dl>
         </PublicCard>
       ) : null}
@@ -308,12 +294,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
             <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
               <div className="flex items-center gap-2">
                 <PackageSearch className="h-4 w-4 text-teal" aria-hidden />
-                <div>
-                  <h3 className="font-display text-base font-semibold text-ink">Shipment timeline</h3>
-                  <p className="text-xs text-muted-soft">
-                    Stages follow your booking status from our operations database.
-                  </p>
-                </div>
+                <h3 className="font-display text-base font-semibold text-ink">Shipment timeline</h3>
               </div>
             </div>
           ) : null}

@@ -78,7 +78,7 @@ export function drawBrandedPdfHeader(
   doc.line(0, headerH, 210, headerH);
 
   if (logoPng) {
-    const logoW = 78;
+    const logoW = 96;
     const logoH = logoW / aspect;
     const yLogo = Math.max(3, (headerH - logoH) / 2);
     doc.addImage(logoPng, "PNG", 10, yLogo, logoW, logoH);
