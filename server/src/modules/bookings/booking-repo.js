@@ -3,6 +3,8 @@ import { ObjectId } from "mongodb";
 import { getDb } from "../../db/mongo.js";
 import {
   createBookingDoc,
+  mergePublicTimelineOverrides,
+  normalizePublicTimelineOverrides,
   toPublicBooking,
   toPublicBookingSummary
 } from "../../models/booking.model.js";
@@ -528,4 +530,44 @@ export async function updateBookingByAgency(agencyUser, bookingId, update) {
   );
   const updatedRow = result?.value ?? result;
   return toPublicBooking(updatedRow);
+}
+
+/**
+ * Merge timeline overrides for a booking assigned to this agency (same rules as admin).
+ * Always merges into existing overrides; ignores body.merge.
+ */
+export async function patchAgencyBookingTimelineOverrides(agencyUser, bookingId, patch) {
+  const db = await getDb();
+  if (!ObjectId.isValid(bookingId)) return null;
+  const _id = new ObjectId(bookingId);
+  const agencyFilter = buildAgencyAssignmentFilter(agencyUser);
+  if (!agencyFilter) return null;
+
+  const { domestic, international } = patch;
+  if (domestic === undefined && international === undefined) {
+    return null;
+  }
+
+  const row = await db.collection(BOOKINGS).findOne({ _id, ...agencyFilter });
+  if (!row) return null;
+
+  const rawCombined = mergePublicTimelineOverrides(row.publicTimelineOverrides, {
+    domestic,
+    international
+  });
+  const normalized = normalizePublicTimelineOverrides(rawCombined);
+  const now = new Date();
+  if (normalized) {
+    await db.collection(BOOKINGS).updateOne(
+      { _id, ...agencyFilter },
+      { $set: { publicTimelineOverrides: normalized, updatedAt: now } }
+    );
+  } else {
+    await db.collection(BOOKINGS).updateOne(
+      { _id, ...agencyFilter },
+      { $set: { updatedAt: now }, $unset: { publicTimelineOverrides: "" } }
+    );
+  }
+  const updated = await db.collection(BOOKINGS).findOne({ _id, ...agencyFilter });
+  return toPublicBooking(updated);
 }

@@ -16,6 +16,7 @@ import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
 import { MIN_PASSWORD_LENGTH } from "../shared/constants.js";
 import { findBookingByReference } from "../modules/bookings/booking-repo.js";
 import { computeNextPublicTimelineStatusPath } from "../lib/public-timeline-status-path.js";
+import { timelineOverridesBodySchema } from "../shared/timeline-overrides-zod.js";
 
 const router = Router();
 const PAGE_SIZE = 25;
@@ -195,19 +196,6 @@ function mergeBookingContactPayloadIntoExisting(existingRaw, patch) {
   if (patch.recipient) base.recipient = applyBookingContactPartyPatch(base.recipient, patch.recipient);
   return base;
 }
-
-const timelineStageOverrideSchema = z.object({
-  title: z.union([z.string().max(200), z.null()]).optional(),
-  location: z.union([z.string().max(500), z.null()]).optional(),
-  hint: z.union([z.string().max(2000), z.null()]).optional(),
-  shownAt: z.union([z.string().max(64), z.null()]).optional()
-});
-
-const timelineOverridesBodySchema = z.object({
-  merge: z.boolean().optional(),
-  domestic: z.record(z.string(), timelineStageOverrideSchema).optional(),
-  international: z.record(z.string(), timelineStageOverrideSchema).optional()
-});
 
 const bookingInvoiceSchema = z.object({
   invoicePdfReady: z.boolean(),

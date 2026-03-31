@@ -2,6 +2,7 @@ import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import {
   listMyAgencyBookings,
+  patchAgencyBookingTimeline,
   patchAgencyProfile,
   requireAgency,
   updateMyAgencyBooking,
@@ -65,11 +66,25 @@ router.patch(
   updateMyAgencyBooking
 );
 router.patch(
+  "/me/bookings/:id/timeline-overrides",
+  requireAuth,
+  requireAgency,
+  agencyPatchLimiter,
+  patchAgencyBookingTimeline
+);
+router.patch(
   "/me/public/bookings/:id",
   requireAuth,
   requireAgency,
   agencyPatchLimiter,
   updateMyAgencyBooking
+);
+router.patch(
+  "/me/public/bookings/:id/timeline-overrides",
+  requireAuth,
+  requireAgency,
+  agencyPatchLimiter,
+  patchAgencyBookingTimeline
 );
 
 export default router;

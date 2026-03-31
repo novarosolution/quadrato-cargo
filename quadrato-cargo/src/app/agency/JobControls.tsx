@@ -256,7 +256,7 @@ export function AgencyJobControls({
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
+    <div className="space-y-5">
       {courierSummary.length > 0 ? (
         <div className="rounded-xl border border-border-strong bg-canvas/30 p-4">
           <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
@@ -272,7 +272,7 @@ export function AgencyJobControls({
                 <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-soft">
                   {label}
                 </dt>
-                <dd className="mt-0.5 break-words text-ink">{value}</dd>
+                <dd className="mt-0.5 wrap-break-word text-ink">{value}</dd>
               </div>
             ))}
           </dl>
@@ -280,6 +280,7 @@ export function AgencyJobControls({
       ) : null}
 
       <AgencyTimelineAndCourierPanels
+        bookingId={bookingId}
         status={currentStatus}
         routeType={routeType}
         updatedAtIso={updatedAtIso}
@@ -293,6 +294,7 @@ export function AgencyJobControls({
         payload={payload}
       />
 
+      <form onSubmit={onSubmit} className="space-y-5">
       {!handoverAccepted ? (
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
           <h4 className="text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-200">
@@ -471,6 +473,7 @@ export function AgencyJobControls({
       >
         {pending ? "Saving…" : "Save status & customer update"}
       </button>
-    </form>
+      </form>
+    </div>
   );
 }

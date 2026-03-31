@@ -124,6 +124,42 @@ export async function patchAgencyProfileApi(args: {
   }
 }
 
+export async function patchAgencyBookingTimelineApi(args: {
+  bookingId: string;
+  body: Record<string, unknown>;
+}): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
+  try {
+    const res = await fetch(
+      `${getApiBaseUrl()}/api/agency/me/bookings/${encodeURIComponent(args.bookingId)}/timeline-overrides`,
+      {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...csrfHeaderRecord(),
+        },
+        body: JSON.stringify(args.body),
+      },
+    );
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      message?: string;
+    };
+    if (res.ok && data.ok) {
+      return { ok: true, message: data.message || "Timeline saved." };
+    }
+    return {
+      ok: false,
+      error: (typeof data.message === "string" && data.message.trim()) || "Failed to save timeline.",
+    };
+  } catch {
+    return {
+      ok: false,
+      error: "Cannot connect to server. Start backend and try again.",
+    };
+  }
+}
+
 export async function updateAgencyBookingApi(args: {
   bookingId: string;
   status: string;

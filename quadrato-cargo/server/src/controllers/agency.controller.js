@@ -3,10 +3,12 @@ import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
 import { toPublicUser } from "../models/user.model.js";
 import {
   listBookingsByAgency,
+  patchAgencyBookingTimelineOverrides,
   updateBookingByAgency,
   verifyAgencyHandoverOtp
 } from "../modules/bookings/booking-repo.js";
 import { updateAgencyPartnerProfile } from "../modules/users/user-repo.js";
+import { timelineOverridesBodySchema } from "../shared/timeline-overrides-zod.js";
 import { objectIdStringSchema } from "../shared/zod-helpers.js";
 
 const ALLOWED_AGENCY_STATUSES = [
@@ -154,6 +156,32 @@ export async function updateMyAgencyBooking(req, res, next) {
       return sendNotFound(res, "Booking not found for this agency.");
     }
     return sendOk(res, { message: "Agency update saved.", booking: row });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function patchAgencyBookingTimeline(req, res, next) {
+  try {
+    const idParsed = objectIdStringSchema.safeParse(req.params.id);
+    if (!idParsed.success) {
+      return sendError(res, idParsed.error.issues[0]?.message ?? "Invalid booking id.");
+    }
+    const parsed = timelineOverridesBodySchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return sendError(res, "Invalid timeline overrides payload.", 400);
+    }
+    if (parsed.data.domestic === undefined && parsed.data.international === undefined) {
+      return sendError(res, "Send timeline step data (domestic or international).", 400);
+    }
+    const row = await patchAgencyBookingTimelineOverrides(req.auth.user, idParsed.data, {
+      domestic: parsed.data.domestic,
+      international: parsed.data.international
+    });
+    if (!row) {
+      return sendNotFound(res, "Booking not found for this agency.");
+    }
+    return sendOk(res, { message: "Customer timeline saved.", booking: row });
   } catch (error) {
     return next(error);
   }

@@ -84,6 +84,9 @@ export function AdminTimelineQuickCardForm({
         <span className="capitalize">{routeType}</span>). Empty fields remove your text and the site uses
         defaults.
       </p>
+      <p className="text-xs text-muted-soft">
+        Assigned agencies can edit the same step from <span className="font-mono text-[11px]">/agency</span>.
+      </p>
 
       <form action={formAction} className="grid gap-4 sm:grid-cols-2">
         <input type="hidden" name="bookingId" value={bookingId} />

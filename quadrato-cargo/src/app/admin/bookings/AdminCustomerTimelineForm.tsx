@@ -195,6 +195,10 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
           This booking is <span className="font-medium capitalize text-ink">{routeType}</span> ({stages.length}{" "}
           steps). Empty fields use automatic defaults on the public page.
         </p>
+        <p className="mt-2">
+          <strong className="font-medium text-ink">Agency partners</strong> assigned to this booking can also
+          update every step from <span className="font-mono text-[11px]">/agency</span> (same merged data).
+        </p>
       </div>
 
       <div className="space-y-3 rounded-xl border border-border-strong bg-surface-elevated/30 p-4">
