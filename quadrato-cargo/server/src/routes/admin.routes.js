@@ -148,7 +148,9 @@ const bookingControlsSchema = z.object({
   customerDisplayCreatedAt: z.string().max(64).optional(),
   customerDisplayUpdatedAt: z.string().max(64).optional(),
   /** Customer-visible estimated delivery date (ISO); empty clears. */
-  estimatedDeliveryAt: z.string().max(64).optional()
+  estimatedDeliveryAt: z.string().max(64).optional(),
+  /** International only: "0"–"11" = fixed Track card; empty = auto from status. Omit = leave unchanged. */
+  internationalAgencyStage: z.string().max(4).optional()
 });
 
 const bookingContactPartyPatchSchema = z
@@ -1006,6 +1008,24 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
     );
     if (nextPath) {
       $set.publicTimelineStatusPath = nextPath;
+    }
+    const routeLower = String(bookingRow.routeType ?? "").toLowerCase();
+    if (routeLower === "international") {
+      if (Object.prototype.hasOwnProperty.call(parsed.data, "internationalAgencyStage")) {
+        const rawStage = parsed.data.internationalAgencyStage;
+        const s = rawStage === undefined ? undefined : String(rawStage ?? "").trim();
+        if (s === "") {
+          $unset.internationalAgencyStage = "";
+        } else if (s !== undefined) {
+          const n = Number(s);
+          if (!Number.isInteger(n) || n < 0 || n > 11) {
+            return sendError(res, "International agency stage must be between 0 and 11, or empty for auto.");
+          }
+          $set.internationalAgencyStage = n;
+        }
+      }
+    } else {
+      $unset.internationalAgencyStage = "";
     }
     const update =
       Object.keys($unset).length > 0 ? { $set, $unset } : { $set };

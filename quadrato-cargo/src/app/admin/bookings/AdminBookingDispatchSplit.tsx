@@ -26,6 +26,7 @@ import {
 } from "../dashboard/actions";
 import { CalendarDays } from "lucide-react";
 import { dateInputToIso, isoToDateInputValue } from "@/lib/estimated-delivery";
+import { INTERNATIONAL_PROFESSIONAL_STAGES } from "@/lib/professional-tracking-stages";
 
 export type AgencyOption = { email: string; name: string | null };
 
@@ -57,6 +58,8 @@ type Props = {
   customerFacingBookedIso: string;
   customerFacingUpdatedIso: string;
   estimatedDeliveryAtIso: string | null;
+  /** International: 0–11 = fixed Track card; null/undefined = follow status. */
+  internationalAgencyStage?: number | null;
 };
 
 const inputClass = adminInputClassName();
@@ -79,6 +82,7 @@ export function AdminBookingDispatchSplit({
   customerFacingBookedIso,
   customerFacingUpdatedIso,
   estimatedDeliveryAtIso,
+  internationalAgencyStage = null,
 }: Props) {
   const router = useRouter();
   const uid = useId().replace(/:/g, "");
@@ -101,6 +105,14 @@ export function AdminBookingDispatchSplit({
   const [eddDateLocal, setEddDateLocal] = useState(() =>
     isoToDateInputValue(estimatedDeliveryAtIso ?? ""),
   );
+  const [intlAgencyStage, setIntlAgencyStage] = useState(() =>
+    internationalAgencyStage != null &&
+    Number.isInteger(internationalAgencyStage) &&
+    internationalAgencyStage >= 0 &&
+    internationalAgencyStage < 12
+      ? String(internationalAgencyStage)
+      : "",
+  );
 
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [state, formAction, pending] = useActionState<
@@ -111,6 +123,17 @@ export function AdminBookingDispatchSplit({
   useEffect(() => {
     if (state?.ok === true) router.refresh();
   }, [state?.ok, router]);
+
+  useEffect(() => {
+    setIntlAgencyStage(
+      internationalAgencyStage != null &&
+        Number.isInteger(internationalAgencyStage) &&
+        internationalAgencyStage >= 0 &&
+        internationalAgencyStage < 12
+        ? String(internationalAgencyStage)
+        : "",
+    );
+  }, [internationalAgencyStage]);
 
   const quickStatuses = useMemo(
     () =>
@@ -192,6 +215,7 @@ export function AdminBookingDispatchSplit({
       "estimatedDeliveryAt",
       eddDateLocal.trim() ? dateInputToIso(eddDateLocal.trim()) : "",
     );
+    fd.set("internationalAgencyStage", intlAgencyStage);
     return fd;
   }
 
@@ -264,6 +288,31 @@ export function AdminBookingDispatchSplit({
                       autoComplete="off"
                     />
                   </AdminFormField>
+
+                  {String(routeType).toLowerCase() === "international" ? (
+                    <AdminFormField
+                      label="International Track — active macro card (0–11)"
+                      htmlFor={`${uid}-intl-stage`}
+                    >
+                      <select
+                        id={`${uid}-intl-stage`}
+                        className={inputClass}
+                        value={intlAgencyStage}
+                        onChange={(e) => setIntlAgencyStage(e.target.value)}
+                      >
+                        <option value="">Auto (from shipment status)</option>
+                        {INTERNATIONAL_PROFESSIONAL_STAGES.map((def, i) => (
+                          <option key={def.id} value={String(i)}>
+                            {i}. {def.title}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-1.5 text-[11px] text-muted-soft">
+                        Overrides which of the 12 international steps is highlighted on customer Track. Clear to
+                        follow status again.
+                      </p>
+                    </AdminFormField>
+                  ) : null}
 
                   <div className="sm:col-span-2 space-y-4 border-t border-border-strong/60 pt-5">
                     <p className="text-xs font-bold uppercase tracking-wide text-muted-soft">

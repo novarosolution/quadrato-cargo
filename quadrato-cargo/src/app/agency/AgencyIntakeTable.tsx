@@ -30,6 +30,8 @@ export type AgencyIntakeRow = {
   publicTimelineOverrides: PublicTimelineOverrides | null;
   publicTimelineStepVisibility: PublicTimelineStepVisibility | null;
   publicTimelineStatusPath: string[] | null;
+  /** International: fixed Track macro index 0–11; null = follow status. */
+  internationalAgencyStage: number | null;
   courierId: string | null;
   payload: unknown;
 };
@@ -177,6 +179,7 @@ export function AgencyIntakeTable({ rows, agencyIdentity }: Props) {
                             publicTimelineOverrides={row.publicTimelineOverrides}
                             publicTimelineStepVisibility={row.publicTimelineStepVisibility}
                             publicTimelineStatusPath={row.publicTimelineStatusPath}
+                            internationalAgencyStage={row.internationalAgencyStage}
                             courierId={row.courierId}
                             payload={row.payload}
                             otpFocusSignal={otpFocusSignal}

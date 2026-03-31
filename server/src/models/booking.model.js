@@ -3,6 +3,14 @@ function cleanText(value) {
   return text.length ? text : null;
 }
 
+/** International macro timeline index 0–11; invalid / missing → null (derive from status). */
+export function normalizeInternationalAgencyStage(raw) {
+  if (raw === null || raw === undefined) return null;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0 || n > 11) return null;
+  return n;
+}
+
 function buildAddressLine(address = {}) {
   const parts = [
     cleanText(address.street),
@@ -227,6 +235,8 @@ export function toPublicBooking(row) {
     publicTimelineStepVisibility: normalizePublicTimelineStepVisibility(
       row?.publicTimelineStepVisibility
     ),
+    /** International: which of 12 Track cards is current; null = use coarse status mapping. */
+    internationalAgencyStage: normalizeInternationalAgencyStage(row?.internationalAgencyStage),
     estimatedDeliveryAt: row.estimatedDeliveryAt ?? null,
     publicTimelineStatusPath: Array.isArray(row?.publicTimelineStatusPath)
       ? row.publicTimelineStatusPath.map((s) => String(s ?? "").trim()).filter(Boolean)

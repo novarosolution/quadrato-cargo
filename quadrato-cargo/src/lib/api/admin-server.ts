@@ -79,6 +79,8 @@ export type AdminBooking = {
   publicTimelineOverrides?: PublicTimelineOverrides | null;
   /** Steps hidden from public Track (`false` only stored). */
   publicTimelineStepVisibility?: PublicTimelineStepVisibility | null;
+  /** International: 0–11 Track macro step; null = auto from status. */
+  internationalAgencyStage?: number | null;
   user?: AdminUser | null;
   courier?: AdminUser | null;
 };

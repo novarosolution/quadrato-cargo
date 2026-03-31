@@ -22,6 +22,8 @@ export type AgencyBooking = {
   publicTimelineOverrides?: PublicTimelineOverrides | null;
   publicTimelineStepVisibility?: PublicTimelineStepVisibility | null;
   publicTimelineStatusPath?: string[] | null;
+  /** International: 0–11 macro stage on customer Track; null = auto from status. */
+  internationalAgencyStage?: number | null;
   courierId?: string | null;
   payload: unknown;
 };
@@ -168,6 +170,8 @@ export async function updateAgencyBookingApi(args: {
   bookingId: string;
   status: string;
   publicTrackingNote: string;
+  /** International only: 0–11 fixes Track macro card; null clears (follow status). Omit = leave unchanged. */
+  internationalAgencyStage?: number | null;
 }): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
   try {
     const res = await fetch(
@@ -182,6 +186,9 @@ export async function updateAgencyBookingApi(args: {
         body: JSON.stringify({
           status: args.status,
           publicTrackingNote: args.publicTrackingNote,
+          ...(args.internationalAgencyStage !== undefined
+            ? { internationalAgencyStage: args.internationalAgencyStage }
+            : {}),
         }),
       },
     );

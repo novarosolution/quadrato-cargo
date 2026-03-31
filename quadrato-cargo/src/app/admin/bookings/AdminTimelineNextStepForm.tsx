@@ -6,10 +6,10 @@ import type {
   PublicTimelineOverrides,
   PublicTimelineStepVisibility,
 } from "@/lib/api/public-client";
+import { resolveInternationalTimelineStageIndex } from "@/lib/international-timeline-stage";
 import {
   DOMESTIC_PROFESSIONAL_STAGES,
   getDomesticProfessionalStageIndex,
-  getInternationalProfessionalStageIndex,
   INTERNATIONAL_PROFESSIONAL_STAGES,
 } from "@/lib/professional-tracking-stages";
 import { adminInputClassName } from "@/components/admin/AdminFormField";
@@ -35,6 +35,7 @@ type Props = {
   status: string;
   initial: PublicTimelineOverrides | null | undefined;
   initialStepVisibility?: PublicTimelineStepVisibility | null | undefined;
+  internationalAgencyStage?: number | null;
 };
 
 export function AdminTimelineNextStepForm({
@@ -43,6 +44,7 @@ export function AdminTimelineNextStepForm({
   status,
   initial,
   initialStepVisibility = null,
+  internationalAgencyStage = null,
 }: Props) {
   const isInternational = String(routeType).toLowerCase() === "international";
   const modeKey = isInternational ? "international" : "domestic";
@@ -51,7 +53,7 @@ export function AdminTimelineNextStepForm({
     : DOMESTIC_PROFESSIONAL_STAGES;
   const st = normalizeBookingStatus(status);
   const currentIndex = isInternational
-    ? getInternationalProfessionalStageIndex(st)
+    ? resolveInternationalTimelineStageIndex(st, internationalAgencyStage)
     : getDomesticProfessionalStageIndex(st);
   const lastIndex = stages.length - 1;
   const hasNext = currentIndex < lastIndex;

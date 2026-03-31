@@ -6,10 +6,10 @@ import type {
   PublicTimelineOverrides,
   PublicTimelineStepVisibility,
 } from "@/lib/api/public-client";
+import { resolveInternationalTimelineStageIndex } from "@/lib/international-timeline-stage";
 import {
   DOMESTIC_PROFESSIONAL_STAGES,
   getDomesticProfessionalStageIndex,
-  getInternationalProfessionalStageIndex,
   INTERNATIONAL_PROFESSIONAL_STAGES,
 } from "@/lib/professional-tracking-stages";
 import { adminInputClassName } from "@/components/admin/AdminFormField";
@@ -35,6 +35,7 @@ type Props = {
   status: string;
   initial: PublicTimelineOverrides | null | undefined;
   initialStepVisibility?: PublicTimelineStepVisibility | null | undefined;
+  internationalAgencyStage?: number | null;
 };
 
 export function AdminTimelineQuickCardForm({
@@ -43,6 +44,7 @@ export function AdminTimelineQuickCardForm({
   status,
   initial,
   initialStepVisibility = null,
+  internationalAgencyStage = null,
 }: Props) {
   const isInternational = String(routeType).toLowerCase() === "international";
   const modeKey = isInternational ? "international" : "domestic";
@@ -51,7 +53,7 @@ export function AdminTimelineQuickCardForm({
     : DOMESTIC_PROFESSIONAL_STAGES;
   const st = normalizeBookingStatus(status);
   const stageIndex = isInternational
-    ? getInternationalProfessionalStageIndex(st)
+    ? resolveInternationalTimelineStageIndex(st, internationalAgencyStage)
     : getDomesticProfessionalStageIndex(st);
   const stageDef = stages[stageIndex];
   const idxKey = String(stageIndex);
@@ -110,8 +112,11 @@ export function AdminTimelineQuickCardForm({
           {stageDef?.title ?? "Step"} <span className="font-normal text-muted-soft">· {routeType}</span>
         </p>
         <p className="mt-1 text-xs text-muted-soft">
-          Change status in <strong className="text-ink">Status, notes &amp; dates</strong> above. Empty fields = default
-          text. Agencies can edit the same card in Agency portal.
+          Change status in <strong className="text-ink">Status, notes &amp; dates</strong>
+          {isInternational
+            ? " (international macro card can be fixed there too). "
+            : ". "}
+          Empty fields = default text. Agencies can edit the same card in Agency portal.
         </p>
       </div>
 

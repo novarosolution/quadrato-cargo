@@ -249,6 +249,7 @@ export async function updateCourierBookingAdmin(
       customerDisplayCreatedAt: String(formData.get("customerDisplayCreatedAt") ?? ""),
       customerDisplayUpdatedAt: String(formData.get("customerDisplayUpdatedAt") ?? ""),
       estimatedDeliveryAt: String(formData.get("estimatedDeliveryAt") ?? ""),
+      internationalAgencyStage: String(formData.get("internationalAgencyStage") ?? ""),
     },
   );
   if (!result.ok) {
@@ -256,6 +257,7 @@ export async function updateCourierBookingAdmin(
   }
   revalidatePath("/admin/bookings");
   revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath(`/admin/bookings/${bookingId}/timeline`);
   revalidatePath("/public/tsking");
   revalidatePath("/public/profile");
   return { ok: true, message: "Booking controls updated." };
@@ -281,6 +283,7 @@ export async function saveManualTrackingAdmin(
       customerDisplayCreatedAt: String(formData.get("customerDisplayCreatedAt") ?? ""),
       customerDisplayUpdatedAt: String(formData.get("customerDisplayUpdatedAt") ?? ""),
       estimatedDeliveryAt: String(formData.get("estimatedDeliveryAt") ?? ""),
+      internationalAgencyStage: String(formData.get("internationalAgencyStage") ?? ""),
     },
   );
   if (!controlsResult.ok) {
@@ -299,6 +302,7 @@ export async function saveManualTrackingAdmin(
 
   revalidatePath("/admin/bookings");
   revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath(`/admin/bookings/${bookingId}/timeline`);
   revalidatePath("/public/tsking");
   revalidatePath("/public/profile");
 

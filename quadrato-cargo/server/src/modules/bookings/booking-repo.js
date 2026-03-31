@@ -519,13 +519,28 @@ export async function updateBookingByAgency(agencyUser, bookingId, update) {
     publicTrackingNote,
     updatedAt: new Date()
   };
+  const agencyUnset = {};
   if (agencyEmail) {
     agencySet.assignedAgency = agencyEmail;
   }
   if (agencyUpdatePath) agencySet.publicTimelineStatusPath = agencyUpdatePath;
+  if (Object.prototype.hasOwnProperty.call(update, "internationalAgencyStage")) {
+    const isa = update.internationalAgencyStage;
+    if (String(row.routeType ?? "").toLowerCase() === "international") {
+      if (isa === null) {
+        agencyUnset.internationalAgencyStage = "";
+      } else if (typeof isa === "number" && Number.isInteger(isa) && isa >= 0 && isa <= 11) {
+        agencySet.internationalAgencyStage = isa;
+      }
+    }
+  }
+  const write =
+    Object.keys(agencyUnset).length > 0
+      ? { $set: agencySet, $unset: agencyUnset }
+      : { $set: agencySet };
   const result = await db.collection(BOOKINGS).findOneAndUpdate(
     { _id, ...agencyFilter },
-    { $set: agencySet },
+    write,
     { returnDocument: "after" }
   );
   const updatedRow = result?.value ?? result;

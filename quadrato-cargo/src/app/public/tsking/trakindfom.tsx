@@ -67,6 +67,7 @@ type State =
         estimatedDeliveryAt?: string | null;
         /** Recorded status steps for timeline; absent = legacy full ladder. */
         publicTimelineStatusPath?: string[] | null;
+        internationalAgencyStage?: number | null;
       };
     };
 
@@ -387,6 +388,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                     timelineOverrides={data.publicTimelineOverrides ?? null}
                     publicTimelineStatusPath={data.publicTimelineStatusPath ?? null}
                     publicTimelineStepVisibility={data.publicTimelineStepVisibility ?? null}
+                    internationalAgencyStage={data.internationalAgencyStage ?? null}
                   />
                 );
               }

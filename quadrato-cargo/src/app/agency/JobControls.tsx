@@ -12,6 +12,7 @@ import type {
 } from "@/lib/api/public-client";
 import { updateAgencyBookingApi, verifyAgencyHandoverApi } from "@/lib/api/agency-client";
 import type { AgencyHubIdentity } from "./agency-hub-types";
+import { INTERNATIONAL_PROFESSIONAL_STAGES } from "@/lib/professional-tracking-stages";
 import { AgencyTimelineAndCourierPanels } from "./AgencyTimelineAndCourierPanels";
 
 type AgencyJobUpdateState =
@@ -140,6 +141,7 @@ type Props = {
   publicTimelineOverrides?: PublicTimelineOverrides | null;
   publicTimelineStepVisibility?: PublicTimelineStepVisibility | null;
   publicTimelineStatusPath?: string[] | null;
+  internationalAgencyStage?: number | null;
   courierId?: string | null;
   /** Booking payload: read-only summary for agency ↔ courier context */
   payload?: unknown;
@@ -161,6 +163,7 @@ export function AgencyJobControls({
   publicTimelineOverrides = null,
   publicTimelineStepVisibility = null,
   publicTimelineStatusPath = null,
+  internationalAgencyStage = null,
   courierId = null,
   payload,
   otpFocusSignal = 0,
@@ -183,6 +186,14 @@ export function AgencyJobControls({
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const [statusValue, setStatusValue] = useState<string>(initialStatus);
   const [trackingValue, setTrackingValue] = useState(publicTrackingNote ?? "");
+  const [intlAgencyStage, setIntlAgencyStage] = useState(() =>
+    internationalAgencyStage != null &&
+    Number.isInteger(internationalAgencyStage) &&
+    internationalAgencyStage >= 0 &&
+    internationalAgencyStage < 12
+      ? String(internationalAgencyStage)
+      : "",
+  );
 
   const courierSummary = useMemo(() => summarizePayloadForCourier(payload), [payload]);
 
@@ -202,6 +213,17 @@ export function AgencyJobControls({
   useEffect(() => {
     setTrackingValue(publicTrackingNote ?? "");
   }, [publicTrackingNote]);
+
+  useEffect(() => {
+    setIntlAgencyStage(
+      internationalAgencyStage != null &&
+        Number.isInteger(internationalAgencyStage) &&
+        internationalAgencyStage >= 0 &&
+        internationalAgencyStage < 12
+        ? String(internationalAgencyStage)
+        : "",
+    );
+  }, [internationalAgencyStage]);
 
   useEffect(() => {
     if (otpFocusSignal === 0) return;
@@ -250,6 +272,12 @@ export function AgencyJobControls({
       bookingId,
       status: statusValue,
       publicTrackingNote: trackingValue,
+      ...(isInternational
+        ? {
+            internationalAgencyStage:
+              intlAgencyStage === "" ? null : Number(intlAgencyStage),
+          }
+        : {}),
     });
     if (result.ok) {
       setState({ ok: true, message: result.message });
@@ -296,6 +324,7 @@ export function AgencyJobControls({
         publicTimelineOverrides={publicTimelineOverrides}
         publicTimelineStepVisibility={publicTimelineStepVisibility}
         publicTimelineStatusPath={publicTimelineStatusPath}
+        internationalAgencyStage={internationalAgencyStage}
         courierId={courierId}
         payload={payload}
       />
@@ -426,6 +455,33 @@ export function AgencyJobControls({
                 ))}
               </select>
             </div>
+            {isInternational ? (
+              <div>
+                <label
+                  htmlFor={`agency-intl-stage-${bookingId}`}
+                  className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+                >
+                  International Track — active macro card
+                </label>
+                <select
+                  id={`agency-intl-stage-${bookingId}`}
+                  value={intlAgencyStage}
+                  onChange={(e) => setIntlAgencyStage(e.target.value)}
+                  className="mt-2 w-full max-w-md rounded-xl border border-border-strong bg-canvas/50 px-3 py-2.5 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+                >
+                  <option value="">Auto (from shipment status)</option>
+                  {INTERNATIONAL_PROFESSIONAL_STAGES.map((def, i) => (
+                    <option key={def.id} value={String(i)}>
+                      {i}. {def.title}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1.5 text-[11px] text-muted-soft">
+                  Same 12 steps customers see on Track. Choose Auto unless you need a fixed card while status
+                  catches up.
+                </p>
+              </div>
+            ) : null}
             <div>
               <label
                 htmlFor={`agency-notes-${bookingId}`}

@@ -45,7 +45,9 @@ const agencyUpdateBookingSchema = z.object({
     message: "Invalid status for agency update."
   }),
   publicTrackingNote: z.string().trim().max(2000).optional(),
-  trackingNotes: z.string().trim().max(2000).optional()
+  trackingNotes: z.string().trim().max(2000).optional(),
+  /** International: 0–11 = fixed Track card; null clears override (auto from status). Omit = unchanged. */
+  internationalAgencyStage: z.number().int().min(0).max(11).nullable().optional()
 });
 
 const agencyProfilePatchSchema = z.object({
@@ -150,7 +152,8 @@ export async function updateMyAgencyBooking(req, res, next) {
 
     const row = await updateBookingByAgency(req.auth.user, idParsed.data, {
       status: parsed.data.status,
-      publicTrackingNote: publicNote
+      publicTrackingNote: publicNote,
+      internationalAgencyStage: parsed.data.internationalAgencyStage
     });
     if (!row) {
       return sendNotFound(res, "Booking not found for this agency.");

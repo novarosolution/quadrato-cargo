@@ -58,6 +58,13 @@ export default async function AgencyPage() {
         publicTimelineStatusPath: Array.isArray(b.publicTimelineStatusPath)
           ? b.publicTimelineStatusPath.map((s) => String(s ?? "").trim()).filter(Boolean)
           : null,
+        internationalAgencyStage:
+          b.internationalAgencyStage != null &&
+          Number.isInteger(b.internationalAgencyStage) &&
+          b.internationalAgencyStage >= 0 &&
+          b.internationalAgencyStage < 12
+            ? b.internationalAgencyStage
+            : null,
         courierId: b.courierId ?? null,
         payload: b.payload,
       }))

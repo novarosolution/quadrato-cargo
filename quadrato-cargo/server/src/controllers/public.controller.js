@@ -1335,7 +1335,8 @@ export async function trackBooking(req, res, next) {
         publicTimelineStepVisibility: row.publicTimelineStepVisibility ?? null,
         estimatedDeliveryAt: row.estimatedDeliveryAt ?? null,
         /** Status transitions for customer timeline; null = show full ladder (legacy). */
-        publicTimelineStatusPath: row.publicTimelineStatusPath ?? null
+        publicTimelineStatusPath: row.publicTimelineStatusPath ?? null,
+        internationalAgencyStage: row.internationalAgencyStage ?? null
       }
     });
   } catch (error) {

@@ -396,7 +396,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           </div>
         </div>
         <AdminBookingDispatchSplit
-          key={`${row.id}-${String(row.customerFacingCreatedAt ?? "")}-${String(row.customerFacingUpdatedAt ?? "")}-${String(row.estimatedDeliveryAt ?? "")}`}
+          key={`${row.id}-${String(row.customerFacingCreatedAt ?? "")}-${String(row.customerFacingUpdatedAt ?? "")}-${String(row.estimatedDeliveryAt ?? "")}-${String(row.internationalAgencyStage ?? "")}`}
           bookingId={row.id}
           trackReference={trackReference}
           routeType={row.routeType}
@@ -420,6 +420,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
                 : row.createdAt.toISOString()),
           )}
           estimatedDeliveryAtIso={row.estimatedDeliveryAt ?? null}
+          internationalAgencyStage={row.internationalAgencyStage ?? null}
         />
       </section>
 

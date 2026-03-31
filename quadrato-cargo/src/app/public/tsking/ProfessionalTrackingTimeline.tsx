@@ -19,13 +19,13 @@ import type {
   PublicTimelineOverrides,
   PublicTimelineStepVisibility,
 } from "@/lib/api/public-client";
+import { resolveInternationalTimelineStageIndex } from "@/lib/international-timeline-stage";
 import {
   buildProfessionalTimelineSegments,
   buildProfessionalTimelineSegmentsFromStatusPath,
   DOMESTIC_PROFESSIONAL_STAGES,
   domesticHubLocation,
   getDomesticProfessionalStageIndex,
-  getInternationalProfessionalStageIndex,
   internationalHubLocation,
   INTERNATIONAL_PROFESSIONAL_STAGES,
   type TrackingShipmentContext,
@@ -136,6 +136,8 @@ export type ProfessionalTrackingTimelineProps = {
   publicTimelineStatusPath?: string[] | null;
   /** Admin: steps marked `false` are omitted here (current status step always shown). */
   publicTimelineStepVisibility?: PublicTimelineStepVisibility | null;
+  /** International: optional 0–11 override for which timeline card is current (agency/admin). */
+  internationalAgencyStage?: number | null;
 };
 
 export function ProfessionalTrackingTimeline({
@@ -147,13 +149,14 @@ export function ProfessionalTrackingTimeline({
   timelineOverrides = null,
   publicTimelineStatusPath = null,
   publicTimelineStepVisibility = null,
+  internationalAgencyStage = null,
 }: ProfessionalTrackingTimelineProps) {
   const isInternational = routeType === "international";
   const stages = isInternational ? INTERNATIONAL_PROFESSIONAL_STAGES : DOMESTIC_PROFESSIONAL_STAGES;
   const modeOverrides =
     timelineOverrides?.[isInternational ? "international" : "domestic"] ?? null;
   const currentIdx = isInternational
-    ? getInternationalProfessionalStageIndex(status)
+    ? resolveInternationalTimelineStageIndex(status, internationalAgencyStage)
     : getDomesticProfessionalStageIndex(status);
   const isCancelled = status === "cancelled";
   const isOnHold = status === "on_hold";

@@ -1333,7 +1333,8 @@ export async function trackBooking(req, res, next) {
         publicTimelineOverrides: row.publicTimelineOverrides ?? null,
         publicTimelineStepVisibility: row.publicTimelineStepVisibility ?? null,
         estimatedDeliveryAt: row.estimatedDeliveryAt ?? null,
-        publicTimelineStatusPath: row.publicTimelineStatusPath ?? null
+        publicTimelineStatusPath: row.publicTimelineStatusPath ?? null,
+        internationalAgencyStage: row.internationalAgencyStage ?? null
       }
     });
   } catch (error) {

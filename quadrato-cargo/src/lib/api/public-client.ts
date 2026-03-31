@@ -172,6 +172,8 @@ export type PublicTrackingResponse =
         estimatedDeliveryAt?: string | null;
         /** Status history for progressive timeline; omit/null = show full milestone ladder (legacy). */
         publicTimelineStatusPath?: string[] | null;
+        /** International: 0–11 = current macro card when set; else derived from status. */
+        internationalAgencyStage?: number | null;
       };
     }
   | { ok: false; message: string };

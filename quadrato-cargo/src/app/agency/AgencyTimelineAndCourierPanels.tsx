@@ -12,12 +12,12 @@ import type {
 } from "@/lib/api/public-client";
 import { patchAgencyBookingTimelineApi } from "@/lib/api/agency-client";
 import { ProfessionalTrackingTimeline } from "@/app/public/tsking/ProfessionalTrackingTimeline";
+import { resolveInternationalTimelineStageIndex } from "@/lib/international-timeline-stage";
 import {
   DOMESTIC_PROFESSIONAL_STAGES,
   INTERNATIONAL_PROFESSIONAL_STAGES,
   domesticHubLocation,
   getDomesticProfessionalStageIndex,
-  getInternationalProfessionalStageIndex,
   internationalHubLocation,
   type TrackingShipmentContext,
 } from "@/lib/professional-tracking-stages";
@@ -244,6 +244,7 @@ type Props = {
   publicTimelineOverrides: PublicTimelineOverrides | null | undefined;
   publicTimelineStepVisibility: PublicTimelineStepVisibility | null | undefined;
   publicTimelineStatusPath: string[] | null | undefined;
+  internationalAgencyStage?: number | null;
   courierId: string | null;
   payload: unknown;
 };
@@ -260,6 +261,7 @@ export function AgencyTimelineAndCourierPanels({
   publicTimelineOverrides,
   publicTimelineStepVisibility,
   publicTimelineStatusPath,
+  internationalAgencyStage = null,
   courierId,
   payload,
 }: Props) {
@@ -271,7 +273,7 @@ export function AgencyTimelineAndCourierPanels({
   const st = normalizeBookingStatus(status);
   const stageIndex =
     mode === "international"
-      ? getInternationalProfessionalStageIndex(st)
+      ? resolveInternationalTimelineStageIndex(st, internationalAgencyStage)
       : getDomesticProfessionalStageIndex(st);
 
   const ctx = useMemo<TrackingShipmentContext>(
@@ -448,6 +450,7 @@ export function AgencyTimelineAndCourierPanels({
                     timelineOverrides={publicTimelineOverrides ?? null}
                     publicTimelineStatusPath={publicTimelineStatusPath ?? null}
                     publicTimelineStepVisibility={publicTimelineStepVisibility ?? null}
+                    internationalAgencyStage={internationalAgencyStage}
                   />
                 </div>
               ) : null}

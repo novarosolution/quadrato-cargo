@@ -96,12 +96,13 @@ export default async function AdminBookingTimelinePage({ params }: Props) {
         <p className="mt-1 text-xs text-muted-soft">Matches today&apos;s shipment status.</p>
         <div className="mt-4">
           <AdminTimelineQuickCardForm
-            key={`${row.id}-${row.routeType}-${row.status}-${JSON.stringify(row.publicTimelineOverrides ?? null)}-${JSON.stringify(row.publicTimelineStepVisibility ?? null)}`}
+            key={`${row.id}-${row.routeType}-${row.status}-${String(row.internationalAgencyStage ?? "")}-${JSON.stringify(row.publicTimelineOverrides ?? null)}-${JSON.stringify(row.publicTimelineStepVisibility ?? null)}`}
             bookingId={row.id}
             routeType={row.routeType}
             status={row.status}
             initial={row.publicTimelineOverrides ?? null}
             initialStepVisibility={row.publicTimelineStepVisibility ?? null}
+            internationalAgencyStage={row.internationalAgencyStage ?? null}
           />
         </div>
       </section>
@@ -114,12 +115,13 @@ export default async function AdminBookingTimelinePage({ params }: Props) {
         <p className="mt-1 text-xs text-muted-soft">Prepare the following step before you advance status.</p>
         <div className="mt-4">
           <AdminTimelineNextStepForm
-            key={`${row.id}-${row.routeType}-next-${row.status}-${JSON.stringify(row.publicTimelineOverrides ?? null)}-${JSON.stringify(row.publicTimelineStepVisibility ?? null)}`}
+            key={`${row.id}-${row.routeType}-next-${row.status}-${String(row.internationalAgencyStage ?? "")}-${JSON.stringify(row.publicTimelineOverrides ?? null)}-${JSON.stringify(row.publicTimelineStepVisibility ?? null)}`}
             bookingId={row.id}
             routeType={row.routeType}
             status={row.status}
             initial={row.publicTimelineOverrides ?? null}
             initialStepVisibility={row.publicTimelineStepVisibility ?? null}
+            internationalAgencyStage={row.internationalAgencyStage ?? null}
           />
         </div>
       </section>
