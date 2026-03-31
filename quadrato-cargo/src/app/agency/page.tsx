@@ -42,6 +42,7 @@ export default async function AgencyPage() {
     ? (res.data.bookings || []).map((b) => ({
         id: b.id,
         createdAt: new Date(b.createdAt).toISOString(),
+        updatedAt: (b.updatedAt && new Date(b.updatedAt).toISOString()) || new Date(b.createdAt).toISOString(),
         consignmentNumber: b.consignmentNumber,
         routeType: b.routeType,
         status: b.status,
@@ -50,6 +51,13 @@ export default async function AgencyPage() {
         agencyHandoverVerifiedAt: b.agencyHandoverVerifiedAt ?? null,
         senderName: partyName(b.payload, "sender"),
         recipientName: partyName(b.payload, "recipient"),
+        senderAddress: b.senderAddress ?? null,
+        recipientAddress: b.recipientAddress ?? null,
+        publicTimelineOverrides: b.publicTimelineOverrides ?? null,
+        publicTimelineStatusPath: Array.isArray(b.publicTimelineStatusPath)
+          ? b.publicTimelineStatusPath.map((s) => String(s ?? "").trim()).filter(Boolean)
+          : null,
+        courierId: b.courierId ?? null,
         payload: b.payload,
       }))
     : [];

@@ -6,8 +6,10 @@ import {
   BOOKING_STATUS_LABELS,
   normalizeBookingStatus,
 } from "@/lib/booking-status";
+import type { PublicTimelineOverrides } from "@/lib/api/public-client";
 import { updateAgencyBookingApi, verifyAgencyHandoverApi } from "@/lib/api/agency-client";
 import type { AgencyHubIdentity } from "./agency-hub-types";
+import { AgencyTimelineAndCourierPanels } from "./AgencyTimelineAndCourierPanels";
 
 type AgencyJobUpdateState =
   | { ok: true; message: string }
@@ -127,8 +129,14 @@ type Props = {
   /** domestic | international — international adds customs/linehaul templates */
   routeType?: string;
   currentStatus: string;
+  updatedAtIso: string;
   agencyHandoverVerifiedAt?: string | null;
   publicTrackingNote: string | null;
+  senderAddress?: string | null;
+  recipientAddress?: string | null;
+  publicTimelineOverrides?: PublicTimelineOverrides | null;
+  publicTimelineStatusPath?: string[] | null;
+  courierId?: string | null;
   /** Booking payload: read-only summary for agency ↔ courier context */
   payload?: unknown;
   /** Increment (e.g. from "Accept & open") to focus OTP when handover not yet verified */
@@ -141,8 +149,14 @@ export function AgencyJobControls({
   reference,
   routeType = "domestic",
   currentStatus,
+  updatedAtIso,
   agencyHandoverVerifiedAt,
   publicTrackingNote,
+  senderAddress = null,
+  recipientAddress = null,
+  publicTimelineOverrides = null,
+  publicTimelineStatusPath = null,
+  courierId = null,
   payload,
   otpFocusSignal = 0,
   agencyIdentity,
@@ -264,6 +278,20 @@ export function AgencyJobControls({
           </dl>
         </div>
       ) : null}
+
+      <AgencyTimelineAndCourierPanels
+        status={currentStatus}
+        routeType={routeType}
+        updatedAtIso={updatedAtIso}
+        publicTrackingNote={publicTrackingNote}
+        senderAddress={senderAddress}
+        recipientAddress={recipientAddress}
+        agencyDisplayName={agencyIdentity.displayName}
+        publicTimelineOverrides={publicTimelineOverrides}
+        publicTimelineStatusPath={publicTimelineStatusPath}
+        courierId={courierId}
+        payload={payload}
+      />
 
       {!handoverAccepted ? (
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">

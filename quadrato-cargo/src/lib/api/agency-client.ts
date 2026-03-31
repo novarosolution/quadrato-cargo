@@ -1,5 +1,6 @@
 import { getApiBaseUrl } from "@/lib/api/base-url";
 import { csrfHeaderRecord } from "@/lib/api/csrf-headers";
+import type { PublicTimelineOverrides } from "@/lib/api/public-client";
 
 export type AgencyBooking = {
   id: string;
@@ -13,6 +14,11 @@ export type AgencyBooking = {
   publicTrackingNote?: string | null;
   assignedAgency?: string | null;
   agencyHandoverVerifiedAt?: string | null;
+  senderAddress?: string | null;
+  recipientAddress?: string | null;
+  publicTimelineOverrides?: PublicTimelineOverrides | null;
+  publicTimelineStatusPath?: string[] | null;
+  courierId?: string | null;
   payload: unknown;
 };
 

@@ -6,12 +6,14 @@ import {
   BOOKING_STATUS_LABELS,
   normalizeBookingStatus,
 } from "@/lib/booking-status";
+import type { PublicTimelineOverrides } from "@/lib/api/public-client";
 import type { AgencyHubIdentity } from "./agency-hub-types";
 import { AgencyJobControls } from "./JobControls";
 
 export type AgencyIntakeRow = {
   id: string;
   createdAt: string;
+  updatedAt: string;
   consignmentNumber: string | null;
   routeType: string;
   status: string;
@@ -20,6 +22,11 @@ export type AgencyIntakeRow = {
   agencyHandoverVerifiedAt: string | null;
   senderName: string;
   recipientName: string;
+  senderAddress: string | null;
+  recipientAddress: string | null;
+  publicTimelineOverrides: PublicTimelineOverrides | null;
+  publicTimelineStatusPath: string[] | null;
+  courierId: string | null;
   payload: unknown;
 };
 
@@ -158,8 +165,14 @@ export function AgencyIntakeTable({ rows, agencyIdentity }: Props) {
                             reference={reference}
                             routeType={row.routeType}
                             currentStatus={row.status}
+                            updatedAtIso={row.updatedAt}
                             agencyHandoverVerifiedAt={row.agencyHandoverVerifiedAt}
                             publicTrackingNote={row.publicTrackingNote || row.trackingNotes}
+                            senderAddress={row.senderAddress}
+                            recipientAddress={row.recipientAddress}
+                            publicTimelineOverrides={row.publicTimelineOverrides}
+                            publicTimelineStatusPath={row.publicTimelineStatusPath}
+                            courierId={row.courierId}
                             payload={row.payload}
                             otpFocusSignal={otpFocusSignal}
                             agencyIdentity={agencyIdentity}
