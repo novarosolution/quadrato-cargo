@@ -17,10 +17,7 @@ import { AdminBookingCustomerLink } from "../linkcustomer";
 import { AdminBookingDataForm } from "../booking";
 import { AdminBookingContactForm } from "../AdminBookingContactForm";
 import { AdminBookingInvoiceForm } from "../AdminBookingInvoiceForm";
-import { AdminCustomerTimelineForm } from "../AdminCustomerTimelineForm";
 import { AdminPageHeader } from "@/components/layout/AppPageHeader";
-import { AdminTimelineQuickCardForm } from "../AdminTimelineQuickCardForm";
-import { AdminTimelineNextStepForm } from "../AdminTimelineNextStepForm";
 import { AdminBookingPickupForm } from "../AdminBookingPickupForm";
 import { AdminBookingShipmentForm } from "../AdminBookingShipmentForm";
 import {
@@ -163,18 +160,30 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           </>
         }
         actions={
-          <DeleteRowButton
-            label="Delete booking"
-            action={deleteCourierBooking.bind(null, row.id)}
-            redirectAfter="/admin/bookings"
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/admin/bookings/${row.id}/timeline`}
+              prefetch={false}
+              className="inline-flex items-center justify-center rounded-xl border border-teal/60 bg-teal/15 px-4 py-2 text-sm font-semibold text-ink transition hover:bg-teal/25 dark:bg-teal/20"
+            >
+              Customer Track
+            </Link>
+            <DeleteRowButton
+              label="Delete booking"
+              action={deleteCourierBooking.bind(null, row.id)}
+              redirectAfter="/admin/bookings"
+            />
+          </div>
         }
       />
 
       <div className="space-y-3 rounded-2xl border border-border-strong bg-surface-elevated/40 px-4 py-4">
         <p className="text-sm text-muted-soft">
-          <span className="font-medium text-ink">Usual order:</span> status &amp; notes → Track cards → contacts /
-          parcel / invoice if needed.
+          <span className="font-medium text-ink">Usual order:</span> status &amp; notes →{" "}
+          <Link href={`/admin/bookings/${row.id}/timeline`} className="font-medium text-teal hover:underline">
+            Customer Track
+          </Link>{" "}
+          → contacts / parcel / invoice if needed.
         </p>
         <nav aria-label="On this page">
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-soft">Jump to</p>
@@ -203,19 +212,27 @@ export default async function AdminBookingDetailPage({ params }: Props) {
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-soft">Customer Track</p>
               <ul className="mt-1.5 flex flex-col gap-1.5 text-sm">
                 <li>
-                  <a href="#booking-quick-card" className={jumpLinkClass}>
+                  <Link href={`/admin/bookings/${row.id}/timeline`} className={jumpLinkClass}>
+                    Track editor (all)
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href={`/admin/bookings/${row.id}/timeline#timeline-current`}
+                    className={jumpLinkClass}
+                  >
                     Current card
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#booking-next-timeline-step" className={jumpLinkClass}>
+                  <Link href={`/admin/bookings/${row.id}/timeline#timeline-next`} className={jumpLinkClass}>
                     Next card
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="#booking-customer-timeline" className={jumpLinkClass}>
-                    All steps
-                  </a>
+                  <Link href={`/admin/bookings/${row.id}/timeline#timeline-bulk`} className={jumpLinkClass}>
+                    All steps (bulk)
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -359,7 +376,24 @@ export default async function AdminBookingDetailPage({ params }: Props) {
       <section id="booking-tracking" className="scroll-mt-24 space-y-4">
         <div className="rounded-xl border border-border-strong/80 bg-canvas/20 px-4 py-3">
           <h2 className="font-display text-lg font-semibold text-ink">Operations &amp; Track</h2>
-          <p className="mt-1 text-sm text-muted">Status, agency, courier, customer timeline cards.</p>
+          <p className="mt-1 text-sm text-muted">Status, agency, courier — then edit timeline on the Track page.</p>
+        </div>
+        <div className="rounded-2xl border border-teal/30 bg-linear-to-r from-teal/10 to-canvas/30 p-4 dark:from-teal/15">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-ink">Customer Track editor</p>
+              <p className="mt-0.5 text-xs text-muted-soft">
+                Current card, next card, bulk steps, and hide steps from customers.
+              </p>
+            </div>
+            <Link
+              href={`/admin/bookings/${row.id}/timeline`}
+              prefetch={false}
+              className="inline-flex shrink-0 items-center justify-center rounded-xl bg-teal px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:opacity-90"
+            >
+              Open Track editor →
+            </Link>
+          </div>
         </div>
         <AdminBookingDispatchSplit
           key={`${row.id}-${String(row.customerFacingCreatedAt ?? "")}-${String(row.customerFacingUpdatedAt ?? "")}-${String(row.estimatedDeliveryAt ?? "")}`}
@@ -387,52 +421,6 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           )}
           estimatedDeliveryAtIso={row.estimatedDeliveryAt ?? null}
         />
-
-        <section
-          id="booking-quick-card"
-          className="scroll-mt-24 rounded-2xl border border-teal/25 bg-teal/4 p-5 dark:bg-teal/10"
-        >
-          <h2 className="font-display text-lg font-semibold text-ink">Current Track card</h2>
-          <p className="mt-1 text-xs text-muted-soft">Matches shipment status today.</p>
-          <div className="mt-4">
-            <AdminTimelineQuickCardForm
-              key={`${row.id}-${row.routeType}-${row.status}-${JSON.stringify(row.publicTimelineOverrides ?? null)}-${JSON.stringify(row.publicTimelineStepVisibility ?? null)}`}
-              bookingId={row.id}
-              routeType={row.routeType}
-              status={row.status}
-              initial={row.publicTimelineOverrides ?? null}
-              initialStepVisibility={row.publicTimelineStepVisibility ?? null}
-            />
-          </div>
-        </section>
-
-        <section
-          id="booking-next-timeline-step"
-          className="scroll-mt-24 rounded-2xl border border-border-strong bg-surface-elevated/40 p-5"
-        >
-          <h2 className="font-display text-lg font-semibold text-ink">Next Track card</h2>
-          <p className="mt-1 text-xs text-muted-soft">Optional — prepare before you change status.</p>
-          <div className="mt-4">
-            <AdminTimelineNextStepForm
-              key={`${row.id}-${row.routeType}-next-${row.status}-${JSON.stringify(row.publicTimelineOverrides ?? null)}-${JSON.stringify(row.publicTimelineStepVisibility ?? null)}`}
-              bookingId={row.id}
-              routeType={row.routeType}
-              status={row.status}
-              initial={row.publicTimelineOverrides ?? null}
-              initialStepVisibility={row.publicTimelineStepVisibility ?? null}
-            />
-          </div>
-        </section>
-
-        <AdminCollapsible id="booking-customer-timeline" title="All timeline steps (bulk)">
-          <AdminCustomerTimelineForm
-            key={`${row.id}-${row.routeType}-${JSON.stringify(row.publicTimelineStepVisibility ?? null)}`}
-            bookingId={row.id}
-            routeType={row.routeType}
-            initial={row.publicTimelineOverrides ?? null}
-            initialStepVisibility={row.publicTimelineStepVisibility ?? null}
-          />
-        </AdminCollapsible>
       </section>
 
       <section id="booking-customer-view" className="scroll-mt-24 space-y-4">
