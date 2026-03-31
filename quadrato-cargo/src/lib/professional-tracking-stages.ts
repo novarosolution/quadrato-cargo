@@ -18,8 +18,8 @@ export type ProfessionalStageDef = {
 };
 
 /**
- * Eleven-slot international flow: phases from {@link INTERNATIONAL_TRACKING_PHASES},
- * plus split last mile / exceptions / delivered — matches professional courier copy (Rajkot → USA).
+ * Twelve-slot international flow: phases from {@link INTERNATIONAL_TRACKING_PHASES},
+ * plus separate out-for-delivery, delivery-attempted, exception, and delivered cards.
  */
 function buildInternationalProfessionalStages(): ProfessionalStageDef[] {
   const phases = INTERNATIONAL_TRACKING_PHASES;
@@ -33,9 +33,17 @@ function buildInternationalProfessionalStages(): ProfessionalStageDef[] {
   }));
 
   out.push({
-    id: "intl_last_mile_active",
-    title: lastPhase.title,
-    hint: lastPhase.steps[0]?.hint ?? "",
+    id: "intl_out_for_delivery_card",
+    title: "Out for delivery",
+    hint: lastPhase.steps[0]?.hint ?? "Courier is on the way to the recipient.",
+  });
+
+  out.push({
+    id: "intl_delivery_attempted_card",
+    title: "Delivery attempted",
+    hint:
+      lastPhase.steps[1]?.hint ??
+      "Shown when a delivery attempt was made but not completed.",
   });
 
   out.push({
@@ -86,11 +94,11 @@ export const DOMESTIC_PROFESSIONAL_STAGES: ProfessionalStageDef[] = [
 ];
 
 /**
- * Macro stage index (0–10) aligned with {@link bookingStatusToInternationalStepIndex} and
- * {@link legacyInternationalFlatIndexToMacroSub}.
+ * Macro stage index (0–11): last mile split into out-for-delivery (8), delivery attempted (9),
+ * exception (10), delivered (11). Aligned with {@link legacyInternationalFlatIndexToMacroSub}.
  */
 export function getInternationalProfessionalStageIndex(status: BookingStatusId): number {
-  if (status === "on_hold") return 9;
+  if (status === "on_hold") return 10;
   if (status === "cancelled") return 0;
   const flat = bookingStatusToInternationalStepIndex(status);
   return legacyInternationalFlatIndexToMacroSub(flat).macro;
@@ -138,10 +146,12 @@ export function internationalHubLocation(
     case 7:
       return ctx.agencyName || "USA destination hub";
     case 8:
-      return ctx.recipientAddress || "Last mile · delivery area";
+      return ctx.recipientAddress || "Out for delivery · recipient area";
     case 9:
-      return "Operations / customs / dispatch review";
+      return ctx.recipientAddress || "Delivery attempt";
     case 10:
+      return "Operations / customs / dispatch review";
+    case 11:
       return ctx.recipientAddress || "Delivery completed";
     default:
       return "Quadrato Cargo network";
@@ -185,13 +195,6 @@ export function buildProfessionalTimelineSegments(
     if (mode !== "international") continue;
     const next = rev[j + 1];
     if (next === undefined) continue;
-    if (idx === 6 && next === 5) {
-      out.push({
-        kind: "divider",
-        key: "usa-import",
-        label: "Arriving in USA · import gateway",
-      });
-    }
     if (idx === 5 && next === 4) {
       out.push({
         kind: "divider",

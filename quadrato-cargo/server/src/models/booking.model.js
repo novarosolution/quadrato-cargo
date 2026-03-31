@@ -81,7 +81,7 @@ export function normalizePublicTimelineOverrides(raw) {
     const src = raw[mode];
     if (!src || typeof src !== "object") continue;
     const dest = {};
-    const maxIdx = mode === "domestic" ? 4 : 10;
+    const maxIdx = mode === "domestic" ? 4 : 11;
     for (const [k, v] of Object.entries(src)) {
       if (!/^\d+$/.test(k)) continue;
       const idx = Number.parseInt(k, 10);

@@ -86,7 +86,7 @@ export async function postBookCourierApi(
   }
 }
 
-/** Admin-editable copy for one professional timeline card (by stage index string "0"…). */
+/** Admin-editable copy for one professional timeline card (by stage index string "0"…"11" intl / "0"…"4" domestic). */
 export type PublicTimelineStageOverride = {
   title?: string;
   location?: string;

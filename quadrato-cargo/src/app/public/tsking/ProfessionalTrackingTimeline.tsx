@@ -78,14 +78,16 @@ function stageIcon(
       case 7:
         return <Building2 className={ic} aria-hidden />;
       case 8:
-        return <User className={ic} aria-hidden />;
+        return <Truck className={ic} aria-hidden />;
       case 9:
+        return <Package className={ic} aria-hidden />;
+      case 10:
         return isException ? (
           <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" aria-hidden />
         ) : (
           <Info className={ic} aria-hidden />
         );
-      case 10:
+      case 11:
         return <Check className={ic} aria-hidden />;
       default:
         return <Package className={ic} aria-hidden />;
@@ -166,7 +168,7 @@ export function ProfessionalTrackingTimeline({
             const actuallyLatest = seg.kind === "stage" && i === 0;
             const isExceptionCard =
               isOnHold &&
-              ((isInternational && stageIndex === 9) || (!isInternational && stageIndex === 3));
+              ((isInternational && stageIndex === 10) || (!isInternational && stageIndex === 3));
             const defaultLocation = isInternational
               ? internationalHubLocation(stageIndex, ctx)
               : domesticHubLocation(stageIndex, ctx);
@@ -238,21 +240,21 @@ export function ProfessionalTrackingTimeline({
                           </span>
                         ) : null}
                       </div>
-                      <p className="flex items-start gap-1.5 text-sm text-ink/90">
+                      <p className="flex items-start gap-1.5 text-sm font-semibold text-ink">
                         <MapPin
                           className="mt-0.5 size-3.5 shrink-0 text-accent dark:text-accent-hover"
                           aria-hidden
                         />
-                        <span className="break-words text-muted">{location}</span>
+                        <span className="break-words">{location}</span>
                       </p>
-                      <p className="text-xs text-muted-soft">{hintText}</p>
+                      <p className="text-sm font-bold leading-snug text-ink">{hintText}</p>
                       {actuallyLatest && latestNote?.trim() ? (
-                        <p className="rounded-lg border border-border-strong bg-surface-highlight px-3 py-2 text-xs text-ink">
+                        <p className="rounded-lg border border-border-strong bg-surface-highlight px-3 py-2 text-sm font-bold text-ink">
                           {latestNote.trim()}
                         </p>
                       ) : null}
-                      <p className="flex items-center gap-1.5 font-sans text-xs text-muted-soft">
-                        <Clock className="size-3.5 shrink-0 text-muted" aria-hidden />
+                      <p className="flex items-center gap-1.5 font-sans text-sm font-bold text-ink">
+                        <Clock className="size-3.5 shrink-0 text-teal" aria-hidden />
                         {showStageTime ? formatTrackingTimestamp(stageTimeIso) : "—"}
                       </p>
                     </div>

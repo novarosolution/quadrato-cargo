@@ -259,8 +259,9 @@ export function bookingStatusToInternationalStepIndex(
 
 /**
  * Maps a flat international step index (same space as {@link bookingStatusToInternationalStepIndex})
- * to the 11-slot professional timeline macro index and sub-step within that card.
- * Last-mile phase is split: first two rows → macro 8, final "Delivered" → macro 10; macro 9 is exceptions only.
+ * to the 12-slot professional timeline macro index.
+ * Last-mile: step 0 → macro 8 (out for delivery), step 1 → macro 9 (attempted), step 2 → macro 11 (delivered).
+ * Macro 10 is reserved for on_hold / exception card only (not flat-indexed).
  */
 export function legacyInternationalFlatIndexToMacroSub(
   flat: number,
@@ -272,13 +273,16 @@ export function legacyInternationalFlatIndexToMacroSub(
     const isLast = pi === phases.length - 1;
     const len = p.steps.length;
     if (isLast) {
-      if (flat < offset + 2) {
+      if (flat < offset + 1) {
         return { macro: 8, sub: Math.max(0, flat - offset) };
       }
-      if (flat < offset + len) {
-        return { macro: 10, sub: 0 };
+      if (flat < offset + 2) {
+        return { macro: 9, sub: 0 };
       }
-      return { macro: 10, sub: 0 };
+      if (flat < offset + len) {
+        return { macro: 11, sub: 0 };
+      }
+      return { macro: 11, sub: 0 };
     }
     if (flat < offset + len) {
       return { macro: pi, sub: flat - offset };

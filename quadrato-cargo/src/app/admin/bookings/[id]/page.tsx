@@ -171,6 +171,21 @@ export default async function AdminBookingDetailPage({ params }: Props) {
             </a>
           </li>
           <li>
+            <a href="#booking-dispatch-panel" className={jumpLinkClass}>
+              Status, dates &amp; messages
+            </a>
+          </li>
+          <li>
+            <a href="#booking-quick-card" className={jumpLinkClass}>
+              Timeline quick edit
+            </a>
+          </li>
+          <li>
+            <a href="#booking-customer-timeline" className={jumpLinkClass}>
+              All timeline steps
+            </a>
+          </li>
+          <li>
             <a href="#booking-tracking" className={jumpLinkClass}>
               Tracking &amp; dispatch
             </a>
@@ -187,7 +202,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           </li>
           <li>
             <a href="#booking-invoice" className={jumpLinkClass}>
-              Invoice
+              Invoice &amp; PDF
             </a>
           </li>
           <li>

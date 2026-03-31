@@ -5,6 +5,9 @@ import {
   DOMESTIC_PROFESSIONAL_STAGES,
   INTERNATIONAL_PROFESSIONAL_STAGES,
 } from "@/lib/professional-tracking-stages";
+
+const DOMESTIC_TIMELINE_MAX_INDEX = DOMESTIC_PROFESSIONAL_STAGES.length - 1;
+const INTERNATIONAL_TIMELINE_MAX_INDEX = INTERNATIONAL_PROFESSIONAL_STAGES.length - 1;
 import type { PublicTimelineOverrides } from "@/lib/api/public-client";
 import { AdminFormField, adminInputClassName } from "@/components/admin/AdminFormField";
 import {
@@ -64,8 +67,8 @@ function buildApiPayload(domestic: Record<string, StageFields>, international: R
     return out;
   };
   return {
-    domestic: cleanMode(domestic, 4),
-    international: cleanMode(international, 10),
+    domestic: cleanMode(domestic, DOMESTIC_TIMELINE_MAX_INDEX),
+    international: cleanMode(international, INTERNATIONAL_TIMELINE_MAX_INDEX),
   };
 }
 
@@ -90,8 +93,12 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
   const stages = isInternational ? INTERNATIONAL_PROFESSIONAL_STAGES : DOMESTIC_PROFESSIONAL_STAGES;
   const modeKey = isInternational ? "international" : "domestic";
 
-  const [domestic, setDomestic] = useState(() => initMode(4, initial?.domestic));
-  const [international, setInternational] = useState(() => initMode(10, initial?.international));
+  const [domestic, setDomestic] = useState(() =>
+    initMode(DOMESTIC_TIMELINE_MAX_INDEX, initial?.domestic),
+  );
+  const [international, setInternational] = useState(() =>
+    initMode(INTERNATIONAL_TIMELINE_MAX_INDEX, initial?.international),
+  );
   const [step, setStep] = useState(0);
 
   const modeState = isInternational ? international : domestic;
@@ -398,8 +405,8 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
             disabled={pending || locPending}
             className="rounded-xl border border-border-strong bg-canvas px-4 py-2.5 text-sm font-medium text-ink disabled:opacity-60"
             onClick={() => {
-              setDomestic(initMode(4, undefined));
-              setInternational(initMode(10, undefined));
+              setDomestic(initMode(DOMESTIC_TIMELINE_MAX_INDEX, undefined));
+              setInternational(initMode(INTERNATIONAL_TIMELINE_MAX_INDEX, undefined));
               setStep(0);
             }}
           >
