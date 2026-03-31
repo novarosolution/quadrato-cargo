@@ -126,15 +126,30 @@ function toPublicInvoice(row) {
   return Object.values(out).some(Boolean) ? out : null;
 }
 
+function customerFacingCreatedInstant(row) {
+  return row?.customerDisplayCreatedAt ?? row?.createdAt ?? null;
+}
+
+function customerFacingUpdatedInstant(row) {
+  const base = row?.updatedAt ?? row?.createdAt ?? null;
+  return row?.customerDisplayUpdatedAt ?? base;
+}
+
 export function toPublicBooking(row) {
   if (!row) return null;
   const sender = row.payload?.sender ?? {};
   const recipient = row.payload?.recipient ?? {};
+  const createdAt = row.createdAt;
+  const updatedAt = row.updatedAt ?? row.createdAt;
   return {
     id: String(row._id),
     userId: row.userId ? String(row.userId) : null,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt ?? row.createdAt,
+    createdAt,
+    updatedAt,
+    customerDisplayCreatedAt: row.customerDisplayCreatedAt ?? null,
+    customerDisplayUpdatedAt: row.customerDisplayUpdatedAt ?? null,
+    customerFacingCreatedAt: customerFacingCreatedInstant(row),
+    customerFacingUpdatedAt: customerFacingUpdatedInstant(row),
     routeType: row.routeType ?? "domestic",
     status: row.status ?? "submitted",
     consignmentNumber: row.consignmentNumber ?? null,
@@ -164,11 +179,17 @@ export function toPublicBookingSummary(row) {
   if (!row) return null;
   const sender = row.payload?.sender ?? {};
   const recipient = row.payload?.recipient ?? {};
+  const createdAt = row.createdAt;
+  const updatedAt = row.updatedAt ?? row.createdAt;
   return {
     id: String(row._id),
     userId: row.userId ? String(row.userId) : null,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt ?? row.createdAt,
+    createdAt,
+    updatedAt,
+    customerDisplayCreatedAt: row.customerDisplayCreatedAt ?? null,
+    customerDisplayUpdatedAt: row.customerDisplayUpdatedAt ?? null,
+    customerFacingCreatedAt: customerFacingCreatedInstant(row),
+    customerFacingUpdatedAt: customerFacingUpdatedInstant(row),
     routeType: row.routeType ?? "domestic",
     status: row.status ?? "submitted",
     consignmentNumber: row.consignmentNumber ?? null,

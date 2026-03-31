@@ -511,8 +511,10 @@ async function buildPdfDataFromBooking(req, parsedData) {
 
   return {
     ...parsedData,
-    bookingDateLabel: safeDateLabel(booking.createdAt),
-    updatedAtLabel: safeDateLabel(booking.updatedAt || booking.createdAt),
+    bookingDateLabel: safeDateLabel(booking.customerFacingCreatedAt ?? booking.createdAt),
+    updatedAtLabel: safeDateLabel(
+      booking.customerFacingUpdatedAt ?? booking.updatedAt ?? booking.createdAt
+    ),
     reference,
     routeTypeLabel: String(booking.routeType || "-"),
     consignmentNumber: String(booking.consignmentNumber || "-"),
@@ -1326,8 +1328,8 @@ export async function trackBooking(req, res, next) {
         senderAddress: row.senderAddress || null,
         recipientName: row.recipientName || null,
         recipientAddress: row.recipientAddress || null,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt ?? row.createdAt,
+        createdAt: row.customerFacingCreatedAt ?? row.createdAt,
+        updatedAt: row.customerFacingUpdatedAt ?? row.updatedAt ?? row.createdAt,
         shipment: buildShipmentSummaryForPublicTrack(row.payload),
         publicTimelineOverrides: row.publicTimelineOverrides ?? null
       }

@@ -56,6 +56,13 @@ export type AdminBooking = {
   userId: string | null;
   courierId: string | null;
   createdAt: string;
+  updatedAt?: string;
+  /** Admin overrides; omitted when unset. */
+  customerDisplayCreatedAt?: string | null;
+  customerDisplayUpdatedAt?: string | null;
+  /** Effective instants shown to customers (track, profile, PDF). */
+  customerFacingCreatedAt?: string | null;
+  customerFacingUpdatedAt?: string | null;
   /** When false, customer invoice PDF is blocked until admin re-enables. Omitted/undefined treated as allowed (legacy rows). */
   invoicePdfReady?: boolean;
   invoice?: AdminBookingInvoice | null;

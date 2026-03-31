@@ -1,6 +1,13 @@
 "use client";
 
 import { useActionState, useEffect, useId, useMemo, useState } from "react";
+
+function isoToDatetimeLocalValue(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 import { useRouter } from "next/navigation";
 import {
   BOOKING_STATUSES,
@@ -44,6 +51,9 @@ type Props = {
   internalNotes: string | null;
   couriers: AdminBookingCourierOption[];
   assignedCourierId: string | null;
+  /** ISO strings for customer-facing labels (track, profile, PDF). */
+  customerFacingBookedIso: string;
+  customerFacingUpdatedIso: string;
 };
 
 const inputClass = adminInputClassName();
@@ -63,6 +73,8 @@ export function AdminBookingDispatchSplit({
   internalNotes,
   couriers,
   assignedCourierId,
+  customerFacingBookedIso,
+  customerFacingUpdatedIso,
 }: Props) {
   const router = useRouter();
   const uid = useId().replace(/:/g, "");
@@ -76,6 +88,12 @@ export function AdminBookingDispatchSplit({
   const [internal, setInternal] = useState(internalNotes ?? "");
   const [agency, setAgency] = useState(assignedAgency ?? "");
   const [courierId, setCourierId] = useState(assignedCourierId ?? "__unassigned");
+  const [displayBookedLocal, setDisplayBookedLocal] = useState(() =>
+    isoToDatetimeLocalValue(customerFacingBookedIso),
+  );
+  const [displayUpdatedLocal, setDisplayUpdatedLocal] = useState(() =>
+    isoToDatetimeLocalValue(customerFacingUpdatedIso),
+  );
 
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [state, formAction, pending] = useActionState<
@@ -153,6 +171,16 @@ export function AdminBookingDispatchSplit({
     fd.set("internalNotes", internal);
     fd.set("assignedAgency", agency);
     fd.set("courierUserId", courierId);
+    const bookedRaw = displayBookedLocal.trim();
+    const updatedRaw = displayUpdatedLocal.trim();
+    fd.set(
+      "customerDisplayCreatedAt",
+      bookedRaw ? new Date(bookedRaw).toISOString() : "",
+    );
+    fd.set(
+      "customerDisplayUpdatedAt",
+      updatedRaw ? new Date(updatedRaw).toISOString() : "",
+    );
     return fd;
   }
 
@@ -221,6 +249,42 @@ export function AdminBookingDispatchSplit({
                       autoComplete="off"
                     />
                   </AdminFormField>
+
+                  <div className="sm:col-span-2 space-y-4 border-t border-border-strong/60 pt-5">
+                    <p className="text-xs font-bold uppercase tracking-wide text-muted-soft">
+                      Customer-facing dates
+                    </p>
+                    <p className="text-[11px] text-muted-soft">
+                      Shown on public track, profile, and PDFs as booked time and last updated. Clear a
+                      field and save to use the real system timestamp instead.
+                    </p>
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <AdminFormField
+                        label="Booked date & time"
+                        htmlFor={`${uid}-cust-created`}
+                      >
+                        <input
+                          id={`${uid}-cust-created`}
+                          type="datetime-local"
+                          className={inputClass}
+                          value={displayBookedLocal}
+                          onChange={(e) => setDisplayBookedLocal(e.target.value)}
+                        />
+                      </AdminFormField>
+                      <AdminFormField
+                        label="Last updated"
+                        htmlFor={`${uid}-cust-updated`}
+                      >
+                        <input
+                          id={`${uid}-cust-updated`}
+                          type="datetime-local"
+                          className={inputClass}
+                          value={displayUpdatedLocal}
+                          onChange={(e) => setDisplayUpdatedLocal(e.target.value)}
+                        />
+                      </AdminFormField>
+                    </div>
+                  </div>
                 </div>
               </div>
 

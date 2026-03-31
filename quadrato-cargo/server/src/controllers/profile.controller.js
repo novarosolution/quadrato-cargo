@@ -50,6 +50,15 @@ const updateAddressBookSchema = z.object({
   recipient: addressSchema.nullish()
 });
 
+function withCustomerFacingBookingDates(booking) {
+  if (!booking || typeof booking !== "object") return booking;
+  return {
+    ...booking,
+    createdAt: booking.customerFacingCreatedAt ?? booking.createdAt,
+    updatedAt: booking.customerFacingUpdatedAt ?? booking.updatedAt ?? booking.createdAt
+  };
+}
+
 export function getMyProfile(req, res) {
   return sendOk(res, { user: req.auth.user });
 }
@@ -139,7 +148,8 @@ export async function listMyBookings(req, res, next) {
       courierName: row?.courierId ? courierMap.get(String(row.courierId)) || null : null
     }));
     const db = await getDb();
-    const bookingsForCustomer = await mapBookingsAssignedAgencyForCustomer(db, bookings);
+    const mapped = await mapBookingsAssignedAgencyForCustomer(db, bookings);
+    const bookingsForCustomer = mapped.map(withCustomerFacingBookingDates);
     return sendOk(res, { bookings: bookingsForCustomer });
   } catch (error) {
     return next(error);
@@ -168,7 +178,11 @@ export async function getMyBookingById(req, res, next) {
     const db = await getDb();
     const agencyDisplay = await resolveAssignedAgencyDisplayName(db, row.assignedAgency);
     return sendOk(res, {
-      booking: { ...row, courierName, assignedAgency: agencyDisplay || null }
+      booking: withCustomerFacingBookingDates({
+        ...row,
+        courierName,
+        assignedAgency: agencyDisplay || null
+      })
     });
   } catch (error) {
     return next(error);

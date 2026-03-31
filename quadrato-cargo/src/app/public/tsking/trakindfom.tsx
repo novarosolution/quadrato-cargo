@@ -27,10 +27,7 @@ import {
   type PublicTrackUiSettings,
   type PublicTrackingShipment,
 } from "@/lib/api/public-client";
-import {
-  INTERNATIONAL_EXCEPTION_STATUSES,
-  estimateInternationalEdd,
-} from "@/lib/international-tracking-flow";
+import { estimateInternationalEdd } from "@/lib/international-tracking-flow";
 import { PublicCard } from "@/components/public/PublicCard";
 import { ProfessionalTrackingTimeline } from "@/app/public/tsking/ProfessionalTrackingTimeline";
 
@@ -414,23 +411,6 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                 />
               );
             })()
-          ) : null}
-          {isInternational && ui.showInternationalHelp ? (
-            <details
-              className={`rounded-lg border border-border-strong bg-canvas/20 px-3 py-2 ${ui.showTimeline ? "mt-4" : ""}`}
-            >
-              <summary className="cursor-pointer text-[11px] font-medium text-muted-soft hover:text-ink">
-                Common delays &amp; customs holds
-              </summary>
-              <ul className="mt-2 space-y-1.5 text-[11px] text-muted">
-                {INTERNATIONAL_EXCEPTION_STATUSES.map((ex) => (
-                  <li key={ex.id}>
-                    <span className="font-medium text-ink">{ex.label}</span>
-                    <span className="text-muted-soft"> — {ex.hint}</span>
-                  </li>
-                ))}
-              </ul>
-            </details>
           ) : null}
         </PublicCard>
       ) : null}

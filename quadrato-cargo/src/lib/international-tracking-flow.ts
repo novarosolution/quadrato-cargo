@@ -227,30 +227,6 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
 export const INTERNATIONAL_TRACKING_STEPS: InternationalTrackingStep[] =
   INTERNATIONAL_TRACKING_PHASES.flatMap((p) => p.steps);
 
-/** Reference labels for exception / problem states (copy & future API) */
-export const INTERNATIONAL_EXCEPTION_STATUSES = [
-  {
-    id: "delayed_weather_ops",
-    label: "Shipment delayed – weather / operational issue",
-    hint: "Network delay; delivery date may shift. We will update automatically.",
-  },
-  {
-    id: "hold_customs",
-    label: "Shipment on hold – customs",
-    hint: "Additional paperwork or inspection may be required.",
-  },
-  {
-    id: "address_issue",
-    label: "Address issue – customer action required",
-    hint: "Please confirm or correct the delivery address with support.",
-  },
-  {
-    id: "delivery_rescheduled",
-    label: "Delivery rescheduled",
-    hint: "A new delivery attempt has been scheduled.",
-  },
-] as const;
-
 /**
  * Maps internal booking status to the furthest international milestone index reached.
  * When the API adds granular events, replace this with server-driven step indices.

@@ -288,7 +288,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           <p className="mt-1 text-sm text-muted">Status, notes, agency, courier, and the public timeline.</p>
         </div>
         <AdminBookingDispatchSplit
-          key={row.id}
+          key={`${row.id}-${String(row.customerFacingCreatedAt ?? "")}-${String(row.customerFacingUpdatedAt ?? "")}`}
           bookingId={row.id}
           trackReference={trackReference}
           routeType={row.routeType}
@@ -302,6 +302,15 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           internalNotes={row.internalNotes}
           couriers={couriers}
           assignedCourierId={row.courierId}
+          customerFacingBookedIso={String(
+            row.customerFacingCreatedAt ?? row.createdAt.toISOString(),
+          )}
+          customerFacingUpdatedIso={String(
+            row.customerFacingUpdatedAt ??
+              (typeof row.updatedAt === "string"
+                ? row.updatedAt
+                : row.createdAt.toISOString()),
+          )}
         />
 
         <section

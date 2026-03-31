@@ -137,7 +137,10 @@ const bookingControlsSchema = z.object({
   /** Full operational log (DB `trackingNotes`); editable by admin. */
   operationalTrackingNotes: z.string().trim().max(20000).optional().default(""),
   internalNotes: z.string().trim().max(4000).optional().default(""),
-  assignedAgency: z.string().trim().max(320).optional().default("")
+  assignedAgency: z.string().trim().max(320).optional().default(""),
+  /** ISO 8601 or empty string to clear. Omit to leave unchanged. */
+  customerDisplayCreatedAt: z.string().max(64).optional(),
+  customerDisplayUpdatedAt: z.string().max(64).optional()
 });
 
 const bookingContactPartyPatchSchema = z
@@ -946,20 +949,38 @@ router.patch("/bookings/:id/controls", async (req, res, next) => {
     if (!ALLOWED_BOOKING_STATUSES.has(status)) {
       return sendError(res, "Invalid booking status.");
     }
-    await db.collection("bookings").updateOne(
-      { _id },
-      {
-        $set: {
-          status,
-          consignmentNumber: consignmentNumber || null,
-          publicTrackingNote: publicTrackingNote || null,
-          trackingNotes: operationalTrackingNotes || null,
-          internalNotes: internalNotes || null,
-          assignedAgency: assignedAgency || null,
-          updatedAt: new Date()
-        }
+    const now = new Date();
+    const $set = {
+      status,
+      consignmentNumber: consignmentNumber || null,
+      publicTrackingNote: publicTrackingNote || null,
+      trackingNotes: operationalTrackingNotes || null,
+      internalNotes: internalNotes || null,
+      assignedAgency: assignedAgency || null,
+      updatedAt: now
+    };
+    const $unset = {};
+    function applyDisplayDate(field, raw) {
+      if (raw === undefined) return true;
+      const t = String(raw).trim();
+      if (t === "") {
+        $unset[field] = "";
+        return true;
       }
-    );
+      const d = new Date(t);
+      if (Number.isNaN(d.getTime())) return false;
+      $set[field] = d;
+      return true;
+    }
+    if (!applyDisplayDate("customerDisplayCreatedAt", parsed.data.customerDisplayCreatedAt)) {
+      return sendError(res, "Invalid customer-facing booked date. Use a valid ISO date-time.");
+    }
+    if (!applyDisplayDate("customerDisplayUpdatedAt", parsed.data.customerDisplayUpdatedAt)) {
+      return sendError(res, "Invalid customer-facing last-updated date. Use a valid ISO date-time.");
+    }
+    const update =
+      Object.keys($unset).length > 0 ? { $set, $unset } : { $set };
+    await db.collection("bookings").updateOne({ _id }, update);
     return sendOk(res);
   } catch (error) {
     next(error);

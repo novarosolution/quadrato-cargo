@@ -242,6 +242,8 @@ export async function updateCourierBookingAdmin(
       operationalTrackingNotes: String(formData.get("operationalTrackingNotes") ?? ""),
       internalNotes: String(formData.get("internalNotes") ?? ""),
       assignedAgency: String(formData.get("assignedAgency") ?? ""),
+      customerDisplayCreatedAt: String(formData.get("customerDisplayCreatedAt") ?? ""),
+      customerDisplayUpdatedAt: String(formData.get("customerDisplayUpdatedAt") ?? ""),
     },
   );
   if (!result.ok) {
@@ -270,6 +272,8 @@ export async function saveManualTrackingAdmin(
       operationalTrackingNotes: String(formData.get("operationalTrackingNotes") ?? ""),
       internalNotes: String(formData.get("internalNotes") ?? ""),
       assignedAgency: String(formData.get("assignedAgency") ?? ""),
+      customerDisplayCreatedAt: String(formData.get("customerDisplayCreatedAt") ?? ""),
+      customerDisplayUpdatedAt: String(formData.get("customerDisplayUpdatedAt") ?? ""),
     },
   );
   if (!controlsResult.ok) {
