@@ -83,6 +83,41 @@ export async function verifyAgencyHandoverApi(args: {
   }
 }
 
+export async function patchAgencyProfileApi(args: {
+  name: string;
+  agencyAddress: string;
+  agencyPhone: string;
+}): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/agency/me/profile`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...csrfHeaderRecord(),
+      },
+      body: JSON.stringify({
+        name: args.name,
+        agencyAddress: args.agencyAddress,
+        agencyPhone: args.agencyPhone,
+      }),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      ok?: boolean;
+      message?: string;
+    };
+    if (res.ok && data.ok) {
+      return { ok: true, message: data.message || "Agency profile saved." };
+    }
+    return { ok: false, error: data.message || "Failed to save profile." };
+  } catch {
+    return {
+      ok: false,
+      error: "Cannot connect to server. Start backend and try again.",
+    };
+  }
+}
+
 export async function updateAgencyBookingApi(args: {
   bookingId: string;
   status: string;

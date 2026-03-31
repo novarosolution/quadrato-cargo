@@ -6,6 +6,7 @@ import {
   BOOKING_STATUS_LABELS,
   normalizeBookingStatus,
 } from "@/lib/booking-status";
+import type { AgencyHubIdentity } from "./agency-hub-types";
 import { AgencyJobControls } from "./JobControls";
 
 export type AgencyIntakeRow = {
@@ -24,9 +25,10 @@ export type AgencyIntakeRow = {
 
 type Props = {
   rows: AgencyIntakeRow[];
+  agencyIdentity: AgencyHubIdentity;
 };
 
-export function AgencyIntakeTable({ rows }: Props) {
+export function AgencyIntakeTable({ rows, agencyIdentity }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
   /** Increment only when "Accept & open" is used so the OTP field can be focused. */
   const [otpFocusSignal, setOtpFocusSignal] = useState(0);
@@ -154,11 +156,13 @@ export function AgencyIntakeTable({ rows }: Props) {
                           <AgencyJobControls
                             bookingId={row.id}
                             reference={reference}
+                            routeType={row.routeType}
                             currentStatus={row.status}
                             agencyHandoverVerifiedAt={row.agencyHandoverVerifiedAt}
                             publicTrackingNote={row.publicTrackingNote || row.trackingNotes}
                             payload={row.payload}
                             otpFocusSignal={otpFocusSignal}
+                            agencyIdentity={agencyIdentity}
                           />
                         </div>
                       </td>

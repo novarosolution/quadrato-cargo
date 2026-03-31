@@ -1,21 +1,35 @@
 export function toPublicUser(doc) {
   if (!doc) return null;
+  const role = doc.role ?? "customer";
+  const agencyAddress =
+    role === "agency" ? String(doc.agencyAddress ?? "").trim() || null : null;
+  const agencyPhone =
+    role === "agency" ? String(doc.agencyPhone ?? "").trim() || null : null;
   return {
     id: String(doc._id),
     email: doc.email ?? "",
     name: doc.name ?? null,
     addressBook: doc.addressBook ?? { sender: null, recipient: null },
-    role: doc.role ?? "customer",
+    role,
     isActive: doc.isActive !== false,
     isOnDuty: doc.isOnDuty !== false,
     createdAt: doc.createdAt,
-    updatedAt: doc.updatedAt
+    updatedAt: doc.updatedAt,
+    agencyAddress,
+    agencyPhone
   };
 }
 
-export function createUserDoc({ email, name, passwordHash, role = "customer" }) {
+export function createUserDoc({
+  email,
+  name,
+  passwordHash,
+  role = "customer",
+  agencyAddress = null,
+  agencyPhone = null
+}) {
   const now = new Date();
-  return {
+  const doc = {
     email: String(email ?? "").trim().toLowerCase(),
     name: String(name ?? "").trim() || null,
     addressBook: {
@@ -29,6 +43,13 @@ export function createUserDoc({ email, name, passwordHash, role = "customer" }) 
     createdAt: now,
     updatedAt: now
   };
+  if (role === "agency") {
+    const addr = agencyAddress != null ? String(agencyAddress).trim().slice(0, 500) : "";
+    const phone = agencyPhone != null ? String(agencyPhone).trim().slice(0, 40) : "";
+    doc.agencyAddress = addr || null;
+    doc.agencyPhone = phone || null;
+  }
+  return doc;
 }
 
 export const userModelSchema = {

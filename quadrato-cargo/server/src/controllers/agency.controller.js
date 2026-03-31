@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
+import { toPublicUser } from "../models/user.model.js";
 import {
   listBookingsByAgency,
   updateBookingByAgency,
   verifyAgencyHandoverOtp
 } from "../modules/bookings/booking-repo.js";
+import { updateAgencyPartnerProfile } from "../modules/users/user-repo.js";
 import { objectIdStringSchema } from "../shared/zod-helpers.js";
 
 const ALLOWED_AGENCY_STATUSES = [
@@ -42,6 +44,12 @@ const agencyUpdateBookingSchema = z.object({
   }),
   publicTrackingNote: z.string().trim().max(2000).optional(),
   trackingNotes: z.string().trim().max(2000).optional()
+});
+
+const agencyProfilePatchSchema = z.object({
+  name: z.string().trim().max(120).optional(),
+  agencyAddress: z.string().trim().max(500).optional(),
+  agencyPhone: z.string().trim().max(40).optional()
 });
 
 export async function listMyAgencyBookings(req, res, next) {
@@ -82,6 +90,38 @@ export async function verifyAgencyHandover(req, res, next) {
         ? "Agency handover already verified."
         : "Agency handover verified. Agency processing started.",
       booking: result.booking
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function patchAgencyProfile(req, res, next) {
+  try {
+    const parsed = agencyProfilePatchSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return sendError(res, parsed.error.issues[0]?.message ?? "Invalid profile.");
+    }
+    const { name, agencyAddress, agencyPhone } = parsed.data;
+    const hasField =
+      name !== undefined || agencyAddress !== undefined || agencyPhone !== undefined;
+    if (!hasField) {
+      return sendError(res, "Send at least one field to update.");
+    }
+    if (name !== undefined && String(name).trim() && String(name).trim().length < 8) {
+      return sendError(res, "Name must be at least 8 characters when provided.");
+    }
+    const updated = await updateAgencyPartnerProfile(req.auth.user.id, {
+      name,
+      agencyAddress,
+      agencyPhone
+    });
+    if (!updated) {
+      return sendError(res, "Could not update agency profile.", 400);
+    }
+    return sendOk(res, {
+      message: "Agency profile saved.",
+      user: toPublicUser(updated)
     });
   } catch (error) {
     return next(error);

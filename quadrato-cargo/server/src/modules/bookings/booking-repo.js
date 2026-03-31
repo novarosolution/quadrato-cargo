@@ -469,12 +469,18 @@ export async function verifyAgencyHandoverOtp(agencyUser, reference, otpCode) {
     row.status,
     "agency_processing"
   );
+  const agencyEmail = String(agencyUser?.email ?? "")
+    .trim()
+    .toLowerCase();
   const setAgency = {
     status: "agency_processing",
     agencyHandoverVerifiedAt: now,
     trackingNotes: nextNotes,
     updatedAt: now
   };
+  if (agencyEmail) {
+    setAgency.assignedAgency = agencyEmail;
+  }
   if (agencyPath) setAgency.publicTimelineStatusPath = agencyPath;
   const result = await db.collection(BOOKINGS).findOneAndUpdate(
     { _id: row._id },
@@ -503,17 +509,23 @@ export async function updateBookingByAgency(agencyUser, bookingId, update) {
     row.status,
     status
   );
+  const agencyEmail = String(agencyUser?.email ?? "")
+    .trim()
+    .toLowerCase();
   const agencySet = {
     status,
     publicTrackingNote,
     updatedAt: new Date()
   };
+  if (agencyEmail) {
+    agencySet.assignedAgency = agencyEmail;
+  }
   if (agencyUpdatePath) agencySet.publicTimelineStatusPath = agencyUpdatePath;
   const result = await db.collection(BOOKINGS).findOneAndUpdate(
     { _id, ...agencyFilter },
     { $set: agencySet },
     { returnDocument: "after" }
   );
-  const row = result?.value ?? result;
-  return toPublicBooking(row);
+  const updatedRow = result?.value ?? result;
+  return toPublicBooking(updatedRow);
 }

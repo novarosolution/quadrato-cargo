@@ -126,7 +126,9 @@ const updateUserSchema = z.object({
   isActive: z.boolean().optional(),
   isOnDuty: z.boolean().optional(),
   newPassword: z.string().max(72).optional().default(""),
-  confirmPassword: z.string().max(72).optional().default("")
+  confirmPassword: z.string().max(72).optional().default(""),
+  agencyAddress: z.string().max(500).optional(),
+  agencyPhone: z.string().max(40).optional()
 });
 
 const bookingControlsSchema = z.object({
@@ -285,11 +287,18 @@ function createUserByRoleHandler(role) {
       }
 
       const passwordHash = await bcrypt.hash(parsed.password, 10);
+      const body = req.body ?? {};
       const userDoc = createUserDoc({
         email: parsed.email,
         name: parsed.name,
         passwordHash,
-        role
+        role,
+        ...(role === "agency"
+          ? {
+              agencyAddress: String(body.agencyAddress ?? "").trim().slice(0, 500) || null,
+              agencyPhone: String(body.agencyPhone ?? "").trim().slice(0, 40) || null
+            }
+          : {})
       });
       const result = await db.collection("users").insertOne(userDoc);
       return sendOk(res, { userId: String(result.insertedId) }, 201);
@@ -910,7 +919,21 @@ router.patch("/users/:id", async (req, res, next) => {
     if (newPassword) {
       update.passwordHash = await bcrypt.hash(newPassword, 10);
     }
-    await db.collection("users").updateOne({ _id }, { $set: update });
+    if (role === "agency") {
+      if (parsed.data.agencyAddress !== undefined) {
+        const a = String(parsed.data.agencyAddress ?? "").trim();
+        update.agencyAddress = a ? a.slice(0, 500) : null;
+      }
+      if (parsed.data.agencyPhone !== undefined) {
+        const p = String(parsed.data.agencyPhone ?? "").trim();
+        update.agencyPhone = p ? p.slice(0, 40) : null;
+      }
+    }
+    const mongoUpdate = { $set: update };
+    if (role !== "agency") {
+      mongoUpdate.$unset = { agencyAddress: "", agencyPhone: "" };
+    }
+    await db.collection("users").updateOne({ _id }, mongoUpdate);
     return sendOk(res);
   } catch (error) {
     next(error);

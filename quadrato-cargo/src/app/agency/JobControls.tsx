@@ -7,6 +7,7 @@ import {
   normalizeBookingStatus,
 } from "@/lib/booking-status";
 import { updateAgencyBookingApi, verifyAgencyHandoverApi } from "@/lib/api/agency-client";
+import type { AgencyHubIdentity } from "./agency-hub-types";
 
 type AgencyJobUpdateState =
   | { ok: true; message: string }
@@ -49,6 +50,30 @@ const STATUS_UPDATE_TEMPLATES: Partial<Record<AgencyAllowed, string[]>> = {
   delivered: [
     "Delivered successfully to recipient. Thank you for using Quadrato Cargo.",
     "Delivery completed. Signed / handed over as per local process.",
+  ],
+};
+
+/** Extra templates when route is international (customs / linehaul wording). */
+const INTERNATIONAL_STATUS_TEMPLATES: Partial<Record<AgencyAllowed, string[]>> = {
+  agency_processing: [
+    "International shipment received at export hub. Commercial invoice and customs paperwork under review.",
+    "Parcel accepted for international processing; awaiting export clearance / flight allocation.",
+  ],
+  in_transit: [
+    "International linehaul — departed origin country; in transit toward destination region. ETA: [date].",
+    "Air / sea segment in progress. Tracking updates after arrival at destination gateway.",
+    "Export cleared; shipment moving on international network to recipient country.",
+  ],
+  out_for_delivery: [
+    "Cleared destination customs; out for local delivery. Duties/taxes: [if applicable].",
+    "Final mile in destination country — courier may contact recipient for ID or duties.",
+  ],
+  on_hold: [
+    "On hold at border / customs: [reason]. Recipient may need to provide documents or pay duties.",
+    "Awaiting destination customs release or airline handling — shipment is secure.",
+  ],
+  delivered: [
+    "International delivery completed — handed over in destination country per local procedure.",
   ],
 };
 
@@ -99,6 +124,8 @@ function summarizePayloadForCourier(payload: unknown): { label: string; value: s
 type Props = {
   bookingId: string;
   reference: string;
+  /** domestic | international — international adds customs/linehaul templates */
+  routeType?: string;
   currentStatus: string;
   agencyHandoverVerifiedAt?: string | null;
   publicTrackingNote: string | null;
@@ -106,23 +133,28 @@ type Props = {
   payload?: unknown;
   /** Increment (e.g. from "Accept & open") to focus OTP when handover not yet verified */
   otpFocusSignal?: number;
+  agencyIdentity: AgencyHubIdentity;
 };
 
 export function AgencyJobControls({
   bookingId,
   reference,
+  routeType = "domestic",
   currentStatus,
   agencyHandoverVerifiedAt,
   publicTrackingNote,
   payload,
   otpFocusSignal = 0,
+  agencyIdentity,
 }: Props) {
   const router = useRouter();
   const otpRef = useRef<HTMLInputElement>(null);
   const normalized = normalizeBookingStatus(currentStatus);
-  const initialStatus = AGENCY_ALLOWED_STATUSES.includes(normalized as AgencyAllowed)
-    ? normalized
-    : "agency_processing";
+  const isInternational = String(routeType).toLowerCase() === "international";
+  const isCancelled = normalized === "cancelled";
+  const agencySelectable = (s: string): s is AgencyAllowed =>
+    AGENCY_ALLOWED_STATUSES.includes(s as AgencyAllowed);
+  const initialStatus = agencySelectable(normalized) ? normalized : "agency_processing";
 
   const [state, setState] = useState<AgencyJobUpdateState | undefined>(undefined);
   const [pending, setPending] = useState(false);
@@ -140,15 +172,31 @@ export function AgencyJobControls({
   }, [agencyHandoverVerifiedAt]);
 
   useEffect(() => {
+    const n = normalizeBookingStatus(currentStatus);
+    if (agencySelectable(n)) {
+      setStatusValue(n);
+    } else if (!isCancelled) {
+      setStatusValue("agency_processing");
+    }
+  }, [currentStatus, isCancelled]);
+
+  useEffect(() => {
+    setTrackingValue(publicTrackingNote ?? "");
+  }, [publicTrackingNote]);
+
+  useEffect(() => {
     if (otpFocusSignal === 0) return;
     if (handoverAccepted) return;
     otpRef.current?.focus();
   }, [otpFocusSignal, handoverAccepted]);
 
   const templatesForStatus = useMemo(() => {
-    const list = STATUS_UPDATE_TEMPLATES[statusValue as AgencyAllowed];
-    return list ?? [];
-  }, [statusValue]);
+    const base = STATUS_UPDATE_TEMPLATES[statusValue as AgencyAllowed] ?? [];
+    const intl = isInternational
+      ? INTERNATIONAL_STATUS_TEMPLATES[statusValue as AgencyAllowed] ?? []
+      : [];
+    return [...base, ...intl];
+  }, [statusValue, isInternational]);
 
   async function verifyHandover(codeArg?: string) {
     const code = String(codeArg ?? otpCode).trim();
@@ -177,6 +225,7 @@ export function AgencyJobControls({
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!handoverAccepted || isCancelled) return;
     setPending(true);
     const result = await updateAgencyBookingApi({
       bookingId,
@@ -263,66 +312,117 @@ export function AgencyJobControls({
           </button>
         </div>
       ) : (
-        <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-          Handover accepted — you can update status and customer message below.
-        </p>
+        <div className="space-y-3">
+          <p className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+            Handover accepted — processing under your hub. Status updates keep this booking linked to
+            your agency account.
+          </p>
+          <div className="rounded-xl border border-teal/25 bg-teal-dim/40 px-4 py-3 text-sm text-ink dark:bg-teal/10">
+            <p className="font-semibold text-ink">{agencyIdentity.displayName}</p>
+            <p className="mt-0.5 text-xs text-muted-soft">{agencyIdentity.email}</p>
+            {agencyIdentity.agencyAddress ? (
+              <p className="mt-2 text-xs leading-relaxed text-muted">{agencyIdentity.agencyAddress}</p>
+            ) : (
+              <p className="mt-2 text-xs text-amber-700 dark:text-amber-200/90">
+                Add your hub address in &ldquo;Agency hub details&rdquo; above so it shows here and stays
+                consistent on every job.
+              </p>
+            )}
+            {agencyIdentity.agencyPhone ? (
+              <p className="mt-1 text-xs text-muted-soft">Phone · {agencyIdentity.agencyPhone}</p>
+            ) : null}
+          </div>
+        </div>
       )}
 
       <div className="space-y-4 border-t border-border-strong pt-4">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
           Step 2 — Status & message to customer / courier context
         </h4>
-        <div>
-          <label
-            htmlFor={`agency-status-${bookingId}`}
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
-            Agency status
-          </label>
-          <select
-            id={`agency-status-${bookingId}`}
-            value={statusValue}
-            onChange={(e) => setStatusValue(e.target.value)}
-            className="mt-2 w-full max-w-md rounded-xl border border-border-strong bg-canvas/50 px-3 py-2.5 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
-          >
-            {AGENCY_ALLOWED_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {BOOKING_STATUS_LABELS[s]}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label
-            htmlFor={`agency-notes-${bookingId}`}
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
-            Customer update (tracking + courier-visible context)
-          </label>
-          {templatesForStatus.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {templatesForStatus.map((tpl) => (
-                <button
-                  key={tpl}
-                  type="button"
-                  title={tpl}
-                  onClick={() => insertTemplate(tpl)}
-                  className="max-w-full rounded-lg border border-border-strong bg-canvas/40 px-2.5 py-1.5 text-left text-[11px] font-medium leading-snug text-ink transition hover:border-teal/40 hover:bg-pill-hover"
-                >
-                  <span className="line-clamp-2">{tpl}</span>
-                </button>
-              ))}
-            </div>
+        <p className="rounded-lg border border-border-strong bg-canvas/30 px-3 py-2 text-xs text-muted">
+          <span className="font-semibold text-muted-soft">Booking status (from system / admin): </span>
+          <span className="text-ink">{BOOKING_STATUS_LABELS[normalized]}</span>
+          {isInternational ? (
+            <span className="ml-2 rounded-md bg-teal/10 px-1.5 py-0.5 font-medium text-teal">
+              International
+            </span>
           ) : null}
-          <textarea
-            id={`agency-notes-${bookingId}`}
-            rows={5}
-            value={trackingValue}
-            onChange={(e) => setTrackingValue(e.target.value)}
-            className="mt-2 w-full resize-y rounded-xl border border-border-strong bg-canvas/50 px-3 py-2.5 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
-            placeholder="Tap a template or write instructions for the customer. Replace [brackets] with real details before saving."
-          />
-        </div>
+          {!agencySelectable(normalized) && !isCancelled ? (
+            <span className="mt-1 block text-[11px] text-amber-800 dark:text-amber-200/90">
+              This step is before or outside the agency menu; after you accept handover, choose the next
+              status below to align with tracking.
+            </span>
+          ) : null}
+        </p>
+        {isCancelled ? (
+          <p
+            className="rounded-xl border border-border-strong bg-canvas/40 px-4 py-3 text-sm text-muted"
+            role="status"
+          >
+            This booking is <strong className="text-ink">cancelled</strong>. Status updates are managed by
+            admin only.
+          </p>
+        ) : !handoverAccepted ? (
+          <p className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm text-amber-900 dark:text-amber-100/90">
+            Accept the courier handover (Step 1) before saving status or customer updates. That keeps
+            admin-assigned international and domestic milestones in order and avoids overwriting the
+            booking by mistake.
+          </p>
+        ) : (
+          <>
+            <div>
+              <label
+                htmlFor={`agency-status-${bookingId}`}
+                className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+              >
+                Agency status
+              </label>
+              <select
+                id={`agency-status-${bookingId}`}
+                value={statusValue}
+                onChange={(e) => setStatusValue(e.target.value)}
+                className="mt-2 w-full max-w-md rounded-xl border border-border-strong bg-canvas/50 px-3 py-2.5 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+              >
+                {AGENCY_ALLOWED_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {BOOKING_STATUS_LABELS[s]}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor={`agency-notes-${bookingId}`}
+                className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+              >
+                Customer update (tracking + courier-visible context)
+              </label>
+              {templatesForStatus.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {templatesForStatus.map((tpl) => (
+                    <button
+                      key={tpl}
+                      type="button"
+                      title={tpl}
+                      onClick={() => insertTemplate(tpl)}
+                      className="max-w-full rounded-lg border border-border-strong bg-canvas/40 px-2.5 py-1.5 text-left text-[11px] font-medium leading-snug text-ink transition hover:border-teal/40 hover:bg-pill-hover"
+                    >
+                      <span className="line-clamp-2">{tpl}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <textarea
+                id={`agency-notes-${bookingId}`}
+                rows={5}
+                value={trackingValue}
+                onChange={(e) => setTrackingValue(e.target.value)}
+                className="mt-2 w-full resize-y rounded-xl border border-border-strong bg-canvas/50 px-3 py-2.5 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+                placeholder="Tap a template or write instructions for the customer. Replace [brackets] with real details before saving."
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {state?.ok === false ? (
@@ -338,7 +438,7 @@ export function AgencyJobControls({
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || !handoverAccepted || isCancelled}
         className="rounded-xl bg-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
       >
         {pending ? "Saving…" : "Save status & customer update"}

@@ -2,6 +2,7 @@ import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import {
   listMyAgencyBookings,
+  patchAgencyProfile,
   requireAgency,
   updateMyAgencyBooking,
   verifyAgencyHandover
@@ -24,8 +25,30 @@ const agencyPatchLimiter = rateLimit({
   message: { ok: false, message: "Too many agency updates. Please slow down." }
 });
 
+const agencyProfileLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, message: "Too many profile updates. Try again shortly." }
+});
+
 const router = Router();
 router.get("/me/bookings", requireAuth, requireAgency, listMyAgencyBookings);
+router.patch(
+  "/me/profile",
+  requireAuth,
+  requireAgency,
+  agencyProfileLimiter,
+  patchAgencyProfile
+);
+router.patch(
+  "/me/public/profile",
+  requireAuth,
+  requireAgency,
+  agencyProfileLimiter,
+  patchAgencyProfile
+);
 router.get("/me/public/bookings", requireAuth, requireAgency, listMyAgencyBookings);
 router.post(
   "/verify-handover",

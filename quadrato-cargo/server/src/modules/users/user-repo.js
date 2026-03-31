@@ -83,6 +83,27 @@ export async function updateUserDutyStatus(userId, isOnDuty) {
   return db.collection(USERS).findOne({ _id });
 }
 
+export async function updateAgencyPartnerProfile(userId, fields) {
+  const db = await getDb();
+  if (!ObjectId.isValid(userId)) return null;
+  const _id = new ObjectId(userId);
+  const $set = { updatedAt: new Date() };
+  if (fields.name !== undefined) {
+    $set.name = String(fields.name ?? "").trim() || null;
+  }
+  if (fields.agencyAddress !== undefined) {
+    const a = String(fields.agencyAddress ?? "").trim();
+    $set.agencyAddress = a ? a.slice(0, 500) : null;
+  }
+  if (fields.agencyPhone !== undefined) {
+    const p = String(fields.agencyPhone ?? "").trim();
+    $set.agencyPhone = p ? p.slice(0, 40) : null;
+  }
+  const res = await db.collection(USERS).updateOne({ _id, role: "agency" }, { $set });
+  if (res.matchedCount === 0) return null;
+  return db.collection(USERS).findOne({ _id });
+}
+
 export async function updateUserAddressBook(userId, addressBookPatch) {
   const db = await getDb();
   if (!ObjectId.isValid(userId)) return null;

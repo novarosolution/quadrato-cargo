@@ -106,6 +106,8 @@ export async function createAgencyUserAdmin(
       email: String(formData.get("email") ?? "").trim(),
       password: String(formData.get("password") ?? ""),
       confirmPassword: String(formData.get("confirmPassword") ?? ""),
+      agencyAddress: String(formData.get("agencyAddress") ?? "").trim(),
+      agencyPhone: String(formData.get("agencyPhone") ?? "").trim(),
     },
     "POST",
   );
@@ -128,6 +130,8 @@ export async function updateUserAdmin(
     isOnDuty: String(formData.get("isOnDuty") ?? "") === "on",
     newPassword: String(formData.get("newPassword") ?? ""),
     confirmPassword: String(formData.get("confirmPassword") ?? ""),
+    agencyAddress: String(formData.get("agencyAddress") ?? "").trim(),
+    agencyPhone: String(formData.get("agencyPhone") ?? "").trim(),
   });
   if (!result.ok) return { ok: false, error: result.message || "Failed to update user." };
   revalidatePath("/admin/users");

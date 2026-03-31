@@ -27,6 +27,9 @@ export type AdminUser = {
   courierJobCount?: number;
   bookings?: AdminBooking[];
   courierAssignments?: AdminBooking[];
+  /** Agency hub profile (role agency only). */
+  agencyAddress?: string | null;
+  agencyPhone?: string | null;
 };
 
 export type AdminBookingInvoice = {

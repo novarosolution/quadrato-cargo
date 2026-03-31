@@ -179,12 +179,15 @@ export default async function AdminUserDetailPage({ params }: Props) {
         </p>
         <div className="mt-6 max-w-lg">
           <AdminUserEditForm
+            key={`${user.id}-${user.updatedAt.getTime()}`}
             userId={user.id}
             initialName={user.name}
             initialEmail={user.email}
             initialRole={ur}
             initialIsActive={user.isActive}
             initialIsOnDuty={user.isOnDuty}
+            initialAgencyAddress={user.agencyAddress ?? ""}
+            initialAgencyPhone={user.agencyPhone ?? ""}
           />
         </div>
       </section>

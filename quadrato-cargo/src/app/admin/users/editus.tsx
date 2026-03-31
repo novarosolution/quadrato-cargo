@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
-import type { UserRole } from "@/lib/user-role";
+import { useActionState, useState } from "react";
+import { normalizeUserRole, type UserRole } from "@/lib/user-role";
 import { updateUserAdmin, type DataManageState } from "../dashboard/actions";
 
 type Props = {
@@ -11,6 +11,8 @@ type Props = {
   initialRole: UserRole;
   initialIsActive: boolean;
   initialIsOnDuty: boolean;
+  initialAgencyAddress?: string | null;
+  initialAgencyPhone?: string | null;
 };
 
 export function AdminUserEditForm({
@@ -20,11 +22,14 @@ export function AdminUserEditForm({
   initialRole,
   initialIsActive,
   initialIsOnDuty,
+  initialAgencyAddress = "",
+  initialAgencyPhone = "",
 }: Props) {
   const [state, formAction, pending] = useActionState<
     DataManageState | undefined,
     FormData
   >(updateUserAdmin, undefined);
+  const [roleDraft, setRoleDraft] = useState<UserRole>(initialRole);
 
   return (
     <form action={formAction} className="space-y-5">
@@ -56,7 +61,8 @@ export function AdminUserEditForm({
         <select
           id="admin-user-role"
           name="role"
-          defaultValue={initialRole}
+          value={roleDraft}
+          onChange={(e) => setRoleDraft(normalizeUserRole(e.target.value))}
           className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
         >
           <option value="customer">Customer (site profile &amp; bookings)</option>
@@ -105,7 +111,7 @@ export function AdminUserEditForm({
           <input type="hidden" name="isActive" value="off" />
           Active account (user can sign in; couriers/agencies can be assigned when active)
         </label>
-        {initialRole === "courier" ? (
+        {roleDraft === "courier" ? (
           <label className="mt-3 inline-flex items-center gap-2 text-sm text-ink">
             <input
               name="isOnDuty"
@@ -121,6 +127,51 @@ export function AdminUserEditForm({
           <input type="hidden" name="isOnDuty" value={initialIsOnDuty ? "on" : "off"} />
         )}
       </div>
+      {roleDraft === "agency" ? (
+        <div className="rounded-xl border border-border bg-canvas/30 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
+            Agency hub (shown on /agency and customer tracking)
+          </p>
+          <div className="mt-4 space-y-3">
+            <div>
+              <label
+                htmlFor="admin-user-agency-address"
+                className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+              >
+                Hub address
+              </label>
+              <textarea
+                id="admin-user-agency-address"
+                name="agencyAddress"
+                rows={3}
+                defaultValue={initialAgencyAddress ?? ""}
+                className="mt-2 w-full resize-y rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+                placeholder="Street, city, postal, country"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="admin-user-agency-phone"
+                className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+              >
+                Operations phone
+              </label>
+              <input
+                id="admin-user-agency-phone"
+                name="agencyPhone"
+                type="tel"
+                defaultValue={initialAgencyPhone ?? ""}
+                className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          <input type="hidden" name="agencyAddress" value="" />
+          <input type="hidden" name="agencyPhone" value="" />
+        </>
+      )}
       <div className="rounded-xl border border-border bg-canvas/30 p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
           Reset password (optional)

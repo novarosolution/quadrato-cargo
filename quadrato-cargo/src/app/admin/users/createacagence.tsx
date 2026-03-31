@@ -55,6 +55,35 @@ export function AdminCreateAgencyForm() {
         </div>
         <div>
           <label
+            htmlFor="admin-agency-address"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Hub address (optional)
+          </label>
+          <textarea
+            id="admin-agency-address"
+            name="agencyAddress"
+            rows={2}
+            className="mt-2 w-full resize-y rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            placeholder="Street, city — appears on agency portal"
+          />
+        </div>
+        <div>
+          <label
+            htmlFor="admin-agency-phone"
+            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+          >
+            Operations phone (optional)
+          </label>
+          <input
+            id="admin-agency-phone"
+            name="agencyPhone"
+            type="tel"
+            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+          />
+        </div>
+        <div>
+          <label
             htmlFor="admin-agency-pw"
             className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
           >
