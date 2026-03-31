@@ -18,11 +18,9 @@ export default async function AdminLayout({
                 href="/admin/dashboard"
                 className="font-display text-lg font-semibold tracking-tight text-ink sm:text-xl"
               >
-                Admin Control Center
+                Admin
               </Link>
-              <p className="mt-0.5 text-sm text-muted">
-                Pick a tab below — hover any item for a short description.
-              </p>
+              <p className="mt-0.5 text-sm text-muted">Choose a section below.</p>
             </div>
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               <ThemeToggle className="h-10 w-10 rounded-xl border border-border-strong bg-canvas/40" />

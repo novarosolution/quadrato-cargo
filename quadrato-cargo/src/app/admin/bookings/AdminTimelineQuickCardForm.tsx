@@ -105,40 +105,15 @@ export function AdminTimelineQuickCardForm({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-border-strong/80 bg-canvas/20 px-3 py-2.5 text-xs text-muted-soft">
-        <p className="font-semibold text-ink">Separate controls</p>
-        <ul className="mt-1.5 list-inside list-disc space-y-1">
-          <li>
-            <strong className="font-medium text-ink">Shipment status</strong> (which milestone is active) — use{" "}
-            <strong className="font-medium text-ink">Status &amp; messages</strong> above and save that form.
-            This section does not change status.
-          </li>
-          <li>
-            <strong className="font-medium text-ink">Card text</strong> — title, location, description, time (below +{" "}
-            <span className="font-medium text-ink">Save card text</span>).
-          </li>
-          <li>
-            <strong className="font-medium text-ink">Show on Track</strong> — tick/untick only ({" "}
-            <span className="font-medium text-ink">Save Track visibility only</span>). Customers never see the
-            checkbox.
-          </li>
-        </ul>
+      <div>
+        <p className="text-sm font-semibold text-ink">
+          {stageDef?.title ?? "Step"} <span className="font-normal text-muted-soft">· {routeType}</span>
+        </p>
+        <p className="mt-1 text-xs text-muted-soft">
+          Change status in <strong className="text-ink">Status, notes &amp; dates</strong> above. Empty fields = default
+          text. Agencies can edit the same card in Agency portal.
+        </p>
       </div>
-      <p className="text-xs text-muted-soft">
-        <span className="font-semibold text-ink">Current step</span> — index{" "}
-        <span className="font-mono text-ink">{stageIndex}</span>,{" "}
-        <span className="font-medium text-ink">{stageDef?.title ?? "Stage"}</span> (
-        <span className="capitalize">{routeType}</span>). Empty fields remove your text and the site uses
-        defaults.
-      </p>
-      <p className="text-xs text-muted-soft">
-        Assigned agencies can edit the same step from <span className="font-mono text-[11px]">/agency</span>.
-      </p>
-      <p className="text-xs text-muted-soft">
-        Unchecked <strong className="font-medium text-ink">Show on public Track</strong> hides this card from
-        customers; the step that matches the booking&apos;s <em>current</em> status always stays visible so they
-        are not left without a milestone.
-      </p>
 
       <form action={formAction} className="grid gap-4 sm:grid-cols-2">
         <input type="hidden" name="bookingId" value={bookingId} />
@@ -151,7 +126,7 @@ export function AdminTimelineQuickCardForm({
             htmlFor="quick-card-title"
             className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
           >
-            Card title
+            Title
           </label>
           <input
             id="quick-card-title"
@@ -167,7 +142,7 @@ export function AdminTimelineQuickCardForm({
             htmlFor="quick-card-location"
             className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
           >
-            Location line
+            Location
           </label>
           <input
             id="quick-card-location"
@@ -200,7 +175,7 @@ export function AdminTimelineQuickCardForm({
             htmlFor="quick-card-time"
             className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
           >
-            Time on card
+            Time
           </label>
           <input
             id="quick-card-time"
@@ -227,27 +202,24 @@ export function AdminTimelineQuickCardForm({
             disabled={pending || visPending}
             className="inline-flex w-full justify-center rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50 sm:w-auto"
           >
-            {pending ? "Saving…" : "Save card text"}
+            {pending ? "Saving…" : "Save text"}
           </button>
         </div>
       </form>
 
-      <div className="rounded-xl border border-dashed border-border-strong/90 bg-surface-elevated/30 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">Track visibility only</p>
-        <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-ink">
+      <div className="rounded-xl border border-border-strong/80 bg-canvas/25 p-4">
+        <label className="flex cursor-pointer items-start gap-2 text-sm text-ink">
           <input
             type="checkbox"
             checked={showOnPublicTrack}
             onChange={(e) => setShowOnPublicTrack(e.target.checked)}
             className="mt-0.5 h-4 w-4 shrink-0 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
           />
-          <span>
-            <span className="font-medium">Show on public Track</span>
-            <span className="mt-0.5 block text-xs text-muted-soft">
-              Save with the button below. This does not change title, location, or description.
-            </span>
-          </span>
+          <span className="font-medium">Show on customer Track</span>
         </label>
+        <p className="mt-1 text-[11px] text-muted-soft">
+          Off = hidden (current status card still shows). Customers never see this checkbox.
+        </p>
         <form action={visFormAction} className="mt-3">
           <input type="hidden" name="bookingId" value={bookingId} />
           <input type="hidden" name="stepVisibilityOnlyJson" value={stepVisibilityOnlyJson} />
@@ -266,7 +238,7 @@ export function AdminTimelineQuickCardForm({
             disabled={visPending || pending}
             className="inline-flex justify-center rounded-xl border border-border-strong bg-canvas px-5 py-2.5 text-sm font-semibold text-ink transition hover:border-teal/40 disabled:opacity-50"
           >
-            {visPending ? "Saving…" : "Save Track visibility only"}
+            {visPending ? "Saving…" : "Save visibility"}
           </button>
         </form>
       </div>

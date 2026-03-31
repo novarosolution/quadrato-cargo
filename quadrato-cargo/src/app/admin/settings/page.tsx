@@ -7,7 +7,7 @@ import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminSiteSettingsForm } from "./SiteSettings";
 
 export const metadata: Metadata = {
-  title: "Data & site — Admin",
+  title: "Settings — Admin",
   robots: { index: false, follow: false },
 };
 
@@ -33,8 +33,8 @@ export default async function AdminDataPage() {
   return (
     <div className="stack-page content-narrow gap-10 max-sm:gap-8">
       <AdminPageHeader
-        title="Data & website"
-        description="Edit public phone and email, site banner, PDF branding, and tracking layout — then export or open lists below."
+        title="Settings"
+        description="Public contact info, site banner, PDF branding, exports."
       />
 
       <AdminSiteSettingsForm initialSettings={settingsRes.settings} />

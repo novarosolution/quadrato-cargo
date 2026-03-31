@@ -120,27 +120,21 @@ export function AdminTimelineNextStepForm({
 
   if (!hasNext || !stageDef) {
     return (
-      <div className="space-y-2 rounded-lg border border-border-strong/80 bg-canvas/20 px-3 py-3 text-sm text-muted-soft">
-        <p className="font-medium text-ink">No next timeline card</p>
-        <p>
-          This booking is already on the last milestone for{" "}
-          <span className="capitalize text-ink">{routeType}</span> tracking, or there is no following step to
-          pre-fill. To change what customers see as &quot;current&quot;, use{" "}
-          <strong className="font-medium text-ink">Status &amp; messages</strong> above.
-        </p>
-      </div>
+      <p className="text-sm text-muted-soft">
+        Last step for this route. Change status in <strong className="text-ink">Status, notes &amp; dates</strong> if
+        needed.
+      </p>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5 text-xs text-muted-soft dark:bg-amber-500/10">
-        <p className="font-semibold text-ink">Prep the next step (status unchanged)</p>
-        <p className="mt-1">
-          This edits the <strong className="text-ink">following</strong> timeline card (step {nextIndex} —{" "}
-          {stageDef.title}). It does <strong className="text-ink">not</strong> move the booking forward. When you
-          are ready, change <strong className="text-ink">Shipment status</strong> in{" "}
-          <strong className="text-ink">Status &amp; messages</strong> above and save that form.
+      <div>
+        <p className="text-sm font-semibold text-ink">
+          Next: {stageDef.title} <span className="font-normal text-muted-soft">· does not change status</span>
+        </p>
+        <p className="mt-1 text-xs text-muted-soft">
+          Advance the booking in <strong className="text-ink">Status, notes &amp; dates</strong> when ready.
         </p>
       </div>
 
@@ -155,7 +149,7 @@ export function AdminTimelineNextStepForm({
             htmlFor="next-card-title"
             className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
           >
-            Card title
+            Title
           </label>
           <input
             id="next-card-title"
@@ -171,7 +165,7 @@ export function AdminTimelineNextStepForm({
             htmlFor="next-card-location"
             className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
           >
-            Location line
+            Location
           </label>
           <input
             id="next-card-location"
@@ -204,7 +198,7 @@ export function AdminTimelineNextStepForm({
             htmlFor="next-card-time"
             className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
           >
-            Time on card
+            Time
           </label>
           <input
             id="next-card-time"
@@ -231,26 +225,20 @@ export function AdminTimelineNextStepForm({
             disabled={pending || visPending}
             className="inline-flex w-full justify-center rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50 sm:w-auto"
           >
-            {pending ? "Saving…" : "Save next step card text"}
+            {pending ? "Saving…" : "Save text"}
           </button>
         </div>
       </form>
 
-      <div className="rounded-xl border border-dashed border-border-strong/90 bg-surface-elevated/30 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">Next step — Track visibility only</p>
-        <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm text-ink">
+      <div className="rounded-xl border border-border-strong/80 bg-canvas/25 p-4">
+        <label className="flex cursor-pointer items-start gap-2 text-sm text-ink">
           <input
             type="checkbox"
             checked={showOnPublicTrack}
             onChange={(e) => setShowOnPublicTrack(e.target.checked)}
             className="mt-0.5 h-4 w-4 shrink-0 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
           />
-          <span>
-            <span className="font-medium">Show on public Track</span>
-            <span className="mt-0.5 block text-xs text-muted-soft">
-              When this becomes the active step, customers will see it if checked. Admin-only control.
-            </span>
-          </span>
+          <span className="font-medium">Show on customer Track</span>
         </label>
         <form action={visFormAction} className="mt-3">
           <input type="hidden" name="bookingId" value={bookingId} />
@@ -270,7 +258,7 @@ export function AdminTimelineNextStepForm({
             disabled={visPending || pending}
             className="inline-flex justify-center rounded-xl border border-border-strong bg-canvas px-5 py-2.5 text-sm font-semibold text-ink transition hover:border-teal/40 disabled:opacity-50"
           >
-            {visPending ? "Saving…" : "Save Track visibility only (next step)"}
+            {visPending ? "Saving…" : "Save visibility"}
           </button>
         </form>
       </div>

@@ -171,75 +171,93 @@ export default async function AdminBookingDetailPage({ params }: Props) {
         }
       />
 
-      <nav
-        aria-label="On this page"
-        className="rounded-2xl border border-border-strong bg-surface-elevated/40 px-4 py-3"
-      >
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">On this page</p>
-        <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm">
-          <li>
-            <a href="#booking-summary" className={jumpLinkClass}>
-              Summary
-            </a>
-          </li>
-          <li>
-            <a href="#booking-dispatch-panel" className={jumpLinkClass}>
-              Status, dates &amp; messages
-            </a>
-          </li>
-          <li>
-            <a href="#booking-estimated-delivery" className={jumpLinkClass}>
-              Est. delivery (EDD)
-            </a>
-          </li>
-          <li>
-            <a href="#booking-quick-card" className={jumpLinkClass}>
-              Current timeline step
-            </a>
-          </li>
-          <li>
-            <a href="#booking-next-timeline-step" className={jumpLinkClass}>
-              Next timeline step
-            </a>
-          </li>
-          <li>
-            <a href="#booking-customer-timeline" className={jumpLinkClass}>
-              All timeline steps
-            </a>
-          </li>
-          <li>
-            <a href="#booking-tracking" className={jumpLinkClass}>
-              Tracking &amp; dispatch
-            </a>
-          </li>
-          <li>
-            <a href="#booking-customer-view" className={jumpLinkClass}>
-              Customer view
-            </a>
-          </li>
-          <li>
-            <a href="#booking-shipment" className={jumpLinkClass}>
-              Shipment
-            </a>
-          </li>
-          <li>
-            <a href="#booking-invoice" className={jumpLinkClass}>
-              Invoice &amp; PDF
-            </a>
-          </li>
-          <li>
-            <a href="#booking-pickup-details" className={jumpLinkClass}>
-              Pickup &amp; details
-            </a>
-          </li>
-        </ul>
-      </nav>
+      <div className="space-y-3 rounded-2xl border border-border-strong bg-surface-elevated/40 px-4 py-4">
+        <p className="text-sm text-muted-soft">
+          <span className="font-medium text-ink">Usual order:</span> status &amp; notes → Track cards → contacts /
+          parcel / invoice if needed.
+        </p>
+        <nav aria-label="On this page">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-soft">Jump to</p>
+          <div className="mt-2 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-soft">Booking</p>
+              <ul className="mt-1.5 flex flex-col gap-1.5 text-sm">
+                <li>
+                  <a href="#booking-summary" className={jumpLinkClass}>
+                    Summary
+                  </a>
+                </li>
+                <li>
+                  <a href="#booking-dispatch-panel" className={jumpLinkClass}>
+                    Status &amp; notes
+                  </a>
+                </li>
+                <li>
+                  <a href="#booking-estimated-delivery" className={jumpLinkClass}>
+                    Delivery date (EDD)
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-soft">Customer Track</p>
+              <ul className="mt-1.5 flex flex-col gap-1.5 text-sm">
+                <li>
+                  <a href="#booking-quick-card" className={jumpLinkClass}>
+                    Current card
+                  </a>
+                </li>
+                <li>
+                  <a href="#booking-next-timeline-step" className={jumpLinkClass}>
+                    Next card
+                  </a>
+                </li>
+                <li>
+                  <a href="#booking-customer-timeline" className={jumpLinkClass}>
+                    All steps
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-soft">People &amp; parcel</p>
+              <ul className="mt-1.5 flex flex-col gap-1.5 text-sm">
+                <li>
+                  <a href="#booking-customer-view" className={jumpLinkClass}>
+                    Contacts
+                  </a>
+                </li>
+                <li>
+                  <a href="#booking-shipment" className={jumpLinkClass}>
+                    Parcel
+                  </a>
+                </li>
+                <li>
+                  <a href="#booking-invoice" className={jumpLinkClass}>
+                    Invoice
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-soft">More</p>
+              <ul className="mt-1.5 flex flex-col gap-1.5 text-sm">
+                <li>
+                  <a href="#booking-pickup-details" className={jumpLinkClass}>
+                    Pickup &amp; JSON
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+      </div>
 
       <section
         id="booking-summary"
         className="scroll-mt-24 rounded-2xl border border-border-strong bg-surface-elevated/50 p-5"
       >
-        <h2 className="font-display text-lg font-semibold">Shipment summary</h2>
+        <h2 className="font-display text-lg font-semibold">Summary</h2>
         <dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2">
           <div className="min-w-0">
             <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
@@ -329,13 +347,9 @@ export default async function AdminBookingDetailPage({ params }: Props) {
                   Custom
                 </span>
               ) : row.routeType === "international" ? (
-                <span className="text-xs text-muted-soft">
-                  Default +10 day estimate (set a date in dispatch to override)
-                </span>
+                <span className="text-xs text-muted-soft">Default +10 days unless you set EDD below.</span>
               ) : (
-                <span className="text-xs text-muted-soft">
-                  Not set — optional for domestic; set below to show customers
-                </span>
+                <span className="text-xs text-muted-soft">Optional — set EDD below to show on Track.</span>
               )}
             </dd>
           </div>
@@ -344,8 +358,8 @@ export default async function AdminBookingDetailPage({ params }: Props) {
 
       <section id="booking-tracking" className="scroll-mt-24 space-y-4">
         <div className="rounded-xl border border-border-strong/80 bg-canvas/20 px-4 py-3">
-          <h2 className="font-display text-lg font-semibold text-ink">Tracking &amp; dispatch</h2>
-          <p className="mt-1 text-sm text-muted">Status, notes, agency, courier, and the public timeline.</p>
+          <h2 className="font-display text-lg font-semibold text-ink">Operations &amp; Track</h2>
+          <p className="mt-1 text-sm text-muted">Status, agency, courier, customer timeline cards.</p>
         </div>
         <AdminBookingDispatchSplit
           key={`${row.id}-${String(row.customerFacingCreatedAt ?? "")}-${String(row.customerFacingUpdatedAt ?? "")}-${String(row.estimatedDeliveryAt ?? "")}`}
@@ -378,10 +392,8 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           id="booking-quick-card"
           className="scroll-mt-24 rounded-2xl border border-teal/25 bg-teal/4 p-5 dark:bg-teal/10"
         >
-          <h2 className="font-display text-lg font-semibold text-ink">Current timeline step</h2>
-          <p className="mt-1 text-xs text-muted-soft">
-            Matches today&apos;s shipment status. Tick/untick and card text use separate save buttons below.
-          </p>
+          <h2 className="font-display text-lg font-semibold text-ink">Current Track card</h2>
+          <p className="mt-1 text-xs text-muted-soft">Matches shipment status today.</p>
           <div className="mt-4">
             <AdminTimelineQuickCardForm
               key={`${row.id}-${row.routeType}-${row.status}-${JSON.stringify(row.publicTimelineOverrides ?? null)}-${JSON.stringify(row.publicTimelineStepVisibility ?? null)}`}
@@ -398,10 +410,8 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           id="booking-next-timeline-step"
           className="scroll-mt-24 rounded-2xl border border-border-strong bg-surface-elevated/40 p-5"
         >
-          <h2 className="font-display text-lg font-semibold text-ink">Next timeline step</h2>
-          <p className="mt-1 text-xs text-muted-soft">
-            Pre-fill the upcoming milestone before you advance status in Status &amp; messages.
-          </p>
+          <h2 className="font-display text-lg font-semibold text-ink">Next Track card</h2>
+          <p className="mt-1 text-xs text-muted-soft">Optional — prepare before you change status.</p>
           <div className="mt-4">
             <AdminTimelineNextStepForm
               key={`${row.id}-${row.routeType}-next-${row.status}-${JSON.stringify(row.publicTimelineOverrides ?? null)}-${JSON.stringify(row.publicTimelineStepVisibility ?? null)}`}
@@ -414,7 +424,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           </div>
         </section>
 
-        <AdminCollapsible id="booking-customer-timeline" title="All timeline steps">
+        <AdminCollapsible id="booking-customer-timeline" title="All timeline steps (bulk)">
           <AdminCustomerTimelineForm
             key={`${row.id}-${row.routeType}-${JSON.stringify(row.publicTimelineStepVisibility ?? null)}`}
             bookingId={row.id}
@@ -427,11 +437,11 @@ export default async function AdminBookingDetailPage({ params }: Props) {
 
       <section id="booking-customer-view" className="scroll-mt-24 space-y-4">
         <div className="rounded-xl border border-border-strong/80 bg-canvas/20 px-4 py-3">
-          <h2 className="font-display text-lg font-semibold text-ink">Customer view</h2>
-          <p className="mt-1 text-sm text-muted">Names on Track; profile downloads.</p>
+          <h2 className="font-display text-lg font-semibold text-ink">Contacts</h2>
+          <p className="mt-1 text-sm text-muted">Sender and recipient on Track and profile.</p>
         </div>
 
-        <AdminCollapsible id="booking-contacts" title="Sender &amp; recipient contact" defaultOpen>
+        <AdminCollapsible id="booking-contacts" title="Sender &amp; recipient" defaultOpen>
           <AdminBookingContactForm
             bookingId={row.id}
             routeType={row.routeType === "international" ? "international" : "domestic"}
@@ -442,13 +452,10 @@ export default async function AdminBookingDetailPage({ params }: Props) {
 
       <section id="booking-shipment" className="scroll-mt-24 space-y-4">
         <div className="rounded-xl border border-border-strong/80 bg-canvas/20 px-4 py-3">
-          <h2 className="font-display text-lg font-semibold text-ink">Shipment details</h2>
-          <p className="mt-1 text-sm text-muted">
-            Weight, dimensions, and contents appear on track and profile when enabled. Declared value
-            is stored for operations but not shown publicly.
-          </p>
+          <h2 className="font-display text-lg font-semibold text-ink">Parcel</h2>
+          <p className="mt-1 text-sm text-muted">Weight, size, contents on Track. Value is internal only.</p>
         </div>
-        <AdminCollapsible id="booking-shipment-form" title="Parcel &amp; declared value" defaultOpen>
+        <AdminCollapsible id="booking-shipment-form" title="Parcel details" defaultOpen>
           <AdminBookingShipmentForm
             bookingId={row.id}
             routeType={row.routeType === "international" ? "international" : "domestic"}
@@ -469,11 +476,11 @@ export default async function AdminBookingDetailPage({ params }: Props) {
 
       <section id="booking-pickup-details" className="scroll-mt-24 space-y-4">
         <div className="rounded-xl border border-border-strong/80 bg-canvas/20 px-4 py-3">
-          <h2 className="font-display text-lg font-semibold text-ink">Pickup &amp; details</h2>
-          <p className="mt-1 text-sm text-muted">Pickup schedule, sender address, account link, full JSON.</p>
+          <h2 className="font-display text-lg font-semibold text-ink">Pickup &amp; extra</h2>
+          <p className="mt-1 text-sm text-muted">Pickup window, sender address, link account, raw data.</p>
         </div>
 
-        <AdminCollapsible id="booking-pickup-form" title="Pickup &amp; sender address" defaultOpen>
+        <AdminCollapsible id="booking-pickup-form" title="Pickup &amp; sender" defaultOpen>
           <AdminBookingPickupForm
             bookingId={row.id}
             routeType={row.routeType === "international" ? "international" : "domestic"}

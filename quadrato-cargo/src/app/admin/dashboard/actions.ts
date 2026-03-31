@@ -345,7 +345,7 @@ export async function saveCustomerTimelineAdmin(
   revalidatePath("/public/tsking");
   return {
     ok: true,
-    message: "Customer shipment timeline saved. It shows on the public track page.",
+    message: "All timeline changes saved.",
   };
 }
 
@@ -401,7 +401,7 @@ export async function saveCustomerTimelineStepAdmin(
   revalidatePath("/public/tsking");
   return {
     ok: true,
-    message: "This step was saved. Other steps and the full timeline snapshot were left unchanged.",
+    message: "Step text saved.",
   };
 }
 
@@ -438,7 +438,7 @@ export async function saveCustomerTimelineStepVisibilityOnly(
   revalidatePath("/public/tsking");
   return {
     ok: true,
-    message: "Track visibility for this step was saved. Card wording was not changed.",
+    message: "Visibility saved.",
   };
 }
 
@@ -475,7 +475,7 @@ export async function saveCustomerTimelineLocationsAdmin(
   if (Object.keys(inner).length === 0) {
     return {
       ok: false,
-      error: "Select at least one step to update (use the Update checkboxes above).",
+      error: "Tick at least one step (Apply checkboxes).",
     };
   }
   const body: Record<string, unknown> = {
@@ -494,7 +494,7 @@ export async function saveCustomerTimelineLocationsAdmin(
   revalidatePath("/public/tsking");
   return {
     ok: true,
-    message: "Location lines for the selected steps were saved on public tracking.",
+    message: "Locations saved.",
   };
 }
 

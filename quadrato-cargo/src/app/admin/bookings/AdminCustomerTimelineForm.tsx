@@ -244,50 +244,49 @@ export function AdminCustomerTimelineForm({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border border-border-strong bg-canvas/25 px-4 py-3 text-xs leading-relaxed text-muted-soft">
-        <p className="font-semibold text-ink">When to use this section</p>
-        <ul className="mt-2 list-inside list-disc space-y-1">
-          <li>
-            <strong className="font-medium text-ink">Current tracking card</strong> (above) — edit only the
-            step that matches today&apos;s booking status.
-          </li>
-          <li>
-            <strong className="font-medium text-ink">Next timeline step</strong> (above) — pre-fill the
-            following card without changing shipment status.
-          </li>
-          <li>
-            <strong className="font-medium text-ink">Shipment status</strong> — only in{" "}
-            <strong className="font-medium text-ink">Status &amp; messages</strong> (save that form).
-          </li>
-          <li>
-            <strong className="font-medium text-ink">Here</strong> — edit any step, bulk-update location lines,
-            or replace the entire saved timeline for both domestic and international.
-          </li>
-        </ul>
-        <p className="mt-2">
-          This booking is <span className="font-medium capitalize text-ink">{routeType}</span> ({stages.length}{" "}
-          steps). Empty fields use automatic defaults on the public page.
-        </p>
-        <p className="mt-2">
-          <strong className="font-medium text-ink">Agency partners</strong> assigned to this booking can also
-          update every step from <span className="font-mono text-[11px]">/agency</span> (same merged data).
-        </p>
-        <p className="mt-2">
-          <strong className="font-medium text-ink">Public Track visibility</strong> — use{" "}
-          <strong className="font-medium text-ink">Show on public Track</strong> per step (admin only). Unchecked
-          steps are hidden from customers; the step that matches the booking&apos;s current status always stays
-          visible on Track.
-        </p>
+      <p className="text-sm text-muted-soft">
+        <span className="font-medium capitalize text-ink">{routeType}</span>, {stages.length} steps. Edit below,
+        then <strong className="text-ink">Save all</strong> for one update, or save each section as you go. Status:
+        use <strong className="text-ink">Status, notes &amp; dates</strong> above.
+      </p>
+
+      <div
+        id="save-all-timeline"
+        className="flex flex-wrap items-end gap-3 rounded-xl border border-teal/35 bg-teal/5 p-4 dark:bg-teal/10"
+      >
+        <form action={formAction} className="flex flex-wrap items-center gap-2">
+          <input type="hidden" name="bookingId" value={bookingId} />
+          <input type="hidden" name="timelineJson" value={payloadJson} />
+          <button
+            type="submit"
+            disabled={pending || locPending || stepPending || stepVisPending}
+            className="rounded-xl bg-teal px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-60"
+          >
+            {pending ? "Saving…" : "Save all"}
+          </button>
+          <button
+            type="button"
+            disabled={pending || locPending || stepPending || stepVisPending}
+            className="rounded-xl border border-border-strong bg-canvas px-4 py-2.5 text-sm font-medium text-ink disabled:opacity-60"
+            onClick={() => {
+              setDomestic(initMode(DOMESTIC_TIMELINE_MAX_INDEX, undefined));
+              setInternational(initMode(INTERNATIONAL_TIMELINE_MAX_INDEX, undefined));
+              setVisibleDomestic(initVisibleMap(DOMESTIC_TIMELINE_MAX_INDEX, undefined));
+              setVisibleInternational(initVisibleMap(INTERNATIONAL_TIMELINE_MAX_INDEX, undefined));
+              setStep(0);
+            }}
+          >
+            Reset form
+          </button>
+        </form>
+        <p className="text-xs text-muted-soft">Saves every step + show/hide for both routes.</p>
       </div>
 
       <div className="space-y-3 rounded-xl border border-border-strong bg-surface-elevated/30 p-4">
         <div>
-          <h3 className="text-sm font-semibold text-ink">Stage location lines (pick steps to update)</h3>
+          <h3 className="text-sm font-semibold text-ink">Bulk location lines</h3>
           <p className="mt-1 text-xs text-muted-soft">
-            Check <strong className="font-medium text-ink">Update</strong> only for steps you want to write to
-            public tracking. Unchecked steps are left unchanged in the database. Text is the map-pin line on each
-            card; leave empty to clear your override and use the automatic default. Applies to this booking&apos;s{" "}
-            <span className="font-medium text-ink capitalize">{routeType}</span> timeline only.
+            Tick steps to update. Empty = default location on Track.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -302,7 +301,7 @@ export function AdminCustomerTimelineForm({
               });
             }}
           >
-            Select all steps
+            All
           </button>
           <button
             type="button"
@@ -315,10 +314,10 @@ export function AdminCustomerTimelineForm({
               });
             }}
           >
-            Clear selection
+            None
           </button>
           <span className="self-center text-xs text-muted-soft">
-            {selectedLocationStepCount} of {last + 1} steps selected
+            {selectedLocationStepCount}/{last + 1} selected
           </span>
         </div>
         <ul className="space-y-4">
@@ -340,14 +339,10 @@ export function AdminCustomerTimelineForm({
                     }
                     className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
                   />
-                  Update
+                  Apply
                 </label>
                 <div className="min-w-0 flex-1">
-                  <AdminFormField
-                    label={`Step ${idx + 1}: ${stageDef.title}`}
-                    htmlFor={`tl-all-loc-${modeKey}-${k}`}
-                    hint="Shown on the customer timeline card as the location line."
-                  >
+                  <AdminFormField label={`${idx + 1}. ${stageDef.title}`} htmlFor={`tl-all-loc-${modeKey}-${k}`}>
                     <input
                       id={`tl-all-loc-${modeKey}-${k}`}
                       className={inputClass}
@@ -373,14 +368,14 @@ export function AdminCustomerTimelineForm({
             }
             className="rounded-xl border border-teal/50 bg-teal-dim/80 px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-teal disabled:opacity-60 dark:bg-teal-dim/40"
           >
-            {locPending ? "Saving…" : "Save selected location lines"}
+            {locPending ? "Saving…" : "Save locations"}
           </button>
         </form>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border-strong bg-canvas/30 px-3 py-2 text-xs text-muted-soft">
-        <span>
-          Step <strong className="text-ink">{step + 1}</strong> of {stages.length}
+        <span className="font-medium text-ink">
+          Step {step + 1} / {stages.length}
         </span>
         <div className="flex flex-wrap gap-2">
           <button
@@ -404,12 +399,10 @@ export function AdminCustomerTimelineForm({
 
       {def ? (
         <div className="space-y-4 rounded-xl border border-border-strong bg-surface-elevated/40 p-4">
-          <p className="text-[11px] text-muted-soft">
-            Default title: <span className="font-medium text-ink">{def.title}</span>
-            <br />
-            Default description: <span className="text-muted">{def.hint}</span>
+          <p className="text-xs text-muted-soft">
+            Default: <span className="text-ink">{def.title}</span> — {def.hint}
           </p>
-          <AdminFormField label="Card title (optional)" htmlFor={`tl-${modeKey}-${step}-title`}>
+          <AdminFormField label="Title" htmlFor={`tl-${modeKey}-${step}-title`}>
             <input
               id={`tl-${modeKey}-${step}-title`}
               className={inputClass}
@@ -419,11 +412,7 @@ export function AdminCustomerTimelineForm({
               maxLength={200}
             />
           </AdminFormField>
-          <AdminFormField
-            label="Location line (optional)"
-            htmlFor={`tl-${modeKey}-${step}-loc`}
-            hint="Shown next to the map pin on the customer card."
-          >
+          <AdminFormField label="Location" htmlFor={`tl-${modeKey}-${step}-loc`}>
             <input
               id={`tl-${modeKey}-${step}-loc`}
               className={inputClass}
@@ -433,7 +422,7 @@ export function AdminCustomerTimelineForm({
               maxLength={500}
             />
           </AdminFormField>
-          <AdminFormField label="Short description (optional)" htmlFor={`tl-${modeKey}-${step}-hint`}>
+          <AdminFormField label="Description" htmlFor={`tl-${modeKey}-${step}-hint`}>
             <textarea
               id={`tl-${modeKey}-${step}-hint`}
               className={`${inputClass} min-h-[72px] resize-y`}
@@ -444,11 +433,7 @@ export function AdminCustomerTimelineForm({
               rows={3}
             />
           </AdminFormField>
-          <AdminFormField
-            label="Time on card (optional)"
-            htmlFor={`tl-${modeKey}-${step}-time`}
-            hint="If empty, customers see the booking last-updated time for visible steps."
-          >
+          <AdminFormField label="Time" htmlFor={`tl-${modeKey}-${step}-time`}>
             <input
               id={`tl-${modeKey}-${step}-time`}
               type="datetime-local"
@@ -468,15 +453,12 @@ export function AdminCustomerTimelineForm({
               disabled={stepPending || pending || locPending || stepVisPending}
               className="rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
             >
-              {stepPending ? "Saving…" : "Save this step — card text only"}
+              {stepPending ? "Saving…" : "Save text"}
             </button>
           </form>
 
-          <div className="mt-4 rounded-lg border border-dashed border-border-strong/80 bg-canvas/20 p-3">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-soft">
-              This step — Track visibility only
-            </p>
-            <label className="mt-2 flex cursor-pointer items-start gap-2 text-sm text-ink">
+          <div className="mt-4 rounded-lg border border-border-strong/80 bg-canvas/25 p-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink">
               <input
                 type="checkbox"
                 checked={visibleMap[String(step)] !== false}
@@ -484,14 +466,9 @@ export function AdminCustomerTimelineForm({
                   const k = String(step);
                   setVisibleMap((prev) => ({ ...prev, [k]: e.target.checked }));
                 }}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
+                className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
               />
-              <span>
-                <span className="font-medium">Show on public Track</span>
-                <span className="mt-0.5 block text-xs text-muted-soft">
-                  Does not change title, location, or description. Save with the button below.
-                </span>
-              </span>
+              <span className="font-medium">Show on customer Track</span>
             </label>
             <form action={stepVisFormAction} className="mt-2">
               <input type="hidden" name="bookingId" value={bookingId} />
@@ -501,40 +478,12 @@ export function AdminCustomerTimelineForm({
                 disabled={stepVisPending || pending || locPending || stepPending}
                 className="rounded-xl border border-border-strong bg-canvas px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-teal/40 disabled:opacity-60"
               >
-                {stepVisPending ? "Saving…" : "Save Track visibility only"}
+                {stepVisPending ? "Saving…" : "Save visibility"}
               </button>
             </form>
           </div>
         </div>
       ) : null}
-
-      <form action={formAction} className="space-y-3">
-        <input type="hidden" name="bookingId" value={bookingId} />
-        <input type="hidden" name="timelineJson" value={payloadJson} />
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            disabled={pending || locPending || stepPending || stepVisPending}
-            className="rounded-xl border border-teal/70 bg-teal px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-60"
-          >
-            {pending ? "Saving…" : "Save all timeline overrides"}
-          </button>
-          <button
-            type="button"
-            disabled={pending || locPending || stepPending || stepVisPending}
-            className="rounded-xl border border-border-strong bg-canvas px-4 py-2.5 text-sm font-medium text-ink disabled:opacity-60"
-            onClick={() => {
-              setDomestic(initMode(DOMESTIC_TIMELINE_MAX_INDEX, undefined));
-              setInternational(initMode(INTERNATIONAL_TIMELINE_MAX_INDEX, undefined));
-              setVisibleDomestic(initVisibleMap(DOMESTIC_TIMELINE_MAX_INDEX, undefined));
-              setVisibleInternational(initVisibleMap(INTERNATIONAL_TIMELINE_MAX_INDEX, undefined));
-              setStep(0);
-            }}
-          >
-            Clear all fields (then Save to remove custom text)
-          </button>
-        </div>
-      </form>
 
       {locState?.ok === false ? (
         <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-200">

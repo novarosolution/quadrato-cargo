@@ -203,17 +203,21 @@ export function AdminBookingDispatchSplit({
     <div className="space-y-4">
       <AdminCollapsible
         id="booking-dispatch-panel"
-        title="Status & messages"
+        title="Status, notes & dates"
         defaultOpen
       >
         <div className="space-y-6">
+          <p className="text-sm text-muted-soft">
+            Use <strong className="text-ink">Save</strong> at the bottom — one save updates everything in this
+            panel and agency/courier below.
+          </p>
           <ManualTrackingQuickLinks bookingId={bookingId} trackReference={trackReference} />
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="space-y-6 lg:col-span-2">
               <div className="rounded-xl border border-border-strong bg-canvas/25 p-4">
                 <h3 className="text-xs font-bold uppercase tracking-wide text-muted-soft">
-                  Status &amp; tracking ID
+                  Status &amp; tracking number
                 </h3>
                 <div className="mt-4 grid gap-5 sm:grid-cols-2">
                   <AdminFormField label="Shipment status" htmlFor={`${uid}-status`}>
@@ -231,7 +235,7 @@ export function AdminBookingDispatchSplit({
                     </select>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <span className="w-full text-[11px] font-medium uppercase tracking-wide text-muted-soft">
-                        Quick picks
+                        Shortcuts
                       </span>
                       {quickStatuses.map((s) => (
                         <button
@@ -263,12 +267,9 @@ export function AdminBookingDispatchSplit({
 
                   <div className="sm:col-span-2 space-y-4 border-t border-border-strong/60 pt-5">
                     <p className="text-xs font-bold uppercase tracking-wide text-muted-soft">
-                      Customer-facing dates
+                      Dates customers see
                     </p>
-                    <p className="text-[11px] text-muted-soft">
-                      Shown on public track, profile, and PDFs as booked time and last updated. Clear a
-                      field and save to use the real system timestamp instead.
-                    </p>
+                    <p className="text-[11px] text-muted-soft">Track, profile, PDFs. Clear field + save = system time.</p>
                     <div className="grid gap-5 sm:grid-cols-2">
                       <AdminFormField
                         label="Booked date & time"
@@ -308,17 +309,12 @@ export function AdminBookingDispatchSplit({
                       />
                       <div className="min-w-0 flex-1 space-y-2">
                         <p className="text-xs font-bold uppercase tracking-wide text-muted-soft">
-                          Est. delivery (EDD)
+                          Delivery date (EDD)
                         </p>
                         <p className="text-[11px] leading-relaxed text-muted-soft">
-                          Shown on public track and profile.{" "}
-                          <span className="font-medium text-ink">
-                            International
-                          </span>{" "}
-                          bookings use a +10 day default until you set a date here.{" "}
-                          <span className="font-medium text-ink">Domestic</span>{" "}
-                          only shows EDD when a date is set. Clear the field and save to remove a
-                          custom date.
+                          <span className="font-medium text-ink">International:</span> +10 day default until you set
+                          a date. <span className="font-medium text-ink">Domestic:</span> EDD only if you set it.
+                          Clear + save removes custom date.
                         </p>
                         <AdminFormField label="Delivery date" htmlFor={`${uid}-edd`}>
                           <input
@@ -337,13 +333,10 @@ export function AdminBookingDispatchSplit({
 
               <div className="rounded-xl border border-border-strong bg-canvas/25 p-4">
                 <h3 className="text-xs font-bold uppercase tracking-wide text-muted-soft">
-                  Customer-visible message
+                  Message on Track
                 </h3>
                 <div className="mt-4">
-                  <AdminFormField
-                    label="Public note"
-                    htmlFor={`${uid}-public`}
-                  >
+                  <AdminFormField label="Customer note" htmlFor={`${uid}-public`}>
                     <textarea
                       id={`${uid}-public`}
                       rows={4}
@@ -353,16 +346,14 @@ export function AdminBookingDispatchSplit({
                       placeholder="Example: Picked up today. Expected delivery Thursday."
                     />
                     <div className="mt-3 rounded-xl border border-border bg-canvas/30 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
-                        Ready-made lines
-                      </p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">Starters</p>
                       <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
                         <select
                           value={selectedTemplate}
                           onChange={(e) => setSelectedTemplate(e.target.value)}
                           className="rounded-lg border border-border-strong bg-canvas/50 px-3 py-2 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
                         >
-                          <option value="">Choose a starter…</option>
+                          <option value="">Pick text…</option>
                           <option value="serviceability">Serviceability verified</option>
                           <option value="pickup_soon">Pickup team heading</option>
                           <option value="picked_up">Parcel picked up</option>
@@ -392,11 +383,9 @@ export function AdminBookingDispatchSplit({
               </div>
 
               <div className="rounded-xl border border-border-strong bg-canvas/25 p-4">
-                <h3 className="text-xs font-bold uppercase tracking-wide text-muted-soft">
-                  Logs &amp; internal notes
-                </h3>
+                <h3 className="text-xs font-bold uppercase tracking-wide text-muted-soft">Staff only</h3>
                 <div className="mt-4 space-y-5">
-                  <AdminFormField label="Operational activity log" htmlFor={`${uid}-ops`}>
+                  <AdminFormField label="Operations log" htmlFor={`${uid}-ops`}>
                     <textarea
                       id={`${uid}-ops`}
                       rows={6}
@@ -406,7 +395,7 @@ export function AdminBookingDispatchSplit({
                       placeholder="Timestamped lines, hub updates, courier notes…"
                     />
                   </AdminFormField>
-                  <AdminFormField label="Internal notes (staff only)" htmlFor={`${uid}-internal`}>
+                  <AdminFormField label="Internal notes" htmlFor={`${uid}-internal`}>
                     <textarea
                       id={`${uid}-internal`}
                       rows={3}
@@ -441,7 +430,7 @@ export function AdminBookingDispatchSplit({
             onClick={submitDispatch}
             className="inline-flex rounded-xl border border-teal/70 bg-teal px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-teal/90 disabled:opacity-50"
           >
-            {pending ? "Saving…" : "Save dispatch updates"}
+            {pending ? "Saving…" : "Save"}
           </button>
         </div>
       </AdminCollapsible>
@@ -525,7 +514,7 @@ export function AdminBookingDispatchSplit({
             onClick={submitDispatch}
             className="inline-flex rounded-xl border border-teal/70 bg-teal px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-teal/90 disabled:opacity-50"
           >
-            {pending ? "Saving…" : "Save assignment"}
+            {pending ? "Saving…" : "Save"}
           </button>
         </div>
       </AdminCollapsible>
