@@ -104,6 +104,58 @@ export function normalizePublicTimelineOverrides(raw) {
   return Object.keys(out).length ? out : null;
 }
 
+/**
+ * Merge admin patches for which professional timeline steps are shown on public Track.
+ * Stored shape keeps only hidden steps as `false`; missing index = visible.
+ * Patch values: `false` = hide from customers, `true` = clear hide (show again).
+ */
+export function mergePublicTimelineStepVisibility(existingRaw, patchRaw) {
+  const patch = patchRaw && typeof patchRaw === "object" ? patchRaw : {};
+  const base = { domestic: {}, international: {} };
+
+  function copyFalseKeys(from, to) {
+    if (!from || typeof from !== "object") return;
+    for (const [k, v] of Object.entries(from)) {
+      if (!/^\d+$/.test(k)) continue;
+      if (v === false) to[k] = false;
+    }
+  }
+
+  copyFalseKeys(existingRaw?.domestic, base.domestic);
+  copyFalseKeys(existingRaw?.international, base.international);
+
+  for (const mode of ["domestic", "international"]) {
+    const p = patch[mode];
+    if (!p || typeof p !== "object") continue;
+    for (const [k, v] of Object.entries(p)) {
+      if (!/^\d+$/.test(k)) continue;
+      if (v === true) delete base[mode][k];
+      else if (v === false) base[mode][k] = false;
+    }
+  }
+  return base;
+}
+
+/** Persist only hidden steps (`false`); omit if nothing hidden. */
+export function normalizePublicTimelineStepVisibility(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const out = {};
+  for (const mode of ["domestic", "international"]) {
+    const src = raw[mode];
+    if (!src || typeof src !== "object") continue;
+    const dest = {};
+    const maxIdx = mode === "domestic" ? 4 : 11;
+    for (const [k, v] of Object.entries(src)) {
+      if (!/^\d+$/.test(k)) continue;
+      const idx = Number.parseInt(k, 10);
+      if (idx < 0 || idx > maxIdx) continue;
+      if (v === false) dest[k] = false;
+    }
+    if (Object.keys(dest).length) out[mode] = dest;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 function toPublicInvoice(row) {
   const inv = row?.invoice;
   if (!inv || typeof inv !== "object") return null;
@@ -172,6 +224,9 @@ export function toPublicBooking(row) {
       ? String(row.publicBarcodeCode).trim().toUpperCase()
       : null,
     publicTimelineOverrides: normalizePublicTimelineOverrides(row?.publicTimelineOverrides),
+    publicTimelineStepVisibility: normalizePublicTimelineStepVisibility(
+      row?.publicTimelineStepVisibility
+    ),
     estimatedDeliveryAt: row.estimatedDeliveryAt ?? null,
     publicTimelineStatusPath: Array.isArray(row?.publicTimelineStatusPath)
       ? row.publicTimelineStatusPath.map((s) => String(s ?? "").trim()).filter(Boolean)

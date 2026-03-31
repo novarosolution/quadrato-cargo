@@ -378,6 +378,17 @@ export async function saveCustomerTimelineStepAdmin(
     merge: true,
     [modeKey]: { [stepIndex]: stage },
   };
+  const visRaw = String(formData.get("stepVisibilityJson") ?? "").trim();
+  if (visRaw) {
+    try {
+      const sv = JSON.parse(visRaw) as unknown;
+      if (sv && typeof sv === "object" && !Array.isArray(sv)) {
+        body.stepVisibility = sv;
+      }
+    } catch {
+      return { ok: false, error: "Step visibility data is not valid JSON." };
+    }
+  }
   const result = await adminMutation(
     `/api/admin/bookings/${encodeURIComponent(bookingId)}/timeline-overrides`,
     body,
@@ -391,6 +402,43 @@ export async function saveCustomerTimelineStepAdmin(
   return {
     ok: true,
     message: "This step was saved. Other steps and the full timeline snapshot were left unchanged.",
+  };
+}
+
+/** Updates only which steps appear on public Track (admin checkbox). Does not change card title/location text. */
+export async function saveCustomerTimelineStepVisibilityOnly(
+  _prev: BookingAdminUpdateState | undefined,
+  formData: FormData,
+): Promise<BookingAdminUpdateState> {
+  const bookingId = String(formData.get("bookingId") ?? "").trim();
+  const raw = String(formData.get("stepVisibilityOnlyJson") ?? "").trim();
+  if (!bookingId) return { ok: false, error: "Missing booking." };
+  let stepVisibility: unknown;
+  try {
+    stepVisibility = raw ? JSON.parse(raw) : null;
+  } catch {
+    return { ok: false, error: "Step visibility data is not valid JSON." };
+  }
+  if (!stepVisibility || typeof stepVisibility !== "object" || Array.isArray(stepVisibility)) {
+    return { ok: false, error: "Invalid step visibility payload." };
+  }
+  const body: Record<string, unknown> = {
+    merge: true,
+    stepVisibility,
+  };
+  const result = await adminMutation(
+    `/api/admin/bookings/${encodeURIComponent(bookingId)}/timeline-overrides`,
+    body,
+  );
+  if (!result.ok) {
+    return { ok: false, error: result.message || "Failed to save step visibility." };
+  }
+  revalidatePath("/admin/bookings");
+  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath("/public/tsking");
+  return {
+    ok: true,
+    message: "Track visibility for this step was saved. Card wording was not changed.",
   };
 }
 

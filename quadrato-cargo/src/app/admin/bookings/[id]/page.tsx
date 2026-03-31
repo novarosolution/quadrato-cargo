@@ -20,6 +20,7 @@ import { AdminBookingInvoiceForm } from "../AdminBookingInvoiceForm";
 import { AdminCustomerTimelineForm } from "../AdminCustomerTimelineForm";
 import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminTimelineQuickCardForm } from "../AdminTimelineQuickCardForm";
+import { AdminTimelineNextStepForm } from "../AdminTimelineNextStepForm";
 import { AdminBookingPickupForm } from "../AdminBookingPickupForm";
 import { AdminBookingShipmentForm } from "../AdminBookingShipmentForm";
 import {
@@ -193,7 +194,12 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           </li>
           <li>
             <a href="#booking-quick-card" className={jumpLinkClass}>
-              Timeline quick edit
+              Current timeline step
+            </a>
+          </li>
+          <li>
+            <a href="#booking-next-timeline-step" className={jumpLinkClass}>
+              Next timeline step
             </a>
           </li>
           <li>
@@ -373,23 +379,48 @@ export default async function AdminBookingDetailPage({ params }: Props) {
           className="scroll-mt-24 rounded-2xl border border-teal/25 bg-teal/4 p-5 dark:bg-teal/10"
         >
           <h2 className="font-display text-lg font-semibold text-ink">Current timeline step</h2>
+          <p className="mt-1 text-xs text-muted-soft">
+            Matches today&apos;s shipment status. Tick/untick and card text use separate save buttons below.
+          </p>
           <div className="mt-4">
             <AdminTimelineQuickCardForm
-              key={`${row.id}-${row.routeType}-${row.status}-${JSON.stringify(row.publicTimelineOverrides ?? null)}`}
+              key={`${row.id}-${row.routeType}-${row.status}-${JSON.stringify(row.publicTimelineOverrides ?? null)}-${JSON.stringify(row.publicTimelineStepVisibility ?? null)}`}
               bookingId={row.id}
               routeType={row.routeType}
               status={row.status}
               initial={row.publicTimelineOverrides ?? null}
+              initialStepVisibility={row.publicTimelineStepVisibility ?? null}
+            />
+          </div>
+        </section>
+
+        <section
+          id="booking-next-timeline-step"
+          className="scroll-mt-24 rounded-2xl border border-border-strong bg-surface-elevated/40 p-5"
+        >
+          <h2 className="font-display text-lg font-semibold text-ink">Next timeline step</h2>
+          <p className="mt-1 text-xs text-muted-soft">
+            Pre-fill the upcoming milestone before you advance status in Status &amp; messages.
+          </p>
+          <div className="mt-4">
+            <AdminTimelineNextStepForm
+              key={`${row.id}-${row.routeType}-next-${row.status}-${JSON.stringify(row.publicTimelineOverrides ?? null)}-${JSON.stringify(row.publicTimelineStepVisibility ?? null)}`}
+              bookingId={row.id}
+              routeType={row.routeType}
+              status={row.status}
+              initial={row.publicTimelineOverrides ?? null}
+              initialStepVisibility={row.publicTimelineStepVisibility ?? null}
             />
           </div>
         </section>
 
         <AdminCollapsible id="booking-customer-timeline" title="All timeline steps">
           <AdminCustomerTimelineForm
-            key={`${row.id}-${row.routeType}`}
+            key={`${row.id}-${row.routeType}-${JSON.stringify(row.publicTimelineStepVisibility ?? null)}`}
             bookingId={row.id}
             routeType={row.routeType}
             initial={row.publicTimelineOverrides ?? null}
+            initialStepVisibility={row.publicTimelineStepVisibility ?? null}
           />
         </AdminCollapsible>
       </section>

@@ -15,7 +15,10 @@ import {
   Info,
 } from "lucide-react";
 import type { BookingStatusId } from "@/lib/booking-status";
-import type { PublicTimelineOverrides } from "@/lib/api/public-client";
+import type {
+  PublicTimelineOverrides,
+  PublicTimelineStepVisibility,
+} from "@/lib/api/public-client";
 import {
   buildProfessionalTimelineSegments,
   buildProfessionalTimelineSegmentsFromStatusPath,
@@ -27,6 +30,17 @@ import {
   INTERNATIONAL_PROFESSIONAL_STAGES,
   type TrackingShipmentContext,
 } from "@/lib/professional-tracking-stages";
+
+function customerSeesTimelineStep(
+  visibility: PublicTimelineStepVisibility | null | undefined,
+  mode: "domestic" | "international",
+  stageIndex: number,
+  currentIdx: number,
+): boolean {
+  if (stageIndex === currentIdx) return true;
+  const m = visibility?.[mode];
+  return m?.[String(stageIndex)] !== false;
+}
 
 function formatTrackingTimestamp(iso: string): string {
   const d = new Date(iso);
@@ -120,6 +134,8 @@ export type ProfessionalTrackingTimelineProps = {
   timelineOverrides?: PublicTimelineOverrides | null;
   /** Recorded status transitions; when present, timeline shows only those steps (not a filled ladder). */
   publicTimelineStatusPath?: string[] | null;
+  /** Admin: steps marked `false` are omitted here (current status step always shown). */
+  publicTimelineStepVisibility?: PublicTimelineStepVisibility | null;
 };
 
 export function ProfessionalTrackingTimeline({
@@ -130,6 +146,7 @@ export function ProfessionalTrackingTimeline({
   latestNote = null,
   timelineOverrides = null,
   publicTimelineStatusPath = null,
+  publicTimelineStepVisibility = null,
 }: ProfessionalTrackingTimelineProps) {
   const isInternational = routeType === "international";
   const stages = isInternational ? INTERNATIONAL_PROFESSIONAL_STAGES : DOMESTIC_PROFESSIONAL_STAGES;
@@ -147,6 +164,10 @@ export function ProfessionalTrackingTimeline({
   if (fromPath && !fromPath.some((s) => s.index === currentIdx)) {
     segments = [{ kind: "stage" as const, index: currentIdx }, ...fromPath];
   }
+
+  segments = segments.filter((seg) =>
+    customerSeesTimelineStep(publicTimelineStepVisibility, mode, seg.index, currentIdx),
+  );
 
   return (
     <div className="space-y-4">

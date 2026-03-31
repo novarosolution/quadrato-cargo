@@ -25,6 +25,7 @@ import {
   fetchPublicTracking,
   mergePublicTrackUi,
   type PublicTimelineOverrides,
+  type PublicTimelineStepVisibility,
   type PublicTrackUiSettings,
   type PublicTrackingShipment,
 } from "@/lib/api/public-client";
@@ -62,6 +63,7 @@ type State =
         updatedAt?: string;
         shipment: PublicTrackingShipment | null;
         publicTimelineOverrides?: PublicTimelineOverrides | null;
+        publicTimelineStepVisibility?: PublicTimelineStepVisibility | null;
         estimatedDeliveryAt?: string | null;
         /** Recorded status steps for timeline; absent = legacy full ladder. */
         publicTimelineStatusPath?: string[] | null;
@@ -384,6 +386,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                     }}
                     timelineOverrides={data.publicTimelineOverrides ?? null}
                     publicTimelineStatusPath={data.publicTimelineStatusPath ?? null}
+                    publicTimelineStepVisibility={data.publicTimelineStepVisibility ?? null}
                   />
                 );
               }
@@ -401,6 +404,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                   }}
                   timelineOverrides={data.publicTimelineOverrides ?? null}
                   publicTimelineStatusPath={data.publicTimelineStatusPath ?? null}
+                  publicTimelineStepVisibility={data.publicTimelineStepVisibility ?? null}
                 />
               );
             })()

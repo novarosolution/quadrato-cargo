@@ -1331,6 +1331,8 @@ export async function trackBooking(req, res, next) {
         updatedAt: row.customerFacingUpdatedAt ?? row.updatedAt ?? row.createdAt,
         shipment: buildShipmentSummaryForPublicTrack(row.payload),
         publicTimelineOverrides: row.publicTimelineOverrides ?? null,
+        /** Admin-only map of hidden steps (`false`); omitted index = visible on Track. */
+        publicTimelineStepVisibility: row.publicTimelineStepVisibility ?? null,
         estimatedDeliveryAt: row.estimatedDeliveryAt ?? null,
         /** Status transitions for customer timeline; null = show full ladder (legacy). */
         publicTimelineStatusPath: row.publicTimelineStatusPath ?? null

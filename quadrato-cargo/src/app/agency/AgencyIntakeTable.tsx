@@ -6,7 +6,10 @@ import {
   BOOKING_STATUS_LABELS,
   normalizeBookingStatus,
 } from "@/lib/booking-status";
-import type { PublicTimelineOverrides } from "@/lib/api/public-client";
+import type {
+  PublicTimelineOverrides,
+  PublicTimelineStepVisibility,
+} from "@/lib/api/public-client";
 import type { AgencyHubIdentity } from "./agency-hub-types";
 import { AgencyJobControls } from "./JobControls";
 
@@ -25,6 +28,7 @@ export type AgencyIntakeRow = {
   senderAddress: string | null;
   recipientAddress: string | null;
   publicTimelineOverrides: PublicTimelineOverrides | null;
+  publicTimelineStepVisibility: PublicTimelineStepVisibility | null;
   publicTimelineStatusPath: string[] | null;
   courierId: string | null;
   payload: unknown;
@@ -171,6 +175,7 @@ export function AgencyIntakeTable({ rows, agencyIdentity }: Props) {
                             senderAddress={row.senderAddress}
                             recipientAddress={row.recipientAddress}
                             publicTimelineOverrides={row.publicTimelineOverrides}
+                            publicTimelineStepVisibility={row.publicTimelineStepVisibility}
                             publicTimelineStatusPath={row.publicTimelineStatusPath}
                             courierId={row.courierId}
                             payload={row.payload}

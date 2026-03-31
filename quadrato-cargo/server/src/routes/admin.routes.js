@@ -7,7 +7,9 @@ import { requireAdminApi } from "../modules/admin/admin-middleware.js";
 import { createUserDoc, toPublicUser } from "../models/user.model.js";
 import {
   mergePublicTimelineOverrides,
+  mergePublicTimelineStepVisibility,
   normalizePublicTimelineOverrides,
+  normalizePublicTimelineStepVisibility,
   toPublicBooking
 } from "../models/booking.model.js";
 import { toPublicContact } from "../models/contact.model.js";
@@ -16,7 +18,7 @@ import { sendError, sendNotFound, sendOk } from "../components/api-response.js";
 import { MIN_PASSWORD_LENGTH } from "../shared/constants.js";
 import { findBookingByReference } from "../modules/bookings/booking-repo.js";
 import { computeNextPublicTimelineStatusPath } from "../lib/public-timeline-status-path.js";
-import { timelineOverridesBodySchema } from "../shared/timeline-overrides-zod.js";
+import { adminTimelinePatchBodySchema } from "../shared/timeline-overrides-zod.js";
 
 const router = Router();
 const PAGE_SIZE = 25;
@@ -1019,36 +1021,56 @@ router.patch("/bookings/:id/timeline-overrides", async (req, res, next) => {
     const db = await getDb();
     const _id = requireObjectIdOrNotFound(res, req.params.id, "Booking not found.");
     if (!_id) return;
-    const parsed = timelineOverridesBodySchema.safeParse(req.body ?? {});
+    const parsed = adminTimelinePatchBodySchema.safeParse(req.body ?? {});
     if (!parsed.success) {
       return sendError(res, "Invalid timeline overrides payload.", 400);
     }
-    const { merge, domestic, international } = parsed.data;
-    let rawCombined;
-    if (merge === true) {
-      const booking = await db.collection("bookings").findOne(
-        { _id },
-        { projection: { publicTimelineOverrides: 1 } }
-      );
-      rawCombined = mergePublicTimelineOverrides(booking?.publicTimelineOverrides, {
-        domestic,
-        international
-      });
-    } else {
-      rawCombined = { domestic, international };
+    const { merge, domestic, international, stepVisibility } = parsed.data;
+    const hasOv = domestic !== undefined || international !== undefined;
+    const hasVis =
+      stepVisibility &&
+      (stepVisibility.domestic !== undefined || stepVisibility.international !== undefined);
+    if (!hasOv && !hasVis) {
+      return sendError(res, "Nothing to update.", 400);
     }
-    const normalized = normalizePublicTimelineOverrides(rawCombined);
-    if (normalized) {
-      await db.collection("bookings").updateOne(
-        { _id },
-        { $set: { publicTimelineOverrides: normalized, updatedAt: new Date() } }
-      );
-    } else {
-      await db.collection("bookings").updateOne(
-        { _id },
-        { $set: { updatedAt: new Date() }, $unset: { publicTimelineOverrides: "" } }
-      );
+
+    const booking = await db.collection("bookings").findOne(
+      { _id },
+      { projection: { publicTimelineOverrides: 1, publicTimelineStepVisibility: 1 } }
+    );
+
+    const now = new Date();
+    const $set = { updatedAt: now };
+    const $unset = {};
+
+    if (hasOv) {
+      let rawCombined;
+      if (merge === true) {
+        rawCombined = mergePublicTimelineOverrides(booking?.publicTimelineOverrides, {
+          domestic,
+          international
+        });
+      } else {
+        rawCombined = { domestic, international };
+      }
+      const normalized = normalizePublicTimelineOverrides(rawCombined);
+      if (normalized) $set.publicTimelineOverrides = normalized;
+      else $unset.publicTimelineOverrides = "";
     }
+
+    if (hasVis) {
+      const mergedVis = mergePublicTimelineStepVisibility(
+        booking?.publicTimelineStepVisibility,
+        stepVisibility
+      );
+      const normalizedVis = normalizePublicTimelineStepVisibility(mergedVis);
+      if (normalizedVis) $set.publicTimelineStepVisibility = normalizedVis;
+      else $unset.publicTimelineStepVisibility = "";
+    }
+
+    const update =
+      Object.keys($unset).length > 0 ? { $set, $unset } : { $set };
+    await db.collection("bookings").updateOne({ _id }, update);
     return sendOk(res);
   } catch (error) {
     next(error);

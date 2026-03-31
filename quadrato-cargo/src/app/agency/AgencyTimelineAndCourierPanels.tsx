@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { BookingStatusId } from "@/lib/booking-status";
 import { normalizeBookingStatus } from "@/lib/booking-status";
-import type { PublicTimelineOverrides, PublicTimelineStageOverride } from "@/lib/api/public-client";
+import type {
+  PublicTimelineOverrides,
+  PublicTimelineStageOverride,
+  PublicTimelineStepVisibility,
+} from "@/lib/api/public-client";
 import { patchAgencyBookingTimelineApi } from "@/lib/api/agency-client";
 import { ProfessionalTrackingTimeline } from "@/app/public/tsking/ProfessionalTrackingTimeline";
 import {
@@ -238,6 +242,7 @@ type Props = {
   recipientAddress: string | null;
   agencyDisplayName: string;
   publicTimelineOverrides: PublicTimelineOverrides | null | undefined;
+  publicTimelineStepVisibility: PublicTimelineStepVisibility | null | undefined;
   publicTimelineStatusPath: string[] | null | undefined;
   courierId: string | null;
   payload: unknown;
@@ -253,6 +258,7 @@ export function AgencyTimelineAndCourierPanels({
   recipientAddress,
   agencyDisplayName,
   publicTimelineOverrides,
+  publicTimelineStepVisibility,
   publicTimelineStatusPath,
   courierId,
   payload,
@@ -441,6 +447,7 @@ export function AgencyTimelineAndCourierPanels({
                     ctx={ctx}
                     timelineOverrides={publicTimelineOverrides ?? null}
                     publicTimelineStatusPath={publicTimelineStatusPath ?? null}
+                    publicTimelineStepVisibility={publicTimelineStepVisibility ?? null}
                   />
                 </div>
               ) : null}

@@ -54,6 +54,7 @@ export default async function AgencyPage() {
         senderAddress: b.senderAddress ?? null,
         recipientAddress: b.recipientAddress ?? null,
         publicTimelineOverrides: b.publicTimelineOverrides ?? null,
+        publicTimelineStepVisibility: b.publicTimelineStepVisibility ?? null,
         publicTimelineStatusPath: Array.isArray(b.publicTimelineStatusPath)
           ? b.publicTimelineStatusPath.map((s) => String(s ?? "").trim()).filter(Boolean)
           : null,

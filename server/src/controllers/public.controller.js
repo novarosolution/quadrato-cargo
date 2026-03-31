@@ -1331,6 +1331,7 @@ export async function trackBooking(req, res, next) {
         updatedAt: row.customerFacingUpdatedAt ?? row.updatedAt ?? row.createdAt,
         shipment: buildShipmentSummaryForPublicTrack(row.payload),
         publicTimelineOverrides: row.publicTimelineOverrides ?? null,
+        publicTimelineStepVisibility: row.publicTimelineStepVisibility ?? null,
         estimatedDeliveryAt: row.estimatedDeliveryAt ?? null,
         publicTimelineStatusPath: row.publicTimelineStatusPath ?? null
       }

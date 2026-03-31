@@ -1,6 +1,9 @@
 import { getApiBaseUrl } from "@/lib/api/base-url";
 import { csrfHeaderRecord } from "@/lib/api/csrf-headers";
-import type { PublicTimelineOverrides } from "@/lib/api/public-client";
+import type {
+  PublicTimelineOverrides,
+  PublicTimelineStepVisibility,
+} from "@/lib/api/public-client";
 
 export type AgencyBooking = {
   id: string;
@@ -17,6 +20,7 @@ export type AgencyBooking = {
   senderAddress?: string | null;
   recipientAddress?: string | null;
   publicTimelineOverrides?: PublicTimelineOverrides | null;
+  publicTimelineStepVisibility?: PublicTimelineStepVisibility | null;
   publicTimelineStatusPath?: string[] | null;
   courierId?: string | null;
   payload: unknown;

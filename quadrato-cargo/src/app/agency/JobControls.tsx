@@ -6,7 +6,10 @@ import {
   BOOKING_STATUS_LABELS,
   normalizeBookingStatus,
 } from "@/lib/booking-status";
-import type { PublicTimelineOverrides } from "@/lib/api/public-client";
+import type {
+  PublicTimelineOverrides,
+  PublicTimelineStepVisibility,
+} from "@/lib/api/public-client";
 import { updateAgencyBookingApi, verifyAgencyHandoverApi } from "@/lib/api/agency-client";
 import type { AgencyHubIdentity } from "./agency-hub-types";
 import { AgencyTimelineAndCourierPanels } from "./AgencyTimelineAndCourierPanels";
@@ -135,6 +138,7 @@ type Props = {
   senderAddress?: string | null;
   recipientAddress?: string | null;
   publicTimelineOverrides?: PublicTimelineOverrides | null;
+  publicTimelineStepVisibility?: PublicTimelineStepVisibility | null;
   publicTimelineStatusPath?: string[] | null;
   courierId?: string | null;
   /** Booking payload: read-only summary for agency ↔ courier context */
@@ -155,6 +159,7 @@ export function AgencyJobControls({
   senderAddress = null,
   recipientAddress = null,
   publicTimelineOverrides = null,
+  publicTimelineStepVisibility = null,
   publicTimelineStatusPath = null,
   courierId = null,
   payload,
@@ -289,6 +294,7 @@ export function AgencyJobControls({
         recipientAddress={recipientAddress}
         agencyDisplayName={agencyIdentity.displayName}
         publicTimelineOverrides={publicTimelineOverrides}
+        publicTimelineStepVisibility={publicTimelineStepVisibility}
         publicTimelineStatusPath={publicTimelineStatusPath}
         courierId={courierId}
         payload={payload}

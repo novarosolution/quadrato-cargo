@@ -100,6 +100,12 @@ export type PublicTimelineOverrides = {
   international?: Record<string, PublicTimelineStageOverride>;
 };
 
+/** Which professional timeline steps appear on public Track; only `false` is stored (hidden). */
+export type PublicTimelineStepVisibility = {
+  domestic?: Record<string, boolean>;
+  international?: Record<string, boolean>;
+};
+
 export type PublicTrackingShipment = {
   contentsDescription: string | null;
   weightKg: number | null;
@@ -160,6 +166,8 @@ export type PublicTrackingResponse =
         updatedAt?: string;
         shipment: PublicTrackingShipment | null;
         publicTimelineOverrides?: PublicTimelineOverrides | null;
+        /** Hidden steps are `false`; current status step is always shown regardless. */
+        publicTimelineStepVisibility?: PublicTimelineStepVisibility | null;
         /** Admin-set EDD (ISO); international track still falls back to +10d from created if unset. */
         estimatedDeliveryAt?: string | null;
         /** Status history for progressive timeline; omit/null = show full milestone ladder (legacy). */

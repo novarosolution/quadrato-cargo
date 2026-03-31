@@ -8,12 +8,16 @@ import {
 
 const DOMESTIC_TIMELINE_MAX_INDEX = DOMESTIC_PROFESSIONAL_STAGES.length - 1;
 const INTERNATIONAL_TIMELINE_MAX_INDEX = INTERNATIONAL_PROFESSIONAL_STAGES.length - 1;
-import type { PublicTimelineOverrides } from "@/lib/api/public-client";
+import type {
+  PublicTimelineOverrides,
+  PublicTimelineStepVisibility,
+} from "@/lib/api/public-client";
 import { AdminFormField, adminInputClassName } from "@/components/admin/AdminFormField";
 import {
   saveCustomerTimelineAdmin,
   saveCustomerTimelineLocationsAdmin,
   saveCustomerTimelineStepAdmin,
+  saveCustomerTimelineStepVisibilityOnly,
   type BookingAdminUpdateState,
 } from "@/app/admin/dashboard/actions";
 
@@ -72,10 +76,40 @@ function buildApiPayload(domestic: Record<string, StageFields>, international: R
   };
 }
 
+function initVisibleMap(
+  maxIdx: number,
+  src: Record<string, boolean> | undefined,
+): Record<string, boolean> {
+  const out: Record<string, boolean> = {};
+  for (let i = 0; i <= maxIdx; i++) {
+    const k = String(i);
+    out[k] = src?.[k] !== false;
+  }
+  return out;
+}
+
+function buildStepVisibilityPayload(
+  visDom: Record<string, boolean>,
+  visIntl: Record<string, boolean>,
+) {
+  const domestic: Record<string, boolean> = {};
+  for (let i = 0; i <= DOMESTIC_TIMELINE_MAX_INDEX; i++) {
+    const k = String(i);
+    domestic[k] = visDom[k] !== false;
+  }
+  const international: Record<string, boolean> = {};
+  for (let i = 0; i <= INTERNATIONAL_TIMELINE_MAX_INDEX; i++) {
+    const k = String(i);
+    international[k] = visIntl[k] !== false;
+  }
+  return { merge: true, domestic, international };
+}
+
 type Props = {
   bookingId: string;
   routeType: string;
   initial: PublicTimelineOverrides | null | undefined;
+  initialStepVisibility?: PublicTimelineStepVisibility | null | undefined;
 };
 
 const inputClass = adminInputClassName();
@@ -88,7 +122,12 @@ function defaultLocationSaveMask(stepCount: number): Record<string, boolean> {
   return m;
 }
 
-export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Props) {
+export function AdminCustomerTimelineForm({
+  bookingId,
+  routeType,
+  initial,
+  initialStepVisibility = null,
+}: Props) {
   const isInternational = String(routeType).toLowerCase() === "international";
   const stages = isInternational ? INTERNATIONAL_PROFESSIONAL_STAGES : DOMESTIC_PROFESSIONAL_STAGES;
   const modeKey = isInternational ? "international" : "domestic";
@@ -98,6 +137,12 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
   );
   const [international, setInternational] = useState(() =>
     initMode(INTERNATIONAL_TIMELINE_MAX_INDEX, initial?.international),
+  );
+  const [visibleDomestic, setVisibleDomestic] = useState(() =>
+    initVisibleMap(DOMESTIC_TIMELINE_MAX_INDEX, initialStepVisibility?.domestic),
+  );
+  const [visibleInternational, setVisibleInternational] = useState(() =>
+    initVisibleMap(INTERNATIONAL_TIMELINE_MAX_INDEX, initialStepVisibility?.international),
   );
   const [step, setStep] = useState(0);
 
@@ -113,6 +158,11 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
     BookingAdminUpdateState | undefined,
     FormData
   >(saveCustomerTimelineStepAdmin, undefined);
+
+  const [stepVisState, stepVisFormAction, stepVisPending] = useActionState<
+    BookingAdminUpdateState | undefined,
+    FormData
+  >(saveCustomerTimelineStepVisibilityOnly, undefined);
 
   const [locState, locFormAction, locPending] = useActionState<
     BookingAdminUpdateState | undefined,
@@ -135,8 +185,12 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
   );
 
   const payloadJson = useMemo(
-    () => JSON.stringify(buildApiPayload(domestic, international)),
-    [domestic, international],
+    () =>
+      JSON.stringify({
+        ...buildApiPayload(domestic, international),
+        stepVisibility: buildStepVisibilityPayload(visibleDomestic, visibleInternational),
+      }),
+    [domestic, international, visibleDomestic, visibleInternational],
   );
 
   const last = stages.length - 1;
@@ -158,6 +212,17 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
       }),
     [row.title, row.location, row.hint, row.shownAt],
   );
+
+  const visibleMap = modeKey === "international" ? visibleInternational : visibleDomestic;
+  const setVisibleMap = modeKey === "international" ? setVisibleInternational : setVisibleDomestic;
+
+  const stepVisibilitySubmitJson = useMemo(() => {
+    const vm = modeKey === "international" ? visibleInternational : visibleDomestic;
+    return JSON.stringify({
+      merge: true,
+      [modeKey]: { [String(step)]: vm[String(step)] !== false },
+    });
+  }, [modeKey, step, visibleInternational, visibleDomestic]);
 
   const locationsPayloadJson = useMemo(() => {
     const inner: Record<string, { location: string }> = {};
@@ -187,6 +252,14 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
             step that matches today&apos;s booking status.
           </li>
           <li>
+            <strong className="font-medium text-ink">Next timeline step</strong> (above) — pre-fill the
+            following card without changing shipment status.
+          </li>
+          <li>
+            <strong className="font-medium text-ink">Shipment status</strong> — only in{" "}
+            <strong className="font-medium text-ink">Status &amp; messages</strong> (save that form).
+          </li>
+          <li>
             <strong className="font-medium text-ink">Here</strong> — edit any step, bulk-update location lines,
             or replace the entire saved timeline for both domestic and international.
           </li>
@@ -198,6 +271,12 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
         <p className="mt-2">
           <strong className="font-medium text-ink">Agency partners</strong> assigned to this booking can also
           update every step from <span className="font-mono text-[11px]">/agency</span> (same merged data).
+        </p>
+        <p className="mt-2">
+          <strong className="font-medium text-ink">Public Track visibility</strong> — use{" "}
+          <strong className="font-medium text-ink">Show on public Track</strong> per step (admin only). Unchecked
+          steps are hidden from customers; the step that matches the booking&apos;s current status always stays
+          visible on Track.
         </p>
       </div>
 
@@ -289,7 +368,9 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
           <input type="hidden" name="locationsJson" value={locationsPayloadJson} />
           <button
             type="submit"
-            disabled={locPending || pending || stepPending || selectedLocationStepCount === 0}
+            disabled={
+              locPending || pending || stepPending || stepVisPending || selectedLocationStepCount === 0
+            }
             className="rounded-xl border border-teal/50 bg-teal-dim/80 px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-teal disabled:opacity-60 dark:bg-teal-dim/40"
           >
             {locPending ? "Saving…" : "Save selected location lines"}
@@ -377,19 +458,53 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
             />
           </AdminFormField>
 
-          <form action={stepFormAction} className="pt-1">
+          <form action={stepFormAction} className="space-y-2 pt-1">
             <input type="hidden" name="bookingId" value={bookingId} />
             <input type="hidden" name="modeKey" value={modeKey} />
             <input type="hidden" name="stepIndex" value={String(step)} />
             <input type="hidden" name="stepPayloadJson" value={stepPayloadJson} />
             <button
               type="submit"
-              disabled={stepPending || pending || locPending}
-              className="rounded-xl border border-border-strong bg-canvas px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-teal/40 disabled:opacity-60"
+              disabled={stepPending || pending || locPending || stepVisPending}
+              className="rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
             >
-              {stepPending ? "Saving…" : "Save this timeline step"}
+              {stepPending ? "Saving…" : "Save this step — card text only"}
             </button>
           </form>
+
+          <div className="mt-4 rounded-lg border border-dashed border-border-strong/80 bg-canvas/20 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-soft">
+              This step — Track visibility only
+            </p>
+            <label className="mt-2 flex cursor-pointer items-start gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={visibleMap[String(step)] !== false}
+                onChange={(e) => {
+                  const k = String(step);
+                  setVisibleMap((prev) => ({ ...prev, [k]: e.target.checked }));
+                }}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
+              />
+              <span>
+                <span className="font-medium">Show on public Track</span>
+                <span className="mt-0.5 block text-xs text-muted-soft">
+                  Does not change title, location, or description. Save with the button below.
+                </span>
+              </span>
+            </label>
+            <form action={stepVisFormAction} className="mt-2">
+              <input type="hidden" name="bookingId" value={bookingId} />
+              <input type="hidden" name="stepVisibilityOnlyJson" value={stepVisibilitySubmitJson} />
+              <button
+                type="submit"
+                disabled={stepVisPending || pending || locPending || stepPending}
+                className="rounded-xl border border-border-strong bg-canvas px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-teal/40 disabled:opacity-60"
+              >
+                {stepVisPending ? "Saving…" : "Save Track visibility only"}
+              </button>
+            </form>
+          </div>
         </div>
       ) : null}
 
@@ -399,18 +514,20 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
         <div className="flex flex-wrap gap-2">
           <button
             type="submit"
-            disabled={pending || locPending}
+            disabled={pending || locPending || stepPending || stepVisPending}
             className="rounded-xl border border-teal/70 bg-teal px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-60"
           >
             {pending ? "Saving…" : "Save all timeline overrides"}
           </button>
           <button
             type="button"
-            disabled={pending || locPending}
+            disabled={pending || locPending || stepPending || stepVisPending}
             className="rounded-xl border border-border-strong bg-canvas px-4 py-2.5 text-sm font-medium text-ink disabled:opacity-60"
             onClick={() => {
               setDomestic(initMode(DOMESTIC_TIMELINE_MAX_INDEX, undefined));
               setInternational(initMode(INTERNATIONAL_TIMELINE_MAX_INDEX, undefined));
+              setVisibleDomestic(initVisibleMap(DOMESTIC_TIMELINE_MAX_INDEX, undefined));
+              setVisibleInternational(initVisibleMap(INTERNATIONAL_TIMELINE_MAX_INDEX, undefined));
               setStep(0);
             }}
           >
@@ -444,6 +561,17 @@ export function AdminCustomerTimelineForm({ bookingId, routeType, initial }: Pro
           {stepState.warning ? (
             <span className="mt-1 block text-xs text-amber-800 dark:text-amber-200">{stepState.warning}</span>
           ) : null}
+        </p>
+      ) : null}
+
+      {stepVisState?.ok === false ? (
+        <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-200">
+          {stepVisState.error}
+        </p>
+      ) : null}
+      {stepVisState?.ok === true ? (
+        <p className="rounded-lg border border-teal/30 bg-teal-dim/50 px-3 py-2 text-sm text-ink">
+          {stepVisState.message}
         </p>
       ) : null}
 
