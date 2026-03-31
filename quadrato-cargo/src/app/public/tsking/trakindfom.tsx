@@ -195,13 +195,6 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                   <p className="mt-1 font-display text-xl font-bold tracking-tight text-ink sm:text-2xl">
                     {formatEddDisplay(eddResolved)}
                   </p>
-                  {isInternational && !data.estimatedDeliveryAt?.trim() ? (
-                    <p className="mt-1.5 text-[11px] leading-relaxed text-muted-soft">
-                      <span className="font-semibold text-ink">Indicative estimate</span> (booking date
-                      + 10 days). It may shift as the parcel moves; dispatch can set a firm date on
-                      your record.
-                    </p>
-                  ) : null}
                 </div>
               </div>
             </div>
