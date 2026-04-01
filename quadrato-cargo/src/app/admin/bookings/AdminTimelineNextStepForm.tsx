@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { normalizeBookingStatus } from "@/lib/booking-status";
 import type {
   PublicTimelineOverrides,
@@ -73,21 +73,6 @@ export function AdminTimelineNextStepForm({
     if (!hasNext || nextIndex < 0) return true;
     return initialStepVisibility?.[modeKey]?.[String(nextIndex)] !== false;
   });
-  useEffect(() => {
-    if (!hasNext || nextIndex < 0) return;
-    const k = String(nextIndex);
-    setShowOnPublicTrack(initialStepVisibility?.[modeKey]?.[k] !== false);
-  }, [initialStepVisibility, modeKey, hasNext, nextIndex]);
-
-  useEffect(() => {
-    if (!hasNext || nextIndex < 0) return;
-    const k = String(nextIndex);
-    const snap = initial?.[modeKey]?.[k];
-    setTitle(snap?.title?.trim() ?? "");
-    setLocation(snap?.location?.trim() ?? "");
-    setHint(snap?.hint?.trim() ?? "");
-    setShownAtLocal(snap?.shownAt ? isoToDatetimeLocal(snap.shownAt) : "");
-  }, [initial, modeKey, hasNext, nextIndex]);
 
   const stepVisibilityOnlyJson = useMemo(() => {
     const k = String(nextIndex);

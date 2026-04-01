@@ -49,7 +49,7 @@ function buildInternationalProfessionalStages(): ProfessionalStageDef[] {
   out.push({
     id: "intl_exceptions_panel",
     title: "Exception / problem status",
-    hint: "Weather or operational delay, customs hold, address issues, or rescheduled delivery.",
+    hint: "Delays (weather or operations), customs hold, address issues, or rescheduled delivery. Use On hold + customer note for detail.",
   });
 
   out.push({

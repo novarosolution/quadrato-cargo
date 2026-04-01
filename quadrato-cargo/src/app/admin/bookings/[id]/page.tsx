@@ -20,6 +20,8 @@ import { AdminBookingInvoiceForm } from "../AdminBookingInvoiceForm";
 import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminBookingPickupForm } from "../AdminBookingPickupForm";
 import { AdminBookingShipmentForm } from "../AdminBookingShipmentForm";
+import { AdminBookingTrackPreview } from "../AdminBookingTrackPreview";
+import { InternationalStaffFlowReference } from "@/components/tracking/InternationalStaffFlowReference";
 import {
   formatEddDisplay,
   resolveEstimatedDeliveryDate,
@@ -146,6 +148,27 @@ export default async function AdminBookingDetailPage({ params }: Props) {
   });
   const hasCustomEdd = Boolean(row.estimatedDeliveryAt);
 
+  const joinAddr = (...parts: string[]) => {
+    const s = parts.map((p) => p.trim()).filter(Boolean).join(", ");
+    return s || null;
+  };
+  const senderAddressForTrack = joinAddr(
+    str(sender.street),
+    str(sender.city),
+    str(sender.postal),
+    str(sender.country),
+  );
+  const recipientAddressForTrack = joinAddr(
+    str(recipient.street),
+    str(recipient.city),
+    str(recipient.postal),
+    str(recipient.country),
+  );
+  const trackPreviewUpdatedIso = String(
+    row.customerFacingUpdatedAt ??
+      (typeof row.updatedAt === "string" ? row.updatedAt : row.createdAt.toISOString()),
+  );
+
   return (
     <div className="stack-page content-narrow">
       <Link href="/admin/bookings" prefetch={false} className="text-sm text-teal hover:underline">
@@ -211,6 +234,11 @@ export default async function AdminBookingDetailPage({ params }: Props) {
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-soft">Customer Track</p>
               <ul className="mt-1.5 flex flex-col gap-1.5 text-sm">
+                <li>
+                  <a href="#booking-track-preview" className={jumpLinkClass}>
+                    Full timeline preview
+                  </a>
+                </li>
                 <li>
                   <Link href={`/admin/bookings/${row.id}/timeline`} className={jumpLinkClass}>
                     Track editor (all)
@@ -395,6 +423,55 @@ export default async function AdminBookingDetailPage({ params }: Props) {
             </Link>
           </div>
         </div>
+
+        <AdminCollapsible
+          id="booking-track-preview"
+          title="Full shipment timeline (customer view)"
+          defaultOpen
+        >
+          <p className="mb-3 text-sm text-muted-soft">
+            Same step-by-step layout as public Track: each row can show{" "}
+            <span className="font-medium text-ink">Completed</span>,{" "}
+            <span className="font-medium text-ink">Latest update</span>, or{" "}
+            <span className="font-medium text-ink">Upcoming</span>. Per-step text and times come from the Track
+            editor; status and international macro index drive which step is &ldquo;latest&rdquo;.
+          </p>
+          <div className="rounded-xl border border-border-strong bg-canvas/30 p-3">
+            <AdminBookingTrackPreview
+              status={row.status}
+              routeType={row.routeType}
+              updatedAtIso={trackPreviewUpdatedIso}
+              publicTrackingNote={row.publicTrackingNote ?? row.customerTrackingNote ?? null}
+              senderAddress={senderAddressForTrack}
+              recipientAddress={recipientAddressForTrack}
+              assignedAgency={row.assignedAgency ?? null}
+              publicTimelineOverrides={row.publicTimelineOverrides ?? null}
+              publicTimelineStepVisibility={row.publicTimelineStepVisibility ?? null}
+              publicTimelineStatusPath={
+                Array.isArray(row.publicTimelineStatusPath)
+                  ? row.publicTimelineStatusPath
+                      .map((s: unknown) => String(s ?? "").trim())
+                      .filter(Boolean)
+                  : null
+              }
+              internationalAgencyStage={
+                row.internationalAgencyStage != null &&
+                Number.isInteger(row.internationalAgencyStage) &&
+                row.internationalAgencyStage >= 0 &&
+                row.internationalAgencyStage < 12
+                  ? row.internationalAgencyStage
+                  : null
+              }
+            />
+          </div>
+        </AdminCollapsible>
+
+        {row.routeType === "international" ? (
+          <div className="mt-4">
+            <InternationalStaffFlowReference defaultOpen={false} />
+          </div>
+        ) : null}
+
         <AdminBookingDispatchSplit
           key={`${row.id}-${String(row.customerFacingCreatedAt ?? "")}-${String(row.customerFacingUpdatedAt ?? "")}-${String(row.estimatedDeliveryAt ?? "")}-${String(row.internationalAgencyStage ?? "")}`}
           bookingId={row.id}

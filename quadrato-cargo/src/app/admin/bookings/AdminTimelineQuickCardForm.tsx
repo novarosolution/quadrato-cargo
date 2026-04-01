@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { normalizeBookingStatus } from "@/lib/booking-status";
 import type {
   PublicTimelineOverrides,
@@ -69,9 +69,6 @@ export function AdminTimelineQuickCardForm({
   const [showOnPublicTrack, setShowOnPublicTrack] = useState(
     () => initialStepVisibility?.[modeKey]?.[idxKey] !== false,
   );
-  useEffect(() => {
-    setShowOnPublicTrack(initialStepVisibility?.[modeKey]?.[idxKey] !== false);
-  }, [initialStepVisibility, modeKey, idxKey]);
 
   const stepVisibilityOnlyJson = useMemo(
     () =>

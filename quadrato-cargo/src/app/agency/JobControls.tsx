@@ -215,17 +215,6 @@ export function AgencyJobControls({
   }, [publicTrackingNote]);
 
   useEffect(() => {
-    setIntlAgencyStage(
-      internationalAgencyStage != null &&
-        Number.isInteger(internationalAgencyStage) &&
-        internationalAgencyStage >= 0 &&
-        internationalAgencyStage < 12
-        ? String(internationalAgencyStage)
-        : "",
-    );
-  }, [internationalAgencyStage]);
-
-  useEffect(() => {
     if (otpFocusSignal === 0) return;
     if (handoverAccepted) return;
     otpRef.current?.focus();
@@ -477,8 +466,10 @@ export function AgencyJobControls({
                   ))}
                 </select>
                 <p className="mt-1.5 text-[11px] text-muted-soft">
-                  Same 12 steps customers see on Track. Choose Auto unless you need a fixed card while status
-                  catches up.
+                  Macros <strong className="text-ink">0–11</strong> match the customer timeline. Open{" "}
+                  <strong className="text-ink">International professional flow</strong> in the shipment panel
+                  above for pickup → export → last mile checklists. Use Auto unless you need a fixed card while
+                  status catches up.
                 </p>
               </div>
             ) : null}

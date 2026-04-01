@@ -167,6 +167,7 @@ export function AgencyIntakeTable({ rows, agencyIdentity }: Props) {
                             </button>
                           </div>
                           <AgencyJobControls
+                            key={`${row.id}-${row.updatedAt}-${String(row.internationalAgencyStage ?? "")}`}
                             bookingId={row.id}
                             reference={reference}
                             routeType={row.routeType}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import type { BookingStatusId } from "@/lib/booking-status";
@@ -12,6 +12,7 @@ import type {
 } from "@/lib/api/public-client";
 import { patchAgencyBookingTimelineApi } from "@/lib/api/agency-client";
 import { ProfessionalTrackingTimeline } from "@/app/public/tsking/ProfessionalTrackingTimeline";
+import { InternationalStaffFlowReference } from "@/components/tracking/InternationalStaffFlowReference";
 import { resolveInternationalTimelineStageIndex } from "@/lib/international-timeline-stage";
 import {
   DOMESTIC_PROFESSIONAL_STAGES,
@@ -120,21 +121,15 @@ function AgencyTimelineStepForm({
   overrideSnap: PublicTimelineStageOverride | undefined;
 }) {
   const router = useRouter();
-  const [title, setTitle] = useState("");
-  const [location, setLocation] = useState("");
-  const [hint, setHint] = useState("");
-  const [shownAtLocal, setShownAtLocal] = useState("");
+  const [title, setTitle] = useState(() => overrideSnap?.title ?? "");
+  const [location, setLocation] = useState(() => overrideSnap?.location ?? "");
+  const [hint, setHint] = useState(() => overrideSnap?.hint ?? "");
+  const [shownAtLocal, setShownAtLocal] = useState(() => {
+    const sa = overrideSnap?.shownAt;
+    return sa && !Number.isNaN(new Date(sa).getTime()) ? isoToDatetimeLocal(sa) : "";
+  });
   const [pending, setPending] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-
-  useEffect(() => {
-    setTitle(overrideSnap?.title ?? "");
-    setLocation(overrideSnap?.location ?? "");
-    setHint(overrideSnap?.hint ?? "");
-    const sa = overrideSnap?.shownAt;
-    setShownAtLocal(sa && !Number.isNaN(new Date(sa).getTime()) ? isoToDatetimeLocal(sa) : "");
-    setMsg(null);
-  }, [overrideSnap, stepIndex]);
 
   async function save() {
     setPending(true);
@@ -266,7 +261,7 @@ export function AgencyTimelineAndCourierPanels({
   payload,
 }: Props) {
   const [allOpen, setAllOpen] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(true);
 
   const mode = String(routeType).toLowerCase() === "international" ? "international" : "domestic";
   const stages = mode === "international" ? INTERNATIONAL_PROFESSIONAL_STAGES : DOMESTIC_PROFESSIONAL_STAGES;
@@ -333,6 +328,35 @@ export function AgencyTimelineAndCourierPanels({
         </dl>
       </div>
 
+      {mode === "international" ? (
+        <InternationalStaffFlowReference defaultOpen={false} className="overflow-hidden" />
+      ) : null}
+
+      <div className="rounded-xl border border-border-strong bg-surface-elevated/60 p-4">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
+          Full shipment timeline (customer Track)
+        </h4>
+        <p className="mt-1 text-[11px] leading-relaxed text-muted-soft">
+          All macro steps in order (newest at top): <strong className="text-ink">Completed</strong>, then{" "}
+          <strong className="text-ink">Latest update</strong>, then <strong className="text-ink">Upcoming</strong>.
+          Matches what you ship on public tracking after saves.
+        </p>
+        <div className="mt-3 rounded-lg border border-border bg-canvas/40 p-3">
+          <ProfessionalTrackingTimeline
+            status={st as BookingStatusId}
+            routeType={mode}
+            updatedAt={updatedAtIso}
+            latestNote={publicTrackingNote}
+            ctx={ctx}
+            timelineOverrides={publicTimelineOverrides ?? null}
+            publicTimelineStatusPath={publicTimelineStatusPath ?? null}
+            publicTimelineStepVisibility={publicTimelineStepVisibility ?? null}
+            internationalAgencyStage={internationalAgencyStage}
+            showAllStages
+          />
+        </div>
+      </div>
+
       <div className="rounded-xl border border-teal/20 bg-teal/5 p-4 dark:bg-teal/10">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
           Current timeline step
@@ -353,6 +377,7 @@ export function AgencyTimelineAndCourierPanels({
           </p>
         </div>
         <AgencyTimelineStepForm
+          key={`${bookingId}-${mode}-${stageIndex}-${JSON.stringify(currentOverrideSnap ?? null)}`}
           bookingId={bookingId}
           mode={mode}
           stepIndex={stageIndex}
@@ -412,6 +437,7 @@ export function AgencyTimelineAndCourierPanels({
                       </summary>
                       <div className="border-t border-border-strong/80 px-3 pb-3">
                         <AgencyTimelineStepForm
+                          key={`${bookingId}-${mode}-${index}-${JSON.stringify(snap ?? null)}`}
                           bookingId={bookingId}
                           mode={mode}
                           stepIndex={index}
@@ -451,6 +477,7 @@ export function AgencyTimelineAndCourierPanels({
                     publicTimelineStatusPath={publicTimelineStatusPath ?? null}
                     publicTimelineStepVisibility={publicTimelineStepVisibility ?? null}
                     internationalAgencyStage={internationalAgencyStage}
+                    showAllStages
                   />
                 </div>
               ) : null}

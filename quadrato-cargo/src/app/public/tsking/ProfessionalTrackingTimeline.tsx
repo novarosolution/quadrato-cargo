@@ -138,6 +138,12 @@ export type ProfessionalTrackingTimelineProps = {
   publicTimelineStepVisibility?: PublicTimelineStepVisibility | null;
   /** International: optional 0–11 override for which timeline card is current (agency/admin). */
   internationalAgencyStage?: number | null;
+  /**
+   * Admin/agency preview: list every macro step (12 intl / 5 domestic), newest first.
+   * Past steps = Completed, current = Latest update, future = Upcoming. Ignores status path.
+   * Customer-facing pages should leave this false (default).
+   */
+  showAllStages?: boolean;
 };
 
 export function ProfessionalTrackingTimeline({
@@ -150,6 +156,7 @@ export function ProfessionalTrackingTimeline({
   publicTimelineStatusPath = null,
   publicTimelineStepVisibility = null,
   internationalAgencyStage = null,
+  showAllStages = false,
 }: ProfessionalTrackingTimelineProps) {
   const isInternational = routeType === "international";
   const stages = isInternational ? INTERNATIONAL_PROFESSIONAL_STAGES : DOMESTIC_PROFESSIONAL_STAGES;
@@ -161,16 +168,25 @@ export function ProfessionalTrackingTimeline({
   const isCancelled = status === "cancelled";
   const isOnHold = status === "on_hold";
   const mode = isInternational ? "international" : "domestic";
-  const fromPath = buildProfessionalTimelineSegmentsFromStatusPath(publicTimelineStatusPath, mode);
-  const ladder = buildProfessionalTimelineSegments(currentIdx, mode);
-  let segments = fromPath ?? ladder;
-  if (fromPath && !fromPath.some((s) => s.index === currentIdx)) {
-    segments = [{ kind: "stage" as const, index: currentIdx }, ...fromPath];
-  }
 
-  segments = segments.filter((seg) =>
-    customerSeesTimelineStep(publicTimelineStepVisibility, mode, seg.index, currentIdx),
-  );
+  let segments;
+  if (showAllStages) {
+    const n = stages.length;
+    segments = Array.from({ length: n }, (_, i) => n - 1 - i).map((index) => ({
+      kind: "stage" as const,
+      index,
+    }));
+  } else {
+    const fromPath = buildProfessionalTimelineSegmentsFromStatusPath(publicTimelineStatusPath, mode);
+    const ladder = buildProfessionalTimelineSegments(currentIdx, mode);
+    segments = fromPath ?? ladder;
+    if (fromPath && !fromPath.some((s) => s.index === currentIdx)) {
+      segments = [{ kind: "stage" as const, index: currentIdx }, ...fromPath];
+    }
+    segments = segments.filter((seg) =>
+      customerSeesTimelineStep(publicTimelineStepVisibility, mode, seg.index, currentIdx),
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -186,7 +202,12 @@ export function ProfessionalTrackingTimeline({
             const def = stages[stageIndex];
             if (!def) return null;
 
-            const actuallyLatest = seg.kind === "stage" && i === 0;
+            const isUpcoming =
+              showAllStages && !isCancelled && stageIndex > currentIdx;
+            const actuallyLatest =
+              seg.kind === "stage" &&
+              !isCancelled &&
+              (showAllStages ? stageIndex === currentIdx : i === 0);
             const isExceptionCard =
               isOnHold &&
               ((isInternational && stageIndex === 10) || (!isInternational && stageIndex === 3));
@@ -202,23 +223,28 @@ export function ProfessionalTrackingTimeline({
                 ? o.shownAt.trim()
                 : updatedAt;
 
-            const completed = !actuallyLatest && !isCancelled;
-            const showStageTime = actuallyLatest || completed;
+            const completed =
+              !isCancelled && !actuallyLatest && !isUpcoming;
+            const showStageTime = actuallyLatest || completed || isUpcoming;
 
             return (
               <li key={`${def.id}-${stageIndex}-${i}`} className="relative">
                 <div
                   className={[
                     "absolute -left-[21px] top-5 z-1 flex size-6 items-center justify-center rounded-full border-2 shadow-sm",
-                    isExceptionCard && actuallyLatest
-                      ? "border-amber-500 bg-amber-500 text-white"
-                      : completed || actuallyLatest
-                        ? "border-teal bg-teal text-slate-950"
-                        : "border-border bg-canvas text-muted",
+                    isUpcoming
+                      ? "border-border-strong border-dashed bg-canvas text-muted"
+                      : isExceptionCard && actuallyLatest
+                        ? "border-amber-500 bg-amber-500 text-white"
+                        : completed || actuallyLatest
+                          ? "border-teal bg-teal text-slate-950"
+                          : "border-border bg-canvas text-muted",
                   ].join(" ")}
                   aria-hidden
                 >
-                  {isExceptionCard && actuallyLatest ? (
+                  {isUpcoming ? (
+                    <span className="size-2 rounded-full bg-muted-soft/80" />
+                  ) : isExceptionCard && actuallyLatest ? (
                     <AlertTriangle className="size-3.5 stroke-[2.5]" />
                   ) : completed || actuallyLatest ? (
                     <Check className="size-3.5 stroke-3" />
@@ -230,11 +256,13 @@ export function ProfessionalTrackingTimeline({
                 <article
                   className={[
                     "rounded-2xl border bg-canvas p-4 shadow-sm transition-colors",
-                    actuallyLatest
-                      ? "border-teal/40 bg-linear-to-br from-teal-dim to-canvas ring-1 ring-teal/25"
-                      : isExceptionCard
-                        ? "border-amber-500/50 bg-amber-500/10 ring-1 ring-amber-500/20"
-                        : "border-border",
+                    isUpcoming
+                      ? "border-border-strong/80 border-dashed bg-canvas/50 opacity-95"
+                      : actuallyLatest
+                        ? "border-teal/40 bg-linear-to-br from-teal-dim to-canvas ring-1 ring-teal/25"
+                        : isExceptionCard
+                          ? "border-amber-500/50 bg-amber-500/10 ring-1 ring-amber-500/20"
+                          : "border-border",
                   ].join(" ")}
                 >
                   <div className="flex flex-wrap items-start gap-3">
@@ -259,6 +287,10 @@ export function ProfessionalTrackingTimeline({
                           <span className="rounded-full border border-border-strong bg-pill px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-soft">
                             Completed
                           </span>
+                        ) : isUpcoming ? (
+                          <span className="rounded-full border border-border-strong bg-canvas px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-soft">
+                            Upcoming
+                          </span>
                         ) : null}
                       </div>
                       <p className="flex items-start gap-1.5 text-sm font-semibold text-ink">
@@ -276,7 +308,11 @@ export function ProfessionalTrackingTimeline({
                       ) : null}
                       <p className="flex items-center gap-1.5 font-sans text-sm font-bold text-ink">
                         <Clock className="size-3.5 shrink-0 text-teal" aria-hidden />
-                        {showStageTime ? formatTrackingTimestamp(stageTimeIso) : "—"}
+                        {isUpcoming
+                          ? "—"
+                          : showStageTime
+                            ? formatTrackingTimestamp(stageTimeIso)
+                            : "—"}
                       </p>
                     </div>
                   </div>

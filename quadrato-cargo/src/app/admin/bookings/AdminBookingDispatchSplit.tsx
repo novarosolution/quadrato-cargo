@@ -124,17 +124,6 @@ export function AdminBookingDispatchSplit({
     if (state?.ok === true) router.refresh();
   }, [state?.ok, router]);
 
-  useEffect(() => {
-    setIntlAgencyStage(
-      internationalAgencyStage != null &&
-        Number.isInteger(internationalAgencyStage) &&
-        internationalAgencyStage >= 0 &&
-        internationalAgencyStage < 12
-        ? String(internationalAgencyStage)
-        : "",
-    );
-  }, [internationalAgencyStage]);
-
   const quickStatuses = useMemo(
     () =>
       routeType === "domestic"
@@ -308,8 +297,9 @@ export function AdminBookingDispatchSplit({
                         ))}
                       </select>
                       <p className="mt-1.5 text-[11px] text-muted-soft">
-                        Overrides which of the 12 international steps is highlighted on customer Track. Clear to
-                        follow status again.
+                        Macros <strong className="text-ink">0–11</strong> match the customer timeline and the{" "}
+                        <strong className="text-ink">International professional flow</strong> checklist on this page.
+                        Clear to follow shipment status again.
                       </p>
                     </AdminFormField>
                   ) : null}

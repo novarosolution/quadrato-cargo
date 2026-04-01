@@ -7,6 +7,7 @@ import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminTimelineQuickCardForm } from "../../AdminTimelineQuickCardForm";
 import { AdminTimelineNextStepForm } from "../../AdminTimelineNextStepForm";
 import { AdminCustomerTimelineForm } from "../../AdminCustomerTimelineForm";
+import { InternationalStaffFlowReference } from "@/components/tracking/InternationalStaffFlowReference";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -73,13 +74,33 @@ export default async function AdminBookingTimelinePage({ params }: Props) {
             <strong className="text-ink">Status</strong> — change shipment status on the main booking page under{" "}
             <strong className="text-ink">Status, notes &amp; dates</strong>, then return here to edit cards.
           </li>
+          {row.routeType === "international" ? (
+            <li>
+              <strong className="text-ink">International macros</strong> — use{" "}
+              <a href="#intl-flow-reference" className="font-medium text-teal underline-offset-2 hover:underline">
+                professional flow checklist (0–11)
+              </a>{" "}
+              to match pickup → export → air → import → last mile and exceptions.
+            </li>
+          ) : null}
         </ul>
       </div>
+
+      {row.routeType === "international" ? (
+        <div id="intl-flow-reference" className="scroll-mt-28">
+          <InternationalStaffFlowReference defaultOpen />
+        </div>
+      ) : null}
 
       <nav
         aria-label="Sections on this page"
         className="flex flex-wrap gap-2 border-b border-border-strong pb-3"
       >
+        {row.routeType === "international" ? (
+          <a href="#intl-flow-reference" className={jumpClass}>
+            Int&apos;l flow (0–11)
+          </a>
+        ) : null}
         <a href="#timeline-current" className={jumpClass}>
           Current card
         </a>

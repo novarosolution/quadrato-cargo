@@ -19,17 +19,17 @@ export type InternationalTrackingPhase = {
 export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
   {
     key: "pickup_origin",
-    title: "Pickup stage (origin – Rajkot)",
+    title: "Pickup stage (Origin – Rajkot)",
     steps: [
       {
         id: "intl_shipment_created",
         label: "Shipment created",
-        hint: "Your booking is registered and labels are being prepared.",
+        hint: "Booking registered; labels and documentation are being prepared.",
       },
       {
         id: "intl_pickup_scheduled",
         label: "Pickup scheduled",
-        hint: "A pickup window has been assigned for Rajkot.",
+        hint: "Pickup window assigned for the origin (e.g. Rajkot) area.",
       },
       {
         id: "intl_shipment_picked_up",
@@ -39,7 +39,7 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       {
         id: "intl_picked_up_rajkot",
         label: "Picked up – Rajkot",
-        hint: "Parcel confirmed at origin city.",
+        hint: "Parcel confirmed at origin city / first scan.",
       },
     ],
   },
@@ -55,12 +55,12 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       {
         id: "intl_processed_origin_rajkot",
         label: "Shipment processed at origin facility",
-        hint: "Sorted and prepared for linehaul to the next hub.",
+        hint: "Sorted and prepared for linehaul to the next facility.",
       },
       {
         id: "intl_departed_rajkot",
         label: "Departed from facility – Rajkot",
-        hint: "Dispatched toward Ahmedabad / Mumbai corridor.",
+        hint: "Dispatched toward Ahmedabad / Mumbai domestic corridor.",
       },
     ],
   },
@@ -97,22 +97,22 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       {
         id: "intl_arrived_export_mumbai",
         label: "Arrived at export hub – Mumbai",
-        hint: "Received at international gateway.",
+        hint: "Received at international export gateway (Mumbai / Delhi as routed).",
       },
       {
         id: "intl_received_gateway",
         label: "Shipment received at gateway",
-        hint: "Export documentation and screening queue.",
+        hint: "Export documentation, screening, and carrier acceptance queue.",
       },
       {
         id: "intl_security_complete",
         label: "Security check completed",
-        hint: "Screening cleared per carrier and customs rules.",
+        hint: "Security screening completed per carrier and regulatory rules.",
       },
       {
         id: "intl_handed_customs_export",
         label: "Handed over to customs",
-        hint: "With Indian export customs for clearance.",
+        hint: "Tendered to Indian export customs for clearance.",
       },
     ],
   },
@@ -149,7 +149,7 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       {
         id: "intl_in_transit_air",
         label: "In transit (air cargo)",
-        hint: "Mid-air / connection legs toward destination.",
+        hint: "International air segment; connections toward destination country.",
       },
       {
         id: "intl_arrived_usa",
@@ -196,13 +196,13 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       {
         id: "intl_in_transit_delivery_loc",
         label: "In transit to delivery location",
-        hint: "On vehicle toward delivery address.",
+        hint: "Moving on domestic network toward the delivery address.",
       },
     ],
   },
   {
     key: "last_mile",
-    title: "Last-mile delivery",
+    title: "Last mile delivery",
     steps: [
       {
         id: "intl_out_for_delivery",
