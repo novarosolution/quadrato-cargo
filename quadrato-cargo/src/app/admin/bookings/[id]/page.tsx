@@ -426,15 +426,17 @@ export default async function AdminBookingDetailPage({ params }: Props) {
 
         <AdminCollapsible
           id="booking-track-preview"
-          title="Full shipment timeline (customer view)"
+          title="Timeline preview (staff — all steps)"
           defaultOpen
         >
           <p className="mb-3 text-sm text-muted-soft">
-            Same step-by-step layout as public Track: each row can show{" "}
-            <span className="font-medium text-ink">Completed</span>,{" "}
-            <span className="font-medium text-ink">Latest update</span>, or{" "}
-            <span className="font-medium text-ink">Upcoming</span>. Per-step text and times come from the Track
-            editor; status and international macro index drive which step is &ldquo;latest&rdquo;.
+            <span className="font-medium text-ink">International:</span> this preview lists all 12 macros
+            (including <span className="font-medium text-ink">Upcoming</span>).{" "}
+            <span className="font-medium text-ink">Public Track</span> only shows{" "}
+            <span className="font-medium text-ink">Completed</span> +{" "}
+            <span className="font-medium text-ink">Latest update</span> — no future steps.{" "}
+            <span className="font-medium text-ink">Domestic:</span> preview matches customer view. Per-step copy and
+            times come from the Track editor; status and macro index set the latest step.
           </p>
           <div className="rounded-xl border border-border-strong bg-canvas/30 p-3">
             <AdminBookingTrackPreview

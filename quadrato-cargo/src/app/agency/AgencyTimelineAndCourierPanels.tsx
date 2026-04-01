@@ -336,12 +336,20 @@ export function AgencyTimelineAndCourierPanels({
 
       <div className="rounded-xl border border-border-strong bg-surface-elevated/60 p-4">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
-          Full shipment timeline (customer Track)
+          Full timeline preview (staff)
         </h4>
         <p className="mt-1 text-[11px] leading-relaxed text-muted-soft">
-          All macro steps in order (newest at top): <strong className="text-ink">Completed</strong>, then{" "}
-          <strong className="text-ink">Latest update</strong>, then <strong className="text-ink">Upcoming</strong>.
-          Matches what you ship on public tracking after saves.
+          {mode === "international" ? (
+            <>
+              Shows all 12 macros including <strong className="text-ink">Upcoming</strong> — customers only see{" "}
+              <strong className="text-ink">Completed</strong> + <strong className="text-ink">Latest update</strong> on
+              public Track.
+            </>
+          ) : (
+            <>
+              All domestic macros including upcoming — matches customer-visible steps for domestic routes.
+            </>
+          )}
         </p>
         <div className="mt-3 rounded-lg border border-border bg-canvas/40 p-3">
           <ProfessionalTrackingTimeline

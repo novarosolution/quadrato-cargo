@@ -15,7 +15,7 @@ export type InternationalMacroStaffBlock = {
 };
 
 export const INTERNATIONAL_SMART_FEATURES_TIP =
-  "Customer Track always shows all 12 international macros (newest first): Completed, Latest update, then Upcoming — nothing is hidden by status history. “Show on Track” visibility applies to domestic only. Per-step time: Card time in the editor; otherwise latest card and macro 0 show a clock. EDD on booking page; public search via consignment or barcode.";
+  "Customer Track shows only completed steps plus Latest update (macros 0 through current) — no future Upcoming cards. Open the full 12-step preview below in admin/agency to plan ahead. Per-step time: Card time in the editor; otherwise latest card and macro 0 show a clock. EDD on booking page; public search via consignment or barcode.";
 
 export const INTERNATIONAL_MACRO_STAFF_REFERENCE: InternationalMacroStaffBlock[] = [
   {

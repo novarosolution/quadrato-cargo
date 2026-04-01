@@ -66,10 +66,15 @@ export default async function AdminBookingTimelinePage({ params }: Props) {
             <strong className="text-ink">Text</strong> — titles, locations, descriptions, times per step.
           </li>
           <li>
-            <strong className="text-ink">Visibility</strong> — <em>Domestic:</em> turn off{" "}
-            <em>Show on customer Track</em> to hide a step (current status step always stays visible).{" "}
-            <em>International:</em> customers always see all 12 macro cards; visibility checkboxes do not apply on
-            public Track.
+            <strong className="text-ink">Visibility</strong> — turn off <em>Show on customer Track</em> to hide a
+            step among those already reached (current macro always stays visible). Customers never see that
+            checkbox.
+          </li>
+          <li>
+            <strong className="text-ink">International vs preview</strong> — public Track lists only{" "}
+            <em>completed + latest</em> steps (no future “Upcoming” cards). Use the collapsible{" "}
+            <strong className="text-ink">International professional flow</strong> or booking preview to see all 12
+            macros including upcoming.
           </li>
           <li>
             <strong className="text-ink">Status</strong> — change shipment status on the main booking page under{" "}

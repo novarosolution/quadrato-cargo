@@ -136,7 +136,7 @@ export type ProfessionalTrackingTimelineProps = {
   timelineOverrides?: PublicTimelineOverrides | null;
   /** Domestic only: optional sparse list from recorded status transitions. Ignored for international. */
   publicTimelineStatusPath?: string[] | null;
-  /** Domestic only: hide steps from customer Track. International always shows all 12 macros (visibility ignored). */
+  /** Hide steps from customer Track (current macro always shown). Applies to domestic and international. */
   publicTimelineStepVisibility?: PublicTimelineStepVisibility | null;
   /** International: optional 0–11 override for which timeline card is current (agency/admin). */
   internationalAgencyStage?: number | null;
@@ -172,17 +172,20 @@ export function ProfessionalTrackingTimeline({
   const isOnHold = status === "on_hold";
   const mode = isInternational ? "international" : "domestic";
 
-  /** International (customer or staff preview): always list every macro 0–11 — newest first; past = Completed, current = Latest, future = Upcoming. */
-  const fullInternationalMacroList = isInternational;
-  const fullMacroTimeline = showAllStages || fullInternationalMacroList;
-
   let segments;
-  if (fullMacroTimeline) {
+  if (showAllStages) {
+    /** Admin/agency preview: all macros including future “Upcoming” rows. */
     const n = stages.length;
     segments = Array.from({ length: n }, (_, i) => n - 1 - i).map((index) => ({
       kind: "stage" as const,
       index,
     }));
+  } else if (isInternational) {
+    /** Customer international: only completed + current (macros 0..currentIdx). No future steps; ignore sparse status path. */
+    const ladder = buildProfessionalTimelineSegments(currentIdx, mode);
+    segments = ladder.filter((seg) =>
+      customerSeesTimelineStep(publicTimelineStepVisibility, mode, seg.index, currentIdx),
+    );
   } else {
     const ladder = buildProfessionalTimelineSegments(currentIdx, mode);
     const fromPath = buildProfessionalTimelineSegmentsFromStatusPath(publicTimelineStatusPath, mode);
@@ -210,11 +213,11 @@ export function ProfessionalTrackingTimeline({
             if (!def) return null;
 
             const isUpcoming =
-              fullMacroTimeline && !isCancelled && stageIndex > currentIdx;
+              showAllStages && !isCancelled && stageIndex > currentIdx;
             const actuallyLatest =
               seg.kind === "stage" &&
               !isCancelled &&
-              (fullMacroTimeline ? stageIndex === currentIdx : i === 0);
+              (showAllStages ? stageIndex === currentIdx : i === 0);
             const isExceptionCard =
               isOnHold &&
               ((isInternational && stageIndex === 10) || (!isInternational && stageIndex === 3));
