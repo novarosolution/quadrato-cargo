@@ -134,6 +134,8 @@ type Props = {
   routeType?: string;
   currentStatus: string;
   updatedAtIso: string;
+  /** Booking created (ISO); timeline first-step time when no per-card time set. */
+  bookedAtIso?: string;
   agencyHandoverVerifiedAt?: string | null;
   publicTrackingNote: string | null;
   senderAddress?: string | null;
@@ -156,6 +158,7 @@ export function AgencyJobControls({
   routeType = "domestic",
   currentStatus,
   updatedAtIso,
+  bookedAtIso,
   agencyHandoverVerifiedAt,
   publicTrackingNote,
   senderAddress = null,
@@ -306,6 +309,7 @@ export function AgencyJobControls({
         status={currentStatus}
         routeType={routeType}
         updatedAtIso={updatedAtIso}
+        bookedAtIso={bookedAtIso ?? updatedAtIso}
         publicTrackingNote={publicTrackingNote}
         senderAddress={senderAddress}
         recipientAddress={recipientAddress}

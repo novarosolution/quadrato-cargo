@@ -441,6 +441,7 @@ export default async function AdminBookingDetailPage({ params }: Props) {
               status={row.status}
               routeType={row.routeType}
               updatedAtIso={trackPreviewUpdatedIso}
+              bookedAtIso={row.createdAt.toISOString()}
               publicTrackingNote={row.publicTrackingNote ?? row.customerTrackingNote ?? null}
               senderAddress={senderAddressForTrack}
               recipientAddress={recipientAddressForTrack}

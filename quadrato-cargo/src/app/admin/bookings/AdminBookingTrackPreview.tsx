@@ -11,6 +11,7 @@ type Props = {
   status: string;
   routeType: string;
   updatedAtIso: string;
+  bookedAtIso: string;
   publicTrackingNote: string | null;
   senderAddress: string | null;
   recipientAddress: string | null;
@@ -29,6 +30,7 @@ export function AdminBookingTrackPreview({
   status,
   routeType,
   updatedAtIso,
+  bookedAtIso,
   publicTrackingNote,
   senderAddress,
   recipientAddress,
@@ -46,6 +48,7 @@ export function AdminBookingTrackPreview({
       status={st}
       routeType={mode}
       updatedAt={updatedAtIso}
+      bookedAtIso={bookedAtIso}
       latestNote={publicTrackingNote}
       ctx={{
         senderAddress,

@@ -66,9 +66,10 @@ export default async function AdminBookingTimelinePage({ params }: Props) {
             <strong className="text-ink">Text</strong> — titles, locations, descriptions, times per step.
           </li>
           <li>
-            <strong className="text-ink">Visibility</strong> — turn off <em>Show on customer Track</em> to hide a step.
-            Customers never see that checkbox. The step for <em>today&apos;s status</em> always stays visible so
-            the timeline is never empty.
+            <strong className="text-ink">Visibility</strong> — <em>Domestic:</em> turn off{" "}
+            <em>Show on customer Track</em> to hide a step (current status step always stays visible).{" "}
+            <em>International:</em> customers always see all 12 macro cards; visibility checkboxes do not apply on
+            public Track.
           </li>
           <li>
             <strong className="text-ink">Status</strong> — change shipment status on the main booking page under{" "}

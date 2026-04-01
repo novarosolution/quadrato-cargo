@@ -15,7 +15,7 @@ export type InternationalMacroStaffBlock = {
 };
 
 export const INTERNATIONAL_SMART_FEATURES_TIP =
-  "Per-step date & time: set Card time in the Track editor. EDD: booking page → Delivery date (EDD). Public search: customers use Track with consignment or barcode.";
+  "Customer Track always shows all 12 international macros (newest first): Completed, Latest update, then Upcoming — nothing is hidden by status history. “Show on Track” visibility applies to domestic only. Per-step time: Card time in the editor; otherwise latest card and macro 0 show a clock. EDD on booking page; public search via consignment or barcode.";
 
 export const INTERNATIONAL_MACRO_STAFF_REFERENCE: InternationalMacroStaffBlock[] = [
   {

@@ -173,6 +173,7 @@ export function AgencyIntakeTable({ rows, agencyIdentity }: Props) {
                             routeType={row.routeType}
                             currentStatus={row.status}
                             updatedAtIso={row.updatedAt}
+                            bookedAtIso={row.createdAt}
                             agencyHandoverVerifiedAt={row.agencyHandoverVerifiedAt}
                             publicTrackingNote={row.publicTrackingNote || row.trackingNotes}
                             senderAddress={row.senderAddress}

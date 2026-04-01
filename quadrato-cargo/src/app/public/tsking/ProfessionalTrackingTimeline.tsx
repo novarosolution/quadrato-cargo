@@ -128,13 +128,15 @@ export type ProfessionalTrackingTimelineProps = {
   status: BookingStatusId;
   routeType: "domestic" | "international";
   updatedAt: string;
+  /** ISO booking created; used for macro 0 time when a step has no `shownAt` (avoids every card showing the same `updatedAt`). */
+  bookedAtIso?: string | null;
   ctx: TrackingShipmentContext;
   latestNote?: string | null;
   /** When set, overrides default stage title, location line, hint, and optional per-card time. */
   timelineOverrides?: PublicTimelineOverrides | null;
-  /** Recorded status transitions; when present, timeline shows only those steps (not a filled ladder). */
+  /** Domestic only: optional sparse list from recorded status transitions. Ignored for international. */
   publicTimelineStatusPath?: string[] | null;
-  /** Admin: steps marked `false` are omitted here (current status step always shown). */
+  /** Domestic only: hide steps from customer Track. International always shows all 12 macros (visibility ignored). */
   publicTimelineStepVisibility?: PublicTimelineStepVisibility | null;
   /** International: optional 0–11 override for which timeline card is current (agency/admin). */
   internationalAgencyStage?: number | null;
@@ -150,6 +152,7 @@ export function ProfessionalTrackingTimeline({
   status,
   routeType,
   updatedAt,
+  bookedAtIso = null,
   ctx,
   latestNote = null,
   timelineOverrides = null,
@@ -169,21 +172,25 @@ export function ProfessionalTrackingTimeline({
   const isOnHold = status === "on_hold";
   const mode = isInternational ? "international" : "domestic";
 
+  /** International (customer or staff preview): always list every macro 0–11 — newest first; past = Completed, current = Latest, future = Upcoming. */
+  const fullInternationalMacroList = isInternational;
+  const fullMacroTimeline = showAllStages || fullInternationalMacroList;
+
   let segments;
-  if (showAllStages) {
+  if (fullMacroTimeline) {
     const n = stages.length;
     segments = Array.from({ length: n }, (_, i) => n - 1 - i).map((index) => ({
       kind: "stage" as const,
       index,
     }));
   } else {
-    const fromPath = buildProfessionalTimelineSegmentsFromStatusPath(publicTimelineStatusPath, mode);
     const ladder = buildProfessionalTimelineSegments(currentIdx, mode);
-    segments = fromPath ?? ladder;
+    const fromPath = buildProfessionalTimelineSegmentsFromStatusPath(publicTimelineStatusPath, mode);
+    let built = fromPath ?? ladder;
     if (fromPath && !fromPath.some((s) => s.index === currentIdx)) {
-      segments = [{ kind: "stage" as const, index: currentIdx }, ...fromPath];
+      built = [{ kind: "stage" as const, index: currentIdx }, ...fromPath];
     }
-    segments = segments.filter((seg) =>
+    segments = built.filter((seg) =>
       customerSeesTimelineStep(publicTimelineStepVisibility, mode, seg.index, currentIdx),
     );
   }
@@ -203,11 +210,11 @@ export function ProfessionalTrackingTimeline({
             if (!def) return null;
 
             const isUpcoming =
-              showAllStages && !isCancelled && stageIndex > currentIdx;
+              fullMacroTimeline && !isCancelled && stageIndex > currentIdx;
             const actuallyLatest =
               seg.kind === "stage" &&
               !isCancelled &&
-              (showAllStages ? stageIndex === currentIdx : i === 0);
+              (fullMacroTimeline ? stageIndex === currentIdx : i === 0);
             const isExceptionCard =
               isOnHold &&
               ((isInternational && stageIndex === 10) || (!isInternational && stageIndex === 3));
@@ -218,14 +225,32 @@ export function ProfessionalTrackingTimeline({
             const titleText = o?.title?.trim() || def.title;
             const location = o?.location?.trim() || defaultLocation;
             const hintText = o?.hint?.trim() || def.hint;
-            const stageTimeIso =
-              o?.shownAt?.trim() && !Number.isNaN(new Date(o.shownAt).getTime())
+            const overrideTime =
+              o?.shownAt?.trim() && !Number.isNaN(new Date(o.shownAt.trim()).getTime())
                 ? o.shownAt.trim()
-                : updatedAt;
+                : null;
+            const bookedOk =
+              Boolean(bookedAtIso?.trim()) &&
+              !Number.isNaN(new Date(String(bookedAtIso).trim()).getTime());
 
             const completed =
               !isCancelled && !actuallyLatest && !isUpcoming;
-            const showStageTime = actuallyLatest || completed || isUpcoming;
+
+            let clockLabel: string;
+            if (isUpcoming) {
+              clockLabel = "—";
+            } else if (overrideTime) {
+              clockLabel = formatTrackingTimestamp(overrideTime);
+            } else if (actuallyLatest) {
+              clockLabel = formatTrackingTimestamp(updatedAt);
+            } else if (completed) {
+              clockLabel =
+                stageIndex === 0 && bookedOk
+                  ? formatTrackingTimestamp(String(bookedAtIso).trim())
+                  : "—";
+            } else {
+              clockLabel = "—";
+            }
 
             return (
               <li key={`${def.id}-${stageIndex}-${i}`} className="relative">
@@ -308,11 +333,7 @@ export function ProfessionalTrackingTimeline({
                       ) : null}
                       <p className="flex items-center gap-1.5 font-sans text-sm font-bold text-ink">
                         <Clock className="size-3.5 shrink-0 text-teal" aria-hidden />
-                        {isUpcoming
-                          ? "—"
-                          : showStageTime
-                            ? formatTrackingTimestamp(stageTimeIso)
-                            : "—"}
+                        {clockLabel}
                       </p>
                     </div>
                   </div>

@@ -379,6 +379,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                     status={normalized}
                     routeType="international"
                     updatedAt={data.updatedAt ?? data.createdAt}
+                    bookedAtIso={data.createdAt}
                     latestNote={data.publicTrackingNote || data.customerTrackingNote}
                     ctx={{
                       senderAddress: data.senderAddress,
@@ -398,6 +399,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                   status={normalized}
                   routeType="domestic"
                   updatedAt={data.updatedAt ?? data.createdAt}
+                  bookedAtIso={data.createdAt}
                   latestNote={data.publicTrackingNote || data.customerTrackingNote}
                   ctx={{
                     senderAddress: data.senderAddress,

@@ -232,6 +232,7 @@ type Props = {
   status: string;
   routeType: string;
   updatedAtIso: string;
+  bookedAtIso?: string;
   publicTrackingNote: string | null;
   senderAddress: string | null;
   recipientAddress: string | null;
@@ -249,6 +250,7 @@ export function AgencyTimelineAndCourierPanels({
   status,
   routeType,
   updatedAtIso,
+  bookedAtIso = updatedAtIso,
   publicTrackingNote,
   senderAddress,
   recipientAddress,
@@ -346,6 +348,7 @@ export function AgencyTimelineAndCourierPanels({
             status={st as BookingStatusId}
             routeType={mode}
             updatedAt={updatedAtIso}
+            bookedAtIso={bookedAtIso}
             latestNote={publicTrackingNote}
             ctx={ctx}
             timelineOverrides={publicTimelineOverrides ?? null}
@@ -471,6 +474,7 @@ export function AgencyTimelineAndCourierPanels({
                     status={st as BookingStatusId}
                     routeType={mode}
                     updatedAt={updatedAtIso}
+                    bookedAtIso={bookedAtIso}
                     latestNote={publicTrackingNote}
                     ctx={ctx}
                     timelineOverrides={publicTimelineOverrides ?? null}
