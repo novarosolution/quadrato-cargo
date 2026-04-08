@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { adminUi } from "@/components/admin/admin-ui";
-import { getApiBaseUrl } from "@/lib/api/base-url";
-import { csrfHeaderRecord } from "@/lib/api/csrf-headers";
+import { adminLogout } from "@/app/admin/login/actions";
 
 export function AdminLogoutButton({ className = "" }: { className?: string }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -11,15 +10,7 @@ export function AdminLogoutButton({ className = "" }: { className?: string }) {
   async function onLogout() {
     setIsLoggingOut(true);
     try {
-      await fetch(`${getApiBaseUrl()}/api/admin/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...csrfHeaderRecord(),
-        },
-        body: "{}",
-      });
+      await adminLogout();
     } finally {
       setIsLoggingOut(false);
       window.location.assign("/admin/login");

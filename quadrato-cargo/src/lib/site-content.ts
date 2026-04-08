@@ -17,6 +17,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
+import { telHref } from "@/lib/tel-href";
 
 export const homeHeroCardData = [
   {
@@ -224,7 +225,7 @@ export function buildContactDispatchSidebarItems(params: {
       id: "phone",
       label: "Phone",
       body: phone,
-      href: `tel:${phone.replace(/\s/g, "")}`,
+      href: telHref(phone),
       Icon: Phone,
     },
     {

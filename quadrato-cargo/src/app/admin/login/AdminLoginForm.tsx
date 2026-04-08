@@ -28,7 +28,7 @@ export function AdminLoginForm() {
           type="email"
           autoComplete="username"
           required
-          className="mt-1.5 w-full rounded-xl border border-border-strong bg-canvas px-4 py-3 text-ink"
+          className="mt-1.5 w-full rounded-xl border border-border-strong bg-canvas px-4 py-3 text-base text-ink"
         />
       </div>
       <div>
@@ -41,13 +41,13 @@ export function AdminLoginForm() {
           type="password"
           autoComplete="current-password"
           required
-          className="mt-1.5 w-full rounded-xl border border-border-strong bg-canvas px-4 py-3 text-ink"
+          className="mt-1.5 w-full rounded-xl border border-border-strong bg-canvas px-4 py-3 text-base text-ink"
         />
       </div>
       <button
         type="submit"
         disabled={pending}
-        className="btn-primary w-full rounded-xl py-3 text-sm font-semibold disabled:opacity-50"
+        className="btn-primary w-full rounded-xl py-3 text-base font-semibold disabled:opacity-50 sm:text-sm"
       >
         {pending ? "Signing in…" : "Sign in"}
       </button>

@@ -14,6 +14,7 @@ import { useMotionPreferences } from "@/lib/motion-preferences";
 import { QuadratoBrandLogo } from "@/components/QuadratoBrandLogo";
 import { authNav, mainNav } from "@/lib/nav";
 import { siteName } from "@/lib/site";
+import { telHref } from "@/lib/tel-href";
 
 const footerLinkClass =
   "text-sm font-medium text-muted transition hover:text-teal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal";
@@ -223,7 +224,7 @@ export function Footer({ initialSiteSettings = null }: FooterProps) {
                   <dd className="mt-1 text-muted">
                     {siteSettings ? (
                       <a
-                        href={`tel:${siteSettings.pdfSupportPhone.replace(/\s/g, "")}`}
+                        href={telHref(siteSettings.pdfSupportPhone)}
                         className="transition hover:text-teal"
                       >
                         {siteSettings.pdfSupportPhone}
