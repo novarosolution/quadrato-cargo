@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { adminUi } from "./admin-ui";
 
 type Props = {
   label: string;
@@ -8,11 +9,12 @@ type Props = {
   children: ReactNode;
 };
 
-const inputClass =
-  "w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25";
-
 export function adminInputClassName() {
-  return inputClass;
+  return adminUi.input;
+}
+
+export function adminSelectClassName() {
+  return adminUi.selectMt;
 }
 
 /**
@@ -21,10 +23,7 @@ export function adminInputClassName() {
 export function AdminFormField({ label, htmlFor, hint, className = "", children }: Props) {
   return (
     <div className={className}>
-      <label
-        htmlFor={htmlFor}
-        className="block text-xs font-semibold uppercase tracking-wide text-muted-soft"
-      >
+      <label htmlFor={htmlFor} className={adminUi.labelBlock}>
         {label}
       </label>
       {hint ? <p className="mt-1 text-xs text-muted-soft">{hint}</p> : null}

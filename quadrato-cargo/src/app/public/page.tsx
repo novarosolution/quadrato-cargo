@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { HomeView } from "@/components/home/HomeMain";
+import HomeView from "@/components/home/HomeMain";
 import { siteDescription, siteName } from "@/lib/site";
 
 export const metadata: Metadata = {

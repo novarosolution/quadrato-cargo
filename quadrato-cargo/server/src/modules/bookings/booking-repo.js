@@ -133,6 +133,26 @@ const COURIER_OPEN_STATUSES = new Set([
   "out_for_pickup"
 ]);
 
+/**
+ * Link legacy guest rows (userId null) to this account when sender email matches.
+ * Lets one customer see every shipment after they log in, even if some were booked logged out.
+ */
+export async function backfillGuestBookingsToUserId(userId, userEmail = "") {
+  const db = await getDb();
+  if (!ObjectId.isValid(userId)) return 0;
+  const normalizedEmail = String(userEmail || "").trim().toLowerCase();
+  if (!normalizedEmail) return 0;
+  const emailRegex = `^${escapeRegex(normalizedEmail)}$`;
+  const result = await db.collection(BOOKINGS).updateMany(
+    {
+      userId: null,
+      "payload.sender.email": { $regex: emailRegex, $options: "i" }
+    },
+    { $set: { userId: new ObjectId(userId), updatedAt: new Date() } }
+  );
+  return Number(result.modifiedCount || 0);
+}
+
 export async function listBookingsByUserId(
   userId,
   userEmail = "",
@@ -157,15 +177,8 @@ export async function listBookingsByUserId(
     });
   }
 
-  // Optional backfill for legacy guest bookings by sender email.
   if (shouldBackfill && normalizedEmail) {
-    await db.collection(BOOKINGS).updateMany(
-      {
-        userId: null,
-        "payload.sender.email": { $regex: emailRegex, $options: "i" }
-      },
-      { $set: { userId: new ObjectId(userId), updatedAt: new Date() } }
-    );
+    await backfillGuestBookingsToUserId(userId, userEmail);
   }
 
   const projection = useSummary
@@ -180,6 +193,10 @@ export async function listBookingsByUserId(
         userId: 1,
         createdAt: 1,
         updatedAt: 1,
+        estimatedDeliveryAt: 1,
+        publicTrackingNote: 1,
+        customerDisplayCreatedAt: 1,
+        customerDisplayUpdatedAt: 1,
         "payload.sender": 1,
         "payload.recipient": 1
       }

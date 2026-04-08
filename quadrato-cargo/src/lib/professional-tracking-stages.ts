@@ -5,17 +5,57 @@ import {
   legacyInternationalFlatIndexToMacroSub,
 } from "@/lib/international-tracking-flow";
 
+/** Fallback when site settings / API omit main hub (matches server default). */
+export const DEFAULT_DOMESTIC_MAIN_HUB_CITY = "Quadrato Cargo";
+
 export type TrackingShipmentContext = {
   senderAddress: string | null;
   recipientAddress: string | null;
   agencyName: string | null;
+  /** Hub city for public timeline (never full street address). */
+  agencyCity: string | null;
+  /** Main network / sort hub for domestic linehaul copy (site setting). */
+  domesticMainHubCity: string | null;
+  /** Booking sender city when available (fallback copy). */
+  fromCity?: string | null;
+  /** Booking recipient city when available (fallback copy). */
+  toCity?: string | null;
+  /** Pickup / origin country label from booking (international route copy). */
+  senderCountry?: string | null;
+  /** Delivery / destination country label from booking (international route copy). */
+  recipientCountry?: string | null;
+  /** Shown on pickup-stage location lines when a courier is assigned. */
+  courierName?: string | null;
 };
+
+function routeCountryLine(value: string | null | undefined, fallback: string): string {
+  const t = String(value ?? "").trim();
+  return t || fallback;
+}
 
 export type ProfessionalStageDef = {
   id: string;
   title: string;
   hint: string;
 };
+
+/** International macro index for the `origin_hub` phase (“Origin processing …”). */
+export const INTERNATIONAL_ORIGIN_PROCESSING_MACRO_INDEX = 1;
+
+/**
+ * When an agency is assigned, macro 1 defaults to “Origin processing (Agency name)” instead of the
+ * static catalog title (agency hub).
+ */
+export function defaultInternationalStageTitle(
+  stageIndex: number,
+  staticTitle: string,
+  agencyName: string | null | undefined,
+): string {
+  if (stageIndex !== INTERNATIONAL_ORIGIN_PROCESSING_MACRO_INDEX) return staticTitle;
+  const n = String(agencyName ?? "").trim();
+  if (!n) return staticTitle;
+  return `Origin processing (${n})`;
+}
 
 /**
  * Twelve-slot international flow: phases from {@link INTERNATIONAL_TRACKING_PHASES},
@@ -128,23 +168,37 @@ export function internationalHubLocation(
   stageIndex: number,
   ctx: TrackingShipmentContext,
 ): string {
+  const hub = ctx.domesticMainHubCity?.trim() || DEFAULT_DOMESTIC_MAIN_HUB_CITY;
+  const ac = ctx.agencyCity?.trim() || null;
+  const fc = ctx.fromCity?.trim() || null;
+  const tc = ctx.toCity?.trim() || null;
+  const originCountry = routeCountryLine(ctx.senderCountry, fc ? `${fc} (origin)` : "Origin country");
+  const destCountry = routeCountryLine(ctx.recipientCountry, tc ? `${tc} (destination)` : "Destination country");
   switch (stageIndex) {
-    case 0:
-      return ctx.senderAddress || "Rajkot · pickup zone";
+    case 0: {
+      const base =
+        ctx.senderAddress ||
+        (fc ? `${fc} · pickup zone` : ac ? `${ac} · service area` : "Pickup zone");
+      const cn = ctx.courierName?.trim();
+      if (cn) return `${cn} · collecting from ${base}`;
+      return base;
+    }
     case 1:
-      return "Rajkot origin facility";
-    case 2:
-      return "Ahmedabad / domestic linehaul";
+      return ac ? `${ac} origin hub` : ctx.agencyName ? `${ctx.agencyName} hub` : "Origin hub";
+    case 2: {
+      const origin = ac || fc || "Origin hub";
+      return `${origin} → ${hub}`;
+    }
     case 3:
-      return "Mumbai export gateway";
+      return `${originCountry} export gateway`;
     case 4:
-      return "India export customs";
+      return `${originCountry} export customs`;
     case 5:
-      return "International air cargo (India → USA)";
+      return `International air cargo (${originCountry} → ${destCountry})`;
     case 6:
-      return "USA import hub / gateway";
+      return `${destCountry} import hub / gateway`;
     case 7:
-      return ctx.agencyName || "USA destination hub";
+      return ctx.agencyName?.trim() || `${destCountry} destination hub`;
     case 8:
       return ctx.recipientAddress || "Out for delivery · recipient area";
     case 9:
@@ -159,13 +213,28 @@ export function internationalHubLocation(
 }
 
 export function domesticHubLocation(stageIndex: number, ctx: TrackingShipmentContext): string {
+  const hub = ctx.domesticMainHubCity?.trim() || DEFAULT_DOMESTIC_MAIN_HUB_CITY;
+  const ac = ctx.agencyCity?.trim() || null;
+  const fc = ctx.fromCity?.trim() || null;
   switch (stageIndex) {
-    case 0:
-      return ctx.senderAddress || "Pickup location";
-    case 1:
-      return ctx.agencyName || "Regional hub";
-    case 2:
-      return ctx.agencyName || "In transit";
+    case 0: {
+      const base =
+        ctx.senderAddress ||
+        (fc ? `${fc} · pickup` : ac ? `${ac} · booking area` : "Pickup location");
+      const cn = ctx.courierName?.trim();
+      if (cn) return `${cn} · collecting from ${base}`;
+      return base;
+    }
+    case 1: {
+      const name = ctx.agencyName?.trim();
+      if (name && ac) return `${name} · ${ac}`;
+      if (ac) return `${ac} hub`;
+      return name || "Regional hub";
+    }
+    case 2: {
+      const origin = ac || ctx.agencyName?.trim() || fc || "Regional hub";
+      return `${origin} → ${hub}`;
+    }
     case 3:
       return ctx.recipientAddress || "Delivery area";
     case 4:

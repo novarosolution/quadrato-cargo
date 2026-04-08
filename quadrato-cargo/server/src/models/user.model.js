@@ -5,6 +5,8 @@ export function toPublicUser(doc) {
     role === "agency" ? String(doc.agencyAddress ?? "").trim() || null : null;
   const agencyPhone =
     role === "agency" ? String(doc.agencyPhone ?? "").trim() || null : null;
+  const agencyCity =
+    role === "agency" ? String(doc.agencyCity ?? "").trim() || null : null;
   return {
     id: String(doc._id),
     email: doc.email ?? "",
@@ -16,7 +18,8 @@ export function toPublicUser(doc) {
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
     agencyAddress,
-    agencyPhone
+    agencyPhone,
+    agencyCity
   };
 }
 
@@ -26,7 +29,8 @@ export function createUserDoc({
   passwordHash,
   role = "customer",
   agencyAddress = null,
-  agencyPhone = null
+  agencyPhone = null,
+  agencyCity = null
 }) {
   const now = new Date();
   const doc = {
@@ -46,8 +50,10 @@ export function createUserDoc({
   if (role === "agency") {
     const addr = agencyAddress != null ? String(agencyAddress).trim().slice(0, 500) : "";
     const phone = agencyPhone != null ? String(agencyPhone).trim().slice(0, 40) : "";
+    const city = agencyCity != null ? String(agencyCity).trim().slice(0, 80) : "";
     doc.agencyAddress = addr || null;
     doc.agencyPhone = phone || null;
+    doc.agencyCity = city || null;
   }
   return doc;
 }

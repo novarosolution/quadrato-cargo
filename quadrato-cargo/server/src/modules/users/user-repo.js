@@ -99,6 +99,10 @@ export async function updateAgencyPartnerProfile(userId, fields) {
     const p = String(fields.agencyPhone ?? "").trim();
     $set.agencyPhone = p ? p.slice(0, 40) : null;
   }
+  if (fields.agencyCity !== undefined) {
+    const c = String(fields.agencyCity ?? "").trim();
+    $set.agencyCity = c ? c.slice(0, 80) : null;
+  }
   const res = await db.collection(USERS).updateOne({ _id, role: "agency" }, { $set });
   if (res.matchedCount === 0) return null;
   return db.collection(USERS).findOne({ _id });

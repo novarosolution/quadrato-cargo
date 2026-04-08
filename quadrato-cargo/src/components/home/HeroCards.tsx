@@ -80,7 +80,7 @@ export function HeroVisual() {
             }}
             whileHover={canAnimateHover ? { y: -5, scale: 1.02, transition: springSoft } : undefined}
             className={[
-              "glass-panel transform-gpu rounded-2xl border p-4 shadow-xl transition-shadow duration-300",
+              "glass-panel transform-gpu rounded-3xl border p-5 shadow-xl transition-shadow duration-300",
               card.tone === "teal" && "border-teal/25 hover:border-teal/40 hover:shadow-teal/10",
               card.tone === "accent" && "border-accent/25 hover:border-accent/40 hover:shadow-accent/10",
               card.tone === "muted" && "border-border-strong hover:border-border",

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Download } from "lucide-react";
 import { fetchAdminOverview, fetchAdminSiteSettings } from "@/lib/api/admin-server";
 import { AdminDatabaseError } from "../dashboard/DbError";
+import { AdminPageBody, AdminPanel } from "@/components/admin/AdminPrimitives";
+import { adminUi } from "@/components/admin/admin-ui";
 import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminSiteSettingsForm } from "./SiteSettings";
 
@@ -31,16 +33,13 @@ export default async function AdminDataPage() {
   const { userCount, contactCount, bookingCount } = res.snapshot;
 
   return (
-    <div className="stack-page content-narrow gap-10 max-sm:gap-8">
-      <AdminPageHeader
-        title="Settings"
-        description="Public contact info, site banner, PDF branding, exports."
-      />
+    <AdminPageBody narrow>
+      <AdminPageHeader title="Settings" description="Site copy, branding, and exports." />
 
       <AdminSiteSettingsForm initialSettings={settingsRes.settings} />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-border-strong bg-surface-elevated/60 p-6">
+        <div className={adminUi.statTile}>
           <p className="text-sm font-medium text-muted-soft">Users</p>
           <p className="mt-2 font-display text-3xl font-semibold text-ink">
             {userCount}
@@ -52,7 +51,7 @@ export default async function AdminDataPage() {
             Manage users →
           </Link>
         </div>
-        <div className="rounded-2xl border border-border-strong bg-surface-elevated/60 p-6">
+        <div className={adminUi.statTile}>
           <p className="text-sm font-medium text-muted-soft">Contacts</p>
           <p className="mt-2 font-display text-3xl font-semibold text-teal">
             {contactCount}
@@ -64,7 +63,7 @@ export default async function AdminDataPage() {
             Manage contacts →
           </Link>
         </div>
-        <div className="rounded-2xl border border-border-strong bg-surface-elevated/60 p-6">
+        <div className={adminUi.statTile}>
           <p className="text-sm font-medium text-muted-soft">Bookings</p>
           <p className="mt-2 font-display text-3xl font-semibold text-accent">
             {bookingCount}
@@ -78,12 +77,9 @@ export default async function AdminDataPage() {
         </div>
       </div>
 
-      <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
-        <h2 className="font-display text-lg font-semibold">CSV export</h2>
-        <p className="mt-2 text-sm text-muted">
-          You must be signed in to admin. Each link downloads a UTF-8 CSV (opens in
-          Excel or Sheets).
-        </p>
+      <AdminPanel as="section">
+        <h2 className={adminUi.sectionTitle}>CSV export</h2>
+        <p className="mt-1 text-xs text-muted-soft">Signed-in admin only. UTF-8 CSV.</p>
         <ul className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <li>
             <Link
@@ -116,13 +112,11 @@ export default async function AdminDataPage() {
             </Link>
           </li>
         </ul>
-      </section>
+      </AdminPanel>
 
-      <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
-        <h2 className="font-display text-lg font-semibold">Quick filters</h2>
-        <p className="mt-2 text-sm text-muted">
-          Jump to list views with common filters (search &amp; edit on each row).
-        </p>
+      <AdminPanel as="section">
+        <h2 className={adminUi.sectionTitle}>Quick filters</h2>
+        <p className="mt-1 text-xs text-muted-soft">Saved list views.</p>
         <ul className="mt-4 flex flex-col gap-2 text-sm">
           <li>
             <Link
@@ -137,7 +131,7 @@ export default async function AdminDataPage() {
               href="/admin/bookings?status=submitted"
               className="text-teal hover:underline"
             >
-              Bookings — Submitted (needs action)
+              Bookings — Submitted
             </Link>
           </li>
           <li>
@@ -150,16 +144,16 @@ export default async function AdminDataPage() {
           </li>
           <li>
             <Link href="/admin/users" className="text-teal hover:underline">
-              All users — search by name or email
+              Users — all
             </Link>
           </li>
           <li>
             <Link href="/admin/contacts" className="text-teal hover:underline">
-              All contacts — search full text
+              Contacts — all
             </Link>
           </li>
         </ul>
-      </section>
-    </div>
+      </AdminPanel>
+    </AdminPageBody>
   );
 }

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdminPageBody, AdminTableShell } from "@/components/admin/AdminPrimitives";
+import { adminUi } from "@/components/admin/admin-ui";
 import { AdminListFilters } from "@/components/admin/ListFilters";
 import { AdminPagination } from "@/components/admin/Pager";
 import { fetchAdminContacts } from "@/lib/api/admin-server";
@@ -37,8 +39,8 @@ export default async function AdminContactsPage({ searchParams }: Props) {
   const subtitle = `${total} message${total === 1 ? "" : "s"}${q ? ` matching “${q}”` : ""}${totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}`;
 
   return (
-    <div className="stack-page content-wide">
-      <AdminPageHeader title="Contact messages" description={subtitle} />
+    <AdminPageBody>
+      <AdminPageHeader title="Contacts" description={subtitle} />
 
       <AdminListFilters
         basePath="/admin/contacts"
@@ -46,16 +48,16 @@ export default async function AdminContactsPage({ searchParams }: Props) {
         defaultQuery={q}
       />
 
-      <div className="overflow-x-auto rounded-2xl border border-border-strong">
+      <AdminTableShell plain>
         <table className="w-full min-w-[640px] text-left text-sm">
-          <thead className="border-b border-border-strong bg-surface-elevated/80">
+          <thead className={adminUi.theadSimple}>
             <tr>
-              <th className="px-4 py-3 font-medium text-muted-soft">Date</th>
-              <th className="px-4 py-3 font-medium text-muted-soft">Name</th>
-              <th className="px-4 py-3 font-medium text-muted-soft">Email</th>
-              <th className="px-4 py-3 font-medium text-muted-soft">Service</th>
-              <th className="px-4 py-3 font-medium text-muted-soft">Preview</th>
-              <th className="px-4 py-3 font-medium text-muted-soft">Actions</th>
+              <th className={adminUi.thRelaxed}>Date</th>
+              <th className={adminUi.thRelaxed}>Name</th>
+              <th className={adminUi.thRelaxed}>Email</th>
+              <th className={adminUi.thRelaxed}>Service</th>
+              <th className={adminUi.thRelaxed}>Preview</th>
+              <th className={adminUi.thRelaxed}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -67,10 +69,7 @@ export default async function AdminContactsPage({ searchParams }: Props) {
               </tr>
             ) : (
               rows.map((r) => (
-                <tr
-                  key={r.id}
-                  className="border-b border-border transition hover:bg-pill-hover"
-                >
+                <tr key={r.id} className={adminUi.trHoverBorder}>
                   <td className="whitespace-nowrap px-4 py-3 text-muted-soft">
                     {r.createdAt.toLocaleString()}
                   </td>
@@ -101,7 +100,7 @@ export default async function AdminContactsPage({ searchParams }: Props) {
             )}
           </tbody>
         </table>
-      </div>
+      </AdminTableShell>
 
       <AdminPagination
         basePath="/admin/contacts"
@@ -109,6 +108,6 @@ export default async function AdminContactsPage({ searchParams }: Props) {
         totalPages={totalPages}
         query={{ q: q || undefined }}
       />
-    </div>
+    </AdminPageBody>
   );
 }

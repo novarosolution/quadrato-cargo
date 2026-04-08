@@ -5,6 +5,7 @@ import { PublicCard } from "@/components/public/PublicCard";
 import { PublicPageSection } from "@/components/public/PublicPageSection";
 import { Container } from "@/components/Wrap";
 import { PageHero } from "@/components/Hero";
+import { publicUi } from "@/components/public/public-ui";
 import { siteName } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -30,7 +31,7 @@ const MAPS_OPEN_URL =
 
 export default function AboutPage() {
   return (
-    <div className="stack-page content-full">
+    <div className={publicUi.page}>
       <PageHero
         eyebrow="About"
         title={`About ${siteName}`}
@@ -41,8 +42,8 @@ export default function AboutPage() {
         <Container>
           <div className="mx-auto max-w-3xl">
             <PublicCard className="border-border-strong/80 bg-surface-elevated/50 sm:p-8 md:p-10">
-              <h2 className="font-display text-xl font-semibold text-ink md:text-2xl">Who we are</h2>
-              <div className="mt-5 space-y-4 text-sm leading-relaxed text-muted md:text-base">
+              <h2 className={publicUi.sectionTitle}>Who we are</h2>
+              <div className={`mt-5 ${publicUi.prose}`}>
                 <p>
                   {siteName} is a technology-driven logistics service provider focused on delivering
                   efficient, flexible, and customer-centric courier solutions. We specialize in enabling
@@ -59,8 +60,8 @@ export default function AboutPage() {
                 <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-teal/15 text-teal">
                   <Target className="h-5 w-5" strokeWidth={2} aria-hidden />
                 </span>
-                <h2 className="mt-5 font-display text-lg font-semibold text-ink">Our mission</h2>
-                <p className="mt-3 text-sm leading-relaxed text-muted md:text-base">
+                <h2 className={`mt-5 ${publicUi.sectionTitleMd}`}>Our mission</h2>
+                <p className={`mt-3 ${publicUi.proseSingle}`}>
                   To provide reliable, technology-enabled logistics solutions that enhance efficiency, reduce
                   turnaround time, and deliver superior customer experience.
                 </p>
@@ -71,8 +72,8 @@ export default function AboutPage() {
                 <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent/15 text-accent">
                   <Telescope className="h-5 w-5" strokeWidth={2} aria-hidden />
                 </span>
-                <h2 className="mt-5 font-display text-lg font-semibold text-ink">Our vision</h2>
-                <p className="mt-3 text-sm leading-relaxed text-muted md:text-base">
+                <h2 className={`mt-5 ${publicUi.sectionTitleMd}`}>Our vision</h2>
+                <p className={`mt-3 ${publicUi.proseSingle}`}>
                   To establish {siteName} as a trusted and scalable logistics partner, recognized for
                   innovation, operational excellence, and customer trust in the cargo and courier ecosystem.
                 </p>
@@ -87,7 +88,7 @@ export default function AboutPage() {
           <div className="mx-auto max-w-5xl">
             <div className="flex flex-col gap-2 text-center sm:text-left">
               <p className="section-eyebrow justify-center sm:justify-start">Visit us</p>
-              <h2 className="font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+              <h2 className={publicUi.sectionTitleDisplay}>
                 Ahmedabad
               </h2>
             </div>
@@ -106,7 +107,7 @@ export default function AboutPage() {
                         href={MAPS_OPEN_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-4 inline-flex text-sm font-medium text-teal underline-offset-2 hover:underline"
+                        className={`mt-4 inline-flex ${publicUi.link}`}
                       >
                         Open in Google Maps
                       </Link>
@@ -130,7 +131,7 @@ export default function AboutPage() {
                     href="https://www.openstreetmap.org/copyright"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-teal underline-offset-2 hover:underline"
+                    className={publicUi.linkQuiet}
                   >
                     OpenStreetMap
                   </a>{" "}
@@ -139,7 +140,7 @@ export default function AboutPage() {
                     href="https://www.openstreetmap.org/?mlat=23.0269&mlon=72.5283#map=17/23.0269/72.5283"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-teal underline-offset-2 hover:underline"
+                    className={publicUi.linkQuiet}
                   >
                     Full screen map
                   </a>

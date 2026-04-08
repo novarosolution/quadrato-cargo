@@ -7,6 +7,7 @@ import { PageHero } from "@/components/Hero";
 import { fetchSiteSettings } from "@/lib/api/public-client";
 import { buildContactDispatchSidebarItems } from "@/lib/site-content";
 import { ContactForm } from "./Contact";
+import { publicUi } from "@/components/public/public-ui";
 import { ContactLocationMap } from "./ContactLocationMap";
 
 export const metadata: Metadata = {
@@ -14,9 +15,6 @@ export const metadata: Metadata = {
   description:
     "Contact Quadrato Cargo for pickup support, shipment queries, and pricing quotes.",
 };
-
-const linkClass =
-  "text-teal underline-offset-2 transition hover:text-teal hover:underline";
 
 export default async function ContactPage() {
   const siteSettings = await fetchSiteSettings();
@@ -28,7 +26,7 @@ export default async function ContactPage() {
   });
 
   return (
-    <div className="stack-page content-full">
+    <div className={publicUi.page}>
       <PageHero
         eyebrow="Contact"
         title="Talk to dispatch"
@@ -39,7 +37,7 @@ export default async function ContactPage() {
         <Container>
           <div className="grid gap-10 lg:grid-cols-5">
             <div className="lg:col-span-2">
-              <h2 className="font-display text-lg font-semibold text-ink">Dispatch</h2>
+              <h2 className={publicUi.sectionTitleMd}>Dispatch</h2>
               <p className="mt-2 text-sm text-muted">
                 Phone, email, and address come from admin Data &amp; site settings (same as footer).
               </p>
@@ -52,7 +50,7 @@ export default async function ContactPage() {
                         <dt className="font-medium text-ink">{ch.label}</dt>
                         <dd className="mt-1 wrap-break-word text-muted">
                           {ch.href ? (
-                            <a href={ch.href} className={linkClass}>
+                            <a href={ch.href} className={publicUi.linkQuiet}>
                               {ch.body}
                             </a>
                           ) : (

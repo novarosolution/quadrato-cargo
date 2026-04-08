@@ -66,11 +66,21 @@ export const homeValueStoryData: Array<{
   },
 ];
 
-export const homeHeroStatData = [
-  { value: "~10 min", label: "Pickup target (serviceable areas)" },
-  { value: "Instant + schedule", label: "Collection options" },
-  { value: "QR receipt", label: "Scan-friendly slip" },
-];
+/** CTA under the home globe band in `HomeOrbStats`. */
+export const homeOrbStatCenter = {
+  ctaHref: "/public/book",
+  ctaLabel: "Book a shipment",
+} as const;
+
+/**
+ * Worldwide metrics around the 3D globe in `HomeOrbStats` (positions: top, left, right, bottom).
+ */
+export const homeOrbStatFigures = [
+  { value: "10,000+", label: "Deliveries" },
+  { value: "180", label: "Countries" },
+  { value: "10,000+", label: "Bookings" },
+  { value: "50+", label: "Agency partners" },
+] as const;
 
 export const homeHeroCallToActionData = [
   { href: "/public/register", label: "Create account", kind: "primary" as const },

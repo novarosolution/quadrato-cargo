@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { getApiBaseUrl } from "@/lib/api/base-url";
+import { getBookingPdfPostUrl } from "@/lib/api/base-url";
 import { csrfHeaderRecord } from "@/lib/api/csrf-headers";
 import {
   sanitizeHttpUrlForQr,
@@ -40,10 +40,10 @@ export type InvoicePdfDetails = {
   currency?: string | null;
   subtotal?: string | null;
   tax?: string | null;
-  insurance?: string | null;
   customsDuties?: string | null;
-  discount?: string | null;
+  insurancePremium?: string | null;
   total?: string | null;
+  insurance?: string | null;
   lineDescription?: string | null;
   notes?: string | null;
 };
@@ -86,6 +86,7 @@ export function DownloadBookingPdfButton({
   buttonLabel = "Download PDF",
   bookingId,
   bookingDateLabel,
+  updatedAtLabel,
   reference,
   routeTypeLabel,
   consignmentNumber,
@@ -95,7 +96,6 @@ export function DownloadBookingPdfButton({
   senderAddress,
   recipientName,
   recipientAddress,
-  contentsLabel,
   trackingNotesLabel,
   trackUrl,
   settings,
@@ -211,8 +211,12 @@ export function DownloadBookingPdfButton({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(5.5);
     let y = 8.5;
-    const addrLines = doc.splitTextToSize(safe(settings.companyAddress), 58);
-    addrLines.slice(0, 2).forEach((line: string) => {
+    const contactStrip = [settings.companyAddress, settings.supportPhone, settings.supportEmail]
+      .map((s) => String(s ?? "").trim())
+      .filter(Boolean)
+      .join(" · ");
+    const stripLines = doc.splitTextToSize(safe(contactStrip).slice(0, 200), PDF_TEXT_W);
+    stripLines.slice(0, 2).forEach((line: string) => {
       doc.text(line, x, y);
       y += 2.7;
     });
@@ -234,14 +238,20 @@ export function DownloadBookingPdfButton({
         ? String(inv.currency).trim().toUpperCase().slice(0, 12)
         : "INR";
     doc.text(`No. ${invNum.slice(0, 22)}`, x, y);
-    doc.text(`Date ${safe(bookingDateLabel).slice(0, 20)}`, 50, y);
+    doc.text(`Booked ${safe(bookingDateLabel).slice(0, 18)}`, 48, y);
     y += 3.4;
     doc.text(`Track ${safe(consignmentNumber || reference).slice(0, 28)}`, x, y);
+    y += 3.2;
+    doc.text(
+      `Currency ${cur} · As of ${safe(updatedAtLabel).slice(0, 22)}`,
+      x,
+      y,
+    );
     y += 4;
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(6);
-    doc.text("Bill to", x, y);
+    doc.text("Bill from", x, y);
     y += 3;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(5.5);
@@ -255,19 +265,56 @@ export function DownloadBookingPdfButton({
     });
     y += 0.5;
 
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6);
+    doc.text("Bill to", x, y);
+    y += 3;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(5.5);
+    const deliverBlock = doc.splitTextToSize(
+      `${safe(recipientName)} · ${safe(recipientAddress)}`.slice(0, 220),
+      PDF_TEXT_W,
+    );
+    deliverBlock.slice(0, 3).forEach((line: string) => {
+      doc.text(line, x, y);
+      y += 2.8;
+    });
+    y += 0.5;
+
     const lineDesc =
       inv.lineDescription != null && String(inv.lineDescription).trim()
         ? String(inv.lineDescription).trim()
-        : contentsLabel;
-    if (safe(lineDesc) !== "-") {
+        : "";
+    if (lineDesc) {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(5.5);
-      doc.text("Description", x, y);
+      doc.text("Service description", x, y);
       y += 2.8;
       doc.setFont("helvetica", "normal");
       doc.splitTextToSize(safe(lineDesc), PDF_TEXT_W)
-        .slice(0, 2)
+        .slice(0, 5)
         .forEach((line: string) => {
+          if (y > PDF_SIZE_LINE_Y - 14) return;
+          doc.text(line, x, y);
+          y += 2.8;
+        });
+      y += 0.5;
+    }
+
+    const ins =
+      inv.insurance != null && String(inv.insurance).trim()
+        ? String(inv.insurance).trim()
+        : "";
+    if (ins && y < PDF_SIZE_LINE_Y - 12) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5.5);
+      doc.text("Insurance details", x, y);
+      y += 2.8;
+      doc.setFont("helvetica", "normal");
+      doc.splitTextToSize(safe(ins), PDF_TEXT_W)
+        .slice(0, 4)
+        .forEach((line: string) => {
+          if (y > PDF_SIZE_LINE_Y - 14) return;
           doc.text(line, x, y);
           y += 2.8;
         });
@@ -290,23 +337,22 @@ export function DownloadBookingPdfButton({
 
     drawMoney("Subtotal", money("subtotal"));
     drawMoney("Tax", money("tax"));
-    drawMoney("Insurance", money("insurance"));
     drawMoney("Customs", money("customsDuties"));
-    drawMoney("Discount", money("discount"));
+    drawMoney("Insurance", money("insurancePremium"));
     drawMoney("Total", money("total"), true);
 
-    if (y < PDF_SIZE_LINE_Y - 8 && money("notes")) {
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(5);
+    if (y < PDF_SIZE_LINE_Y - 6 && money("notes")) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(5.5);
       doc.setTextColor(80, 88, 102);
-      doc.splitTextToSize(`Note: ${money("notes")}`, PDF_TEXT_W)
-        .slice(0, 2)
-        .forEach((line: string) => {
-          if (y < PDF_SIZE_LINE_Y - 2) {
-            doc.text(line, x, y);
-            y += 2.6;
-          }
-        });
+      doc.text("Admin note", x, y);
+      y += 2.8;
+      doc.setFont("helvetica", "normal");
+      doc.splitTextToSize(money("notes"), PDF_TEXT_W).forEach((line: string) => {
+        if (y >= PDF_SIZE_LINE_Y - 2) return;
+        doc.text(line, x, y);
+        y += 2.6;
+      });
     }
 
     doc.setTextColor(130, 140, 155);
@@ -327,9 +373,10 @@ export function DownloadBookingPdfButton({
     setIsDownloading(true);
     setDownloadError(null);
     try {
-      const response = await fetch(`${getApiBaseUrl()}/api/public/bookings/pdf`, {
+      const response = await fetch(getBookingPdfPostUrl(), {
         method: "POST",
         credentials: "include",
+        cache: "no-store",
         headers: {
           "Content-Type": "application/json",
           ...csrfHeaderRecord(),
@@ -351,14 +398,21 @@ export function DownloadBookingPdfButton({
       const blob = await response.blob();
       const stem = sanitizePdfFileStem(reference || bookingId);
       const prefix = template === "invoice" ? "invoice" : "tracking";
-      saveBlobAsFile(blob, `${prefix}-${stem}.pdf`);
+      const bust = template === "invoice" ? `-${Date.now()}` : "";
+      saveBlobAsFile(blob, `${prefix}-${stem}${bust}.pdf`);
     } catch (error) {
-      try {
-        await runFallbackPdf();
-        setDownloadError(null);
-      } catch {
+      const msg =
+        error instanceof Error ? error.message : "PDF download failed. Please try again.";
+      if (template === "tracking") {
+        try {
+          await runFallbackPdf();
+          setDownloadError(null);
+        } catch {
+          setDownloadError(msg);
+        }
+      } else {
         setDownloadError(
-          error instanceof Error ? error.message : "PDF download failed. Please try again.",
+          `${msg} If the API is unreachable, start the backend (e.g. npm run dev:api from the repo root) and try again.`,
         );
       }
     } finally {

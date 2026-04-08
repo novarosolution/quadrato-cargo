@@ -29,6 +29,8 @@
   --ghost-border: rgba(255, 255, 255, 0.15);
   --grid-line: rgba(255, 255, 255, 0.025);
   --noise-opacity: 0.35;
+  /* Wordmark “Quadrato Cargo” — crisp white on dark chrome */
+  --logo-wordmark-fill: #f8fafc;
 }
 
 html[data-theme="light"] {
@@ -42,8 +44,8 @@ html[data-theme="light"] {
   --surface-elevated: #ffffff;
   --surface-highlight: #f1f5f9;
   --ink: #0f172a;
-  --muted: #475569;
-  --muted-soft: #64748b;
+  --muted: #334155;
+  --muted-soft: #475569;
   --teal-dim: rgba(13, 148, 136, 0.14);
   --border: rgba(15, 23, 42, 0.1);
   --border-strong: rgba(15, 23, 42, 0.14);
@@ -53,6 +55,8 @@ html[data-theme="light"] {
   --ghost-border: rgba(15, 23, 42, 0.12);
   --grid-line: rgba(15, 23, 42, 0.06);
   --noise-opacity: 0.22;
+  /* Wordmark on light backgrounds — near-black, not brand blue */
+  --logo-wordmark-fill: #020617;
 }
 
 /* Before ThemeInit runs, match system light/dark without data-theme (avoids flash vs :root dark default) */
@@ -68,8 +72,8 @@ html[data-theme="light"] {
     --surface-elevated: #ffffff;
     --surface-highlight: #f1f5f9;
     --ink: #0f172a;
-    --muted: #475569;
-    --muted-soft: #64748b;
+    --muted: #334155;
+    --muted-soft: #475569;
     --teal-dim: rgba(13, 148, 136, 0.14);
     --border: rgba(15, 23, 42, 0.1);
     --border-strong: rgba(15, 23, 42, 0.14);
@@ -79,6 +83,7 @@ html[data-theme="light"] {
     --ghost-border: rgba(15, 23, 42, 0.12);
     --grid-line: rgba(15, 23, 42, 0.06);
     --noise-opacity: 0.22;
+    --logo-wordmark-fill: #020617;
   }
 }
 
@@ -154,10 +159,45 @@ body {
   background-color: var(--color-canvas);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  line-height: 1.6;
+  line-height: 1.65;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: clip;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Text selection — readable in dark and light */
+::selection {
+  background: color-mix(in oklab, var(--color-teal) 34%, transparent);
+  color: var(--color-ink);
+}
+
+html[data-theme="light"] ::selection {
+  background: color-mix(in oklab, var(--color-teal) 22%, var(--color-surface-highlight));
+  color: var(--color-ink);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) ::selection {
+    background: color-mix(in oklab, var(--color-teal) 22%, var(--color-surface-highlight));
+    color: var(--color-ink);
+  }
+}
+
+/* Keyboard focus ring — applies site-wide unless a control sets outline-none */
+:where(a, button, input, textarea, select, summary):focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
+}
+
+:where(a, button, input, textarea, select):focus:not(:focus-visible) {
+  outline: none;
 }
 
 h1,
@@ -167,6 +207,67 @@ h3,
   font-family: var(--font-display);
   letter-spacing: -0.02em;
   line-height: 1.2;
+}
+
+/**
+ * Premium display type — bold, high contrast; on white/light UI uses layered “lift” shadows
+ * so headlines read crisply (3D-style depth without low-contrast gradient text).
+ * Applies to the utility class and to semantic h1–h3 that use `font-display`.
+ */
+.type-display-premium,
+h1.font-display,
+h2.font-display,
+h3.font-display,
+legend.font-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.14;
+  color: var(--color-ink);
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.1),
+    0 2px 22px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="light"] .type-display-premium,
+html[data-theme="light"] h1.font-display,
+html[data-theme="light"] h2.font-display,
+html[data-theme="light"] h3.font-display,
+html[data-theme="light"] legend.font-display {
+  color: #020617;
+  font-weight: 800;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 1),
+    0 2px 0 rgba(255, 255, 255, 0.65),
+    0 3px 8px rgba(15, 23, 42, 0.08),
+    0 10px 32px rgba(15, 23, 42, 0.07);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) .type-display-premium,
+  html:not([data-theme]) h1.font-display,
+  html:not([data-theme]) h2.font-display,
+  html:not([data-theme]) h3.font-display,
+  html:not([data-theme]) legend.font-display {
+    color: #020617;
+    font-weight: 800;
+    text-shadow:
+      0 1px 0 rgba(255, 255, 255, 1),
+      0 2px 0 rgba(255, 255, 255, 0.65),
+      0 3px 8px rgba(15, 23, 42, 0.08),
+      0 10px 32px rgba(15, 23, 42, 0.07);
+  }
+}
+
+@media (prefers-contrast: more) {
+  .type-display-premium,
+  h1.font-display,
+  h2.font-display,
+  h3.font-display,
+  legend.font-display {
+    text-shadow: none;
+    font-weight: 800;
+  }
 }
 
 /* Native disclosure widgets: visible focus + no clipped marker */
@@ -184,22 +285,497 @@ details summary:focus-visible {
 
 /* Shared rhythm helpers for consistent spacing across public pages */
 .page-section {
-  padding-block: clamp(3rem, 5.5vw, 6rem);
+  padding-block: clamp(4rem, 7vw, 7.5rem);
+}
+
+/**
+ * Home hero — subtle dot grid + isolation so glow layers stack predictably.
+ * Light theme uses a softer grid so it stays airy on white.
+ */
+.home-hero-surface {
+  position: relative;
+  isolation: isolate;
+}
+
+.home-hero-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.42;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in oklab, var(--color-border-strong) 50%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 95% 65% at 50% -5%, black 15%, transparent 70%);
+}
+
+html[data-theme="light"] .home-hero-surface::before {
+  opacity: 0.28;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(15, 23, 42, 0.055) 1px,
+    transparent 0
+  );
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) .home-hero-surface::before {
+    opacity: 0.28;
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(15, 23, 42, 0.055) 1px,
+      transparent 0
+    );
+  }
+}
+
+/* Home — primary quick links under hero */
+.home-quick-action-card {
+  position: relative;
+  border-radius: 1.35rem;
+  border: 1px solid color-mix(in oklab, var(--color-border-strong) 85%, transparent);
+  background: linear-gradient(
+    165deg,
+    color-mix(in oklab, var(--color-surface-elevated) 92%, transparent) 0%,
+    color-mix(in oklab, var(--color-surface-elevated) 62%, transparent) 100%
+  );
+  box-shadow:
+    0 22px 56px -34px rgba(0, 0, 0, 0.55),
+    0 0 0 1px color-mix(in oklab, var(--color-teal) 5%, transparent);
+  transition:
+    transform 0.35s var(--ease-out-expo),
+    border-color 0.35s ease,
+    box-shadow 0.35s var(--ease-out-expo);
+}
+
+.home-quick-action-card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in oklab, var(--color-teal) 28%, var(--color-border-strong));
+  box-shadow:
+    0 28px 64px -28px rgba(0, 0, 0, 0.58),
+    0 0 48px -20px color-mix(in oklab, var(--color-teal) 18%, transparent);
+}
+
+.home-quick-action-card--featured {
+  border-color: color-mix(in oklab, var(--color-teal) 22%, var(--color-border-strong));
+  box-shadow:
+    0 26px 64px -30px rgba(0, 0, 0, 0.55),
+    0 0 0 1px color-mix(in oklab, var(--color-teal) 14%, transparent),
+    0 0 56px -24px color-mix(in oklab, var(--color-teal) 12%, transparent);
+}
+
+@media (min-width: 768px) {
+  .home-quick-action-card--featured {
+    transform: translateY(-6px);
+  }
+  .home-quick-action-card--featured:hover {
+    transform: translateY(-10px);
+  }
+}
+
+html[data-theme="light"] .home-quick-action-card {
+  background: linear-gradient(
+    165deg,
+    color-mix(in oklab, #ffffff 98%, var(--color-canvas)) 0%,
+    color-mix(in oklab, var(--color-surface-highlight) 88%, var(--color-canvas)) 100%
+  );
+  box-shadow:
+    0 18px 48px -32px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(15, 23, 42, 0.05);
+}
+
+html[data-theme="light"] .home-quick-action-card:hover {
+  box-shadow:
+    0 22px 56px -28px rgba(15, 23, 42, 0.14),
+    0 0 0 1px color-mix(in oklab, var(--color-teal) 22%, transparent);
+}
+
+/* —— Public book courier page —— */
+.book-page-hero {
+  position: relative;
+  isolation: isolate;
+}
+
+.book-page-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in oklab, var(--color-border-strong) 45%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 90% 80% at 50% -20%, black 25%, transparent 65%);
+}
+
+html[data-theme="light"] .book-page-hero::before {
+  opacity: 0.22;
+  background-image: radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.05) 1px, transparent 0);
+}
+
+.book-step-panel {
+  border-radius: 1.35rem;
+  border: 1px solid color-mix(in oklab, var(--color-border-strong) 75%, transparent);
+  background: linear-gradient(
+    165deg,
+    color-mix(in oklab, var(--color-surface-elevated) 88%, transparent) 0%,
+    color-mix(in oklab, var(--color-surface-elevated) 52%, transparent) 100%
+  );
+  box-shadow:
+    0 22px 56px -36px rgba(0, 0, 0, 0.45),
+    0 0 0 1px color-mix(in oklab, var(--color-teal) 7%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+html[data-theme="light"] .book-step-panel {
+  background: linear-gradient(
+    165deg,
+    color-mix(in oklab, #ffffff 97%, var(--color-canvas)) 0%,
+    color-mix(in oklab, var(--color-surface-highlight) 92%, var(--color-canvas)) 100%
+  );
+  box-shadow:
+    0 20px 48px -32px rgba(15, 23, 42, 0.1),
+    0 0 0 1px rgba(15, 23, 42, 0.05);
+}
+
+.book-form-card {
+  border-radius: 1.5rem;
+  border: 1px solid color-mix(in oklab, var(--color-border-strong) 80%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-surface-elevated) 55%, transparent) 0%,
+    color-mix(in oklab, var(--color-canvas) 40%, transparent) 100%
+  );
+  box-shadow:
+    0 28px 72px -40px rgba(0, 0, 0, 0.5),
+    0 0 0 1px color-mix(in oklab, var(--color-teal) 8%, transparent);
+}
+
+html[data-theme="light"] .book-form-card {
+  background: linear-gradient(180deg, #ffffff 0%, color-mix(in oklab, var(--color-canvas) 96%, #fff) 100%);
+  box-shadow:
+    0 24px 56px -36px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) .home-quick-action-card {
+    background: linear-gradient(
+      165deg,
+      color-mix(in oklab, #ffffff 98%, var(--color-canvas)) 0%,
+      color-mix(in oklab, var(--color-surface-highlight) 88%, var(--color-canvas)) 100%
+    );
+    box-shadow:
+      0 18px 48px -32px rgba(15, 23, 42, 0.12),
+      0 0 0 1px rgba(15, 23, 42, 0.05);
+  }
+
+  html:not([data-theme]) .home-quick-action-card:hover {
+    box-shadow:
+      0 22px 56px -28px rgba(15, 23, 42, 0.14),
+      0 0 0 1px color-mix(in oklab, var(--color-teal) 22%, transparent);
+  }
+}
+
+/* Premium home / marketing section frame */
+.home-section-shell {
+  border-radius: 2rem;
+  border: 1px solid color-mix(in oklab, var(--color-border-strong) 80%, transparent);
+  background: linear-gradient(
+    155deg,
+    color-mix(in oklab, var(--color-surface-elevated) 72%, transparent) 0%,
+    color-mix(in oklab, var(--color-surface-elevated) 48%, transparent) 48%,
+    color-mix(in oklab, var(--color-canvas) 55%, transparent) 100%
+  );
+  padding: clamp(1.85rem, 3.2vw, 3rem);
+  box-shadow:
+    0 1px 0 0 color-mix(in oklab, var(--color-border) 35%, transparent),
+    0 28px 72px -36px rgba(0, 0, 0, 0.5),
+    0 0 0 1px color-mix(in oklab, var(--color-teal) 6%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+html[data-theme="light"] .home-section-shell {
+  background: linear-gradient(
+    165deg,
+    color-mix(in oklab, #ffffff 96%, var(--color-canvas)) 0%,
+    color-mix(in oklab, var(--color-surface-elevated) 94%, var(--color-canvas)) 100%
+  );
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.95),
+    0 24px 56px -32px rgba(15, 23, 42, 0.1),
+    0 0 0 1px rgba(15, 23, 42, 0.05);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) .home-section-shell {
+    background: linear-gradient(
+      165deg,
+      color-mix(in oklab, #ffffff 96%, var(--color-canvas)) 0%,
+      color-mix(in oklab, var(--color-surface-elevated) 94%, var(--color-canvas)) 100%
+    );
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.95),
+      0 24px 56px -32px rgba(15, 23, 42, 0.1),
+      0 0 0 1px rgba(15, 23, 42, 0.05);
+  }
+}
+
+/* Public site header — glass + hairline (used on TopBar) */
+.site-header {
+  box-shadow:
+    0 1px 0 0 color-mix(in oklab, var(--color-border-strong) 70%, transparent),
+    0 12px 40px -28px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="light"] .site-header {
+  box-shadow:
+    0 1px 0 0 rgba(15, 23, 42, 0.08),
+    0 16px 48px -32px rgba(15, 23, 42, 0.1);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) .site-header {
+    box-shadow:
+      0 1px 0 0 rgba(15, 23, 42, 0.08),
+      0 16px 48px -32px rgba(15, 23, 42, 0.1);
+  }
+}
+
+/* Public footer — depth + teal lift */
+.site-footer {
+  box-shadow: inset 0 1px 0 0 color-mix(in oklab, var(--color-teal) 22%, transparent);
+}
+
+html[data-theme="light"] .site-footer {
+  box-shadow: inset 0 1px 0 0 color-mix(in oklab, var(--color-teal) 35%, transparent);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) .site-footer {
+    box-shadow: inset 0 1px 0 0 color-mix(in oklab, var(--color-teal) 35%, transparent);
+  }
 }
 
 .page-section-compact {
-  padding-block: clamp(2.25rem, 4.4vw, 4.5rem);
+  padding-block: clamp(2.35rem, 4.5vw, 4.75rem);
+}
+
+/* Home — “How it works” band depth */
+.home-process-band {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-canvas) 92%, var(--color-teal)) 0%,
+    color-mix(in oklab, var(--color-surface) 35%, transparent) 22%,
+    color-mix(in oklab, var(--color-canvas) 90%, transparent) 55%,
+    color-mix(in oklab, var(--color-surface) 28%, transparent) 100%
+  );
+  border-color: color-mix(in oklab, var(--color-border-strong) 65%, transparent);
+}
+
+html[data-theme="light"] .home-process-band {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-canvas) 98%, var(--color-teal)) 0%,
+    rgba(255, 255, 255, 0.65) 35%,
+    color-mix(in oklab, var(--color-canvas) 96%, transparent) 100%
+  );
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) .home-process-band {
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--color-canvas) 98%, var(--color-teal)) 0%,
+      rgba(255, 255, 255, 0.65) 35%,
+      color-mix(in oklab, var(--color-canvas) 96%, transparent) 100%
+    );
+  }
+}
+
+/* —— Home orb (3D globe band) —— */
+/* Globe frame: rounded square by default → circle on hover (fine pointer). */
+.home-orb-globe-frame {
+  border-radius: 1rem;
+  background: radial-gradient(
+    circle at 50% 35%,
+    #1e3a5f 0%,
+    #0f172a 42%,
+    #020617 100%
+  );
+  box-shadow:
+    inset 0 0 56px rgba(56, 189, 248, 0.12),
+    inset 0 -20px 48px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(147, 197, 253, 0.18);
+  border: 1px solid rgba(147, 197, 253, 0.22);
+  transition:
+    border-radius 0.55s var(--ease-out-expo),
+    box-shadow 0.45s var(--ease-out-expo),
+    border-color 0.35s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .home-orb-globe-frame:is(:hover, :focus-within) {
+    border-radius: 9999px;
+    box-shadow:
+      inset 0 0 64px rgba(56, 189, 248, 0.18),
+      inset 0 -16px 40px rgba(0, 0, 0, 0.28),
+      0 0 0 1px rgba(147, 197, 253, 0.35),
+      0 0 40px -8px rgba(56, 189, 248, 0.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-orb-globe-frame {
+    border-radius: 9999px;
+    transition: none;
+  }
+}
+
+html[data-theme="light"] .home-orb-globe-frame {
+  background: radial-gradient(
+    circle at 50% 42%,
+    #38bdf8 0%,
+    #7dd3fc 38%,
+    #bae6fd 72%,
+    #e0f2fe 100%
+  );
+  box-shadow:
+    inset 0 0 28px rgba(12, 74, 110, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 0 0 1px color-mix(in oklab, #0369a1 22%, rgba(15, 23, 42, 0.12));
+  border: 1px solid color-mix(in oklab, #0284c7 28%, rgba(15, 23, 42, 0.14));
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-theme="light"] .home-orb-globe-frame:is(:hover, :focus-within) {
+    box-shadow:
+      inset 0 0 36px rgba(12, 74, 110, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 0 0 1px color-mix(in oklab, #0369a1 32%, transparent),
+      0 0 32px -4px rgba(14, 165, 233, 0.22);
+  }
+}
+
+.home-orb-globe-loader {
+  border-radius: 1rem;
+  background: radial-gradient(circle at 50% 35%, #1e3a5f 0%, #0f172a 50%, #020617 100%);
+  box-shadow:
+    inset 0 0 40px rgba(56, 189, 248, 0.1),
+    0 0 0 1px rgba(147, 197, 253, 0.15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-orb-globe-loader {
+    border-radius: 9999px;
+  }
+}
+
+html[data-theme="light"] .home-orb-globe-loader {
+  background: radial-gradient(
+    circle at 50% 40%,
+    #38bdf8 0%,
+    #7dd3fc 45%,
+    #bae6fd 100%
+  );
+  box-shadow:
+    inset 0 0 24px rgba(12, 74, 110, 0.07),
+    0 0 0 1px color-mix(in oklab, #0369a1 20%, rgba(15, 23, 42, 0.1));
+  border: 1px solid color-mix(in oklab, #0284c7 25%, rgba(15, 23, 42, 0.1));
+}
+
+.home-orb-globe-loader-text {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #e0f2fe;
+}
+
+html[data-theme="light"] .home-orb-globe-loader-text {
+  color: #0c4a6e;
+}
+
+html[data-theme="light"] .home-orb-panel {
+  background: linear-gradient(
+    168deg,
+    #ffffff 0%,
+    color-mix(in oklab, #ffffff 96%, var(--canvas)) 55%,
+    color-mix(in oklab, #f8fafc 88%, #e2e8f0) 100%
+  );
+  box-shadow:
+    0 16px 48px -36px rgba(51, 65, 85, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  border-color: color-mix(in oklab, var(--border-strong) 55%, #cbd5e1);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) .home-orb-globe-frame {
+    background: radial-gradient(
+      circle at 50% 42%,
+      #38bdf8 0%,
+      #7dd3fc 38%,
+      #bae6fd 72%,
+      #e0f2fe 100%
+    );
+    box-shadow:
+      inset 0 0 28px rgba(12, 74, 110, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.75),
+      0 0 0 1px color-mix(in oklab, #0369a1 22%, rgba(15, 23, 42, 0.12));
+    border: 1px solid color-mix(in oklab, #0284c7 28%, rgba(15, 23, 42, 0.14));
+  }
+
+  html:not([data-theme]) .home-orb-globe-loader {
+    background: radial-gradient(
+      circle at 50% 40%,
+      #38bdf8 0%,
+      #7dd3fc 45%,
+      #bae6fd 100%
+    );
+    box-shadow:
+      inset 0 0 24px rgba(12, 74, 110, 0.07),
+      0 0 0 1px color-mix(in oklab, #0369a1 20%, rgba(15, 23, 42, 0.1));
+    border: 1px solid color-mix(in oklab, #0284c7 25%, rgba(15, 23, 42, 0.1));
+  }
+
+  html:not([data-theme]) .home-orb-globe-loader-text {
+    color: #0c4a6e;
+  }
+
+  html:not([data-theme]) .home-orb-panel {
+    background: linear-gradient(
+      168deg,
+      #ffffff 0%,
+      color-mix(in oklab, #ffffff 96%, var(--canvas)) 55%,
+      color-mix(in oklab, #f8fafc 88%, #e2e8f0) 100%
+    );
+    box-shadow:
+      0 16px 48px -36px rgba(51, 65, 85, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+    border-color: color-mix(in oklab, var(--border-strong) 55%, #cbd5e1);
+  }
 }
 
 /* Vertical rhythm between major blocks (admin, courier, agency, some public) */
 .stack-page {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.65rem;
 }
 @media (min-width: 640px) {
   .stack-page {
-    gap: 2rem;
+    gap: 2.1rem;
+  }
+}
+@media (min-width: 1024px) {
+  .stack-page {
+    gap: 2.5rem;
   }
 }
 
@@ -221,29 +797,6 @@ details summary:focus-visible {
   max-width: none;
 }
 
-/* Courier / agency main column — same width and padding rhythm as admin layout main */
-.role-dashboard-main {
-  margin-left: auto;
-  margin-right: auto;
-  width: 100%;
-  max-width: 80rem;
-  padding: 2rem 1rem;
-}
-@media (min-width: 640px) {
-  .role-dashboard-main {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
-  }
-}
-@media (min-width: 1024px) {
-  .role-dashboard-main {
-    padding-left: 2rem;
-    padding-right: 2rem;
-    padding-top: 2.5rem;
-    padding-bottom: 2.5rem;
-  }
-}
-
 .panel-card {
   border-radius: 1rem;
   border: 1px solid var(--color-border);
@@ -251,6 +804,25 @@ details summary:focus-visible {
   padding: clamp(1rem, 1.2vw + 0.75rem, 1.5rem);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.05),
+    0 12px 40px -28px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="light"] .panel-card {
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.98),
+    0 14px 44px -20px rgba(15, 23, 42, 0.14),
+    0 4px 14px -6px rgba(15, 23, 42, 0.07);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) .panel-card {
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.98),
+      0 14px 44px -20px rgba(15, 23, 42, 0.14),
+      0 4px 14px -6px rgba(15, 23, 42, 0.07);
+  }
 }
 
 .panel-card-soft {
@@ -312,9 +884,9 @@ html[data-theme="light"] .body-gradient {
     transparent 100%
   );
   background:
-    radial-gradient(ellipse 100% 80% at 50% -25%, rgba(45, 212, 191, 0.12), transparent 50%),
-    radial-gradient(ellipse 55% 45% at 95% 5%, rgba(249, 115, 22, 0.08), transparent),
-    linear-gradient(180deg, var(--color-canvas) 0%, var(--color-canvas-mid) 45%, var(--color-canvas) 100%);
+    radial-gradient(ellipse 100% 82% at 50% -22%, rgba(45, 212, 191, 0.16), transparent 52%),
+    radial-gradient(ellipse 52% 46% at 94% 6%, rgba(249, 115, 22, 0.1), transparent),
+    linear-gradient(180deg, #fafbfd 0%, var(--color-canvas-mid) 46%, #f4f6fb 100%);
 }
 
 /* Horizontal lines only — vertical grid lines sit on viewport edges on some DPR/zoom and pick up teal from the glow. */
@@ -375,6 +947,184 @@ html[data-theme="light"] .admin-app-shell {
     0 1px 0 0 rgba(15, 23, 42, 0.06);
 }
 
+/**
+ * Premium admin workspace — fixed ambient layers (below sticky header z-index).
+ */
+.admin-shell-premium {
+  position: relative;
+  isolation: isolate;
+}
+
+.admin-shell-premium::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 85% 55% at 8% -5%, color-mix(in oklab, var(--color-teal) 18%, transparent), transparent 52%),
+    radial-gradient(ellipse 70% 50% at 100% 0%, color-mix(in oklab, var(--color-teal) 10%, transparent), transparent 48%),
+    radial-gradient(ellipse 55% 40% at 50% 100%, color-mix(in oklab, var(--color-teal) 6%, transparent), transparent 55%),
+    linear-gradient(180deg, var(--color-canvas) 0%, color-mix(in oklab, var(--color-canvas) 94%, var(--color-teal)) 100%);
+}
+
+.admin-shell-premium::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image: radial-gradient(
+    circle at center,
+    color-mix(in oklab, var(--color-ink) 10%, transparent) 0.55px,
+    transparent 0.55px
+  );
+  background-size: 28px 28px;
+  mask-image: linear-gradient(180deg, black 0%, black 55%, transparent 92%);
+}
+
+html[data-theme="light"] .admin-shell-premium::before {
+  background:
+    radial-gradient(ellipse 90% 58% at 6% -8%, color-mix(in oklab, var(--color-teal) 22%, transparent), transparent 56%),
+    radial-gradient(ellipse 65% 48% at 102% 4%, color-mix(in oklab, #0d9488 12%, transparent), transparent 50%),
+    radial-gradient(ellipse 50% 38% at 78% 96%, color-mix(in oklab, var(--color-teal) 6%, transparent), transparent 50%),
+    linear-gradient(
+      185deg,
+      color-mix(in oklab, var(--color-canvas) 99%, white) 0%,
+      var(--color-canvas) 42%,
+      color-mix(in oklab, var(--color-canvas) 97%, #e2e8f0) 100%
+    );
+}
+
+html[data-theme="light"] .admin-shell-premium::after {
+  opacity: 0.32;
+  background-image: radial-gradient(
+    circle at center,
+    color-mix(in oklab, #0f172a 5%, transparent) 0.5px,
+    transparent 0.5px
+  );
+}
+
+@media (prefers-contrast: more) {
+  .admin-shell-premium::before,
+  .admin-shell-premium::after {
+    opacity: 0;
+  }
+}
+
+/* Standalone admin login — same family, lighter */
+.admin-login-shell {
+  position: relative;
+  isolation: isolate;
+  background: radial-gradient(
+    ellipse 100% 70% at 50% -20%,
+    color-mix(in oklab, var(--color-teal) 10%, transparent),
+    var(--color-canvas) 55%
+  );
+}
+
+html[data-theme="light"] .admin-login-shell {
+  background: radial-gradient(
+    ellipse 100% 65% at 50% -18%,
+    color-mix(in oklab, var(--color-teal) 14%, transparent),
+    var(--color-canvas) 52%
+  );
+}
+
+/* Admin page title — accent rule + optical balance */
+.admin-page-title {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 0.35rem;
+}
+
+.admin-page-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 2.75rem;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-teal) 88%, transparent),
+    color-mix(in oklab, var(--color-teal) 15%, transparent)
+  );
+  box-shadow: 0 0 20px color-mix(in oklab, var(--color-teal) 35%, transparent);
+}
+
+@media (prefers-contrast: more) {
+  .admin-page-title::after {
+    box-shadow: none;
+    background: var(--color-teal);
+  }
+}
+
+/* Admin / agency main column — soft top wash below sticky header */
+.admin-main,
+.agency-main,
+.courier-main {
+  background: radial-gradient(
+    ellipse 120% 55% at 50% -15%,
+    color-mix(in oklab, var(--color-teal) 7%, transparent) 0%,
+    transparent 62%
+  );
+}
+
+.admin-shell-premium .admin-main {
+  background:
+    radial-gradient(
+      ellipse 130% 60% at 50% -18%,
+      color-mix(in oklab, var(--color-teal) 9%, transparent) 0%,
+      transparent 58%
+    ),
+    radial-gradient(ellipse 80% 45% at 100% 60%, color-mix(in oklab, var(--color-teal) 3%, transparent), transparent 50%);
+}
+
+html[data-theme="light"] .admin-main,
+html[data-theme="light"] .agency-main,
+html[data-theme="light"] .courier-main {
+  background: radial-gradient(
+    ellipse 120% 50% at 50% -12%,
+    color-mix(in oklab, var(--color-teal) 5%, transparent) 0%,
+    transparent 58%
+  );
+}
+
+html[data-theme="light"] .admin-shell-premium .admin-main {
+  background:
+    radial-gradient(
+      ellipse 125% 55% at 50% -14%,
+      color-mix(in oklab, var(--color-teal) 8%, transparent) 0%,
+      transparent 56%
+    ),
+    radial-gradient(ellipse 70% 40% at 100% 55%, color-mix(in oklab, var(--color-teal) 4%, transparent), transparent 48%);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) .admin-main,
+  html:not([data-theme]) .agency-main,
+  html:not([data-theme]) .courier-main {
+    background: radial-gradient(
+      ellipse 120% 50% at 50% -12%,
+      color-mix(in oklab, var(--color-teal) 5%, transparent) 0%,
+      transparent 58%
+    );
+  }
+
+  html:not([data-theme]) .admin-shell-premium .admin-main {
+    background:
+      radial-gradient(
+        ellipse 125% 55% at 50% -14%,
+        color-mix(in oklab, var(--color-teal) 8%, transparent) 0%,
+        transparent 56%
+      ),
+      radial-gradient(ellipse 70% 40% at 100% 55%, color-mix(in oklab, var(--color-teal) 4%, transparent), transparent 48%);
+  }
+}
+
 /* Public site: login/register vs marketing — clearer contrast so copy and cards read reliably */
 [data-public-zone="auth"] {
   background: linear-gradient(
@@ -424,6 +1174,22 @@ html[data-theme="light"] [data-public-zone="auth"] .panel-card {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--color-teal);
+}
+
+html[data-theme="light"] .section-eyebrow {
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: #0f766e;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+@media (prefers-color-scheme: light) {
+  html:not([data-theme]) .section-eyebrow {
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    color: #0f766e;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
 }
 
 /* Cards */
@@ -556,13 +1322,16 @@ html[data-theme="light"] .card-interactive:hover {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
+/* Solid ink on light: clipped gradients are easy to wash out or break in WebKit */
 html[data-theme="light"] .text-gradient {
-  background: linear-gradient(120deg, #0d9488 0%, #ea580c 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  color: var(--ink);
+  -webkit-text-fill-color: var(--ink);
 }
 
 .shimmer-border {
@@ -642,9 +1411,9 @@ html[data-theme="light"] .glass-panel {
       transparent 100%
     );
     background:
-      radial-gradient(ellipse 100% 80% at 50% -25%, rgba(45, 212, 191, 0.12), transparent 50%),
-      radial-gradient(ellipse 55% 45% at 95% 5%, rgba(249, 115, 22, 0.08), transparent),
-      linear-gradient(180deg, var(--color-canvas) 0%, var(--color-canvas-mid) 45%, var(--color-canvas) 100%);
+      radial-gradient(ellipse 100% 82% at 50% -22%, rgba(45, 212, 191, 0.16), transparent 52%),
+      radial-gradient(ellipse 52% 46% at 94% 6%, rgba(249, 115, 22, 0.1), transparent),
+      linear-gradient(180deg, #fafbfd 0%, var(--color-canvas-mid) 46%, #f4f6fb 100%);
   }
 
   html:not([data-theme]) .body-noise {
@@ -661,6 +1430,36 @@ html[data-theme="light"] .glass-panel {
     box-shadow:
       inset 0 1px 0 0 rgba(255, 255, 255, 0.98),
       0 1px 0 0 rgba(15, 23, 42, 0.06);
+  }
+
+  html:not([data-theme]) .admin-shell-premium::before {
+    background:
+      radial-gradient(ellipse 90% 58% at 6% -8%, color-mix(in oklab, var(--color-teal) 22%, transparent), transparent 56%),
+      radial-gradient(ellipse 65% 48% at 102% 4%, color-mix(in oklab, #0d9488 12%, transparent), transparent 50%),
+      radial-gradient(ellipse 50% 38% at 78% 96%, color-mix(in oklab, var(--color-teal) 6%, transparent), transparent 50%),
+      linear-gradient(
+        185deg,
+        color-mix(in oklab, var(--color-canvas) 99%, white) 0%,
+        var(--color-canvas) 42%,
+        color-mix(in oklab, var(--color-canvas) 97%, #e2e8f0) 100%
+      );
+  }
+
+  html:not([data-theme]) .admin-shell-premium::after {
+    opacity: 0.32;
+    background-image: radial-gradient(
+      circle at center,
+      color-mix(in oklab, #0f172a 5%, transparent) 0.5px,
+      transparent 0.5px
+    );
+  }
+
+  html:not([data-theme]) .admin-login-shell {
+    background: radial-gradient(
+      ellipse 100% 65% at 50% -18%,
+      color-mix(in oklab, var(--color-teal) 14%, transparent),
+      var(--color-canvas) 52%
+    );
   }
 
   html:not([data-theme]) .card-interactive::before {
@@ -681,10 +1480,11 @@ html[data-theme="light"] .glass-panel {
   }
 
   html:not([data-theme]) .text-gradient {
-    background: linear-gradient(120deg, #0d9488 0%, #ea580c 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    background: none;
+    -webkit-background-clip: unset;
+    background-clip: unset;
+    color: var(--ink);
+    -webkit-text-fill-color: var(--ink);
   }
 
   html:not([data-theme]) .shimmer-border {

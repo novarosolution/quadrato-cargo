@@ -15,7 +15,13 @@ type Props = {
   publicTrackingNote: string | null;
   senderAddress: string | null;
   recipientAddress: string | null;
-  assignedAgency: string | null;
+  agencyName: string | null;
+  agencyCity: string | null;
+  domesticMainHubCity: string;
+  fromCity: string | null;
+  toCity: string | null;
+  senderCountry: string | null;
+  recipientCountry: string | null;
   publicTimelineOverrides: PublicTimelineOverrides | null;
   publicTimelineStepVisibility: PublicTimelineStepVisibility | null;
   publicTimelineStatusPath: string[] | null;
@@ -34,7 +40,13 @@ export function AdminBookingTrackPreview({
   publicTrackingNote,
   senderAddress,
   recipientAddress,
-  assignedAgency,
+  agencyName,
+  agencyCity,
+  domesticMainHubCity,
+  fromCity,
+  toCity,
+  senderCountry,
+  recipientCountry,
   publicTimelineOverrides,
   publicTimelineStepVisibility,
   publicTimelineStatusPath,
@@ -53,7 +65,13 @@ export function AdminBookingTrackPreview({
       ctx={{
         senderAddress,
         recipientAddress,
-        agencyName: assignedAgency,
+        agencyName,
+        agencyCity,
+        domesticMainHubCity,
+        fromCity,
+        toCity,
+        senderCountry,
+        recipientCountry,
       }}
       timelineOverrides={publicTimelineOverrides}
       publicTimelineStatusPath={publicTimelineStatusPath}

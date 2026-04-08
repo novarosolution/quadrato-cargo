@@ -1,7 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { Check, ChevronLeft, Copy, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { postBookCourierApi } from "@/lib/api/public-client";
 import { authFieldClass, authInputClass } from "@/components/auth/authStyles";
@@ -16,6 +18,9 @@ import {
   validateBookCourierStep,
   validateBookCourier,
 } from "@/lib/validators/book-courier";
+import { RegionFieldByCountry } from "@/components/public/RegionFieldByCountry";
+import { COUNTRY_OPTIONS } from "@/lib/booking-country-options";
+import { getRegionOptionsForCountry } from "@/lib/country-state-options";
 
 type BookCourierState = {
   ok: boolean;
@@ -30,202 +35,6 @@ const initial: BookCourierState = {
   fieldErrors: {},
 };
 
-const COUNTRY_OPTIONS = [
-  "Afghanistan",
-  "Albania",
-  "Algeria",
-  "Andorra",
-  "Angola",
-  "Antigua and Barbuda",
-  "Argentina",
-  "Armenia",
-  "Australia",
-  "Austria",
-  "Azerbaijan",
-  "Bahamas",
-  "Bahrain",
-  "Bangladesh",
-  "Barbados",
-  "Belarus",
-  "Belgium",
-  "Belize",
-  "Benin",
-  "Bhutan",
-  "Bolivia",
-  "Bosnia and Herzegovina",
-  "Botswana",
-  "Brazil",
-  "Brunei",
-  "Bulgaria",
-  "Burkina Faso",
-  "Burundi",
-  "Cambodia",
-  "Cameroon",
-  "Canada",
-  "Cape Verde",
-  "Central African Republic",
-  "Chad",
-  "Chile",
-  "China",
-  "Colombia",
-  "Comoros",
-  "Congo",
-  "Costa Rica",
-  "Croatia",
-  "Cuba",
-  "Cyprus",
-  "Czech Republic",
-  "Denmark",
-  "Djibouti",
-  "Dominica",
-  "Dominican Republic",
-  "Ecuador",
-  "Egypt",
-  "El Salvador",
-  "Equatorial Guinea",
-  "Eritrea",
-  "Estonia",
-  "Eswatini",
-  "Ethiopia",
-  "Fiji",
-  "Finland",
-  "France",
-  "Gabon",
-  "Gambia",
-  "Georgia",
-  "Germany",
-  "Ghana",
-  "Greece",
-  "Grenada",
-  "Guatemala",
-  "Guinea",
-  "Guinea-Bissau",
-  "Guyana",
-  "Haiti",
-  "Honduras",
-  "Hungary",
-  "Iceland",
-  "India",
-  "Indonesia",
-  "Iran",
-  "Iraq",
-  "Ireland",
-  "Israel",
-  "Italy",
-  "Jamaica",
-  "Japan",
-  "Jordan",
-  "Kazakhstan",
-  "Kenya",
-  "Kiribati",
-  "Kuwait",
-  "Kyrgyzstan",
-  "Laos",
-  "Latvia",
-  "Lebanon",
-  "Lesotho",
-  "Liberia",
-  "Libya",
-  "Liechtenstein",
-  "Lithuania",
-  "Luxembourg",
-  "Madagascar",
-  "Malawi",
-  "Malaysia",
-  "Maldives",
-  "Mali",
-  "Malta",
-  "Marshall Islands",
-  "Mauritania",
-  "Mauritius",
-  "Mexico",
-  "Micronesia",
-  "Moldova",
-  "Monaco",
-  "Mongolia",
-  "Montenegro",
-  "Morocco",
-  "Mozambique",
-  "Myanmar",
-  "Namibia",
-  "Nauru",
-  "Nepal",
-  "Netherlands",
-  "New Zealand",
-  "Nicaragua",
-  "Niger",
-  "Nigeria",
-  "North Korea",
-  "North Macedonia",
-  "Norway",
-  "Oman",
-  "Pakistan",
-  "Palau",
-  "Panama",
-  "Papua New Guinea",
-  "Paraguay",
-  "Peru",
-  "Philippines",
-  "Poland",
-  "Portugal",
-  "Qatar",
-  "Romania",
-  "Russia",
-  "Rwanda",
-  "Saint Kitts and Nevis",
-  "Saint Lucia",
-  "Saint Vincent and the Grenadines",
-  "Samoa",
-  "San Marino",
-  "Sao Tome and Principe",
-  "Saudi Arabia",
-  "Senegal",
-  "Serbia",
-  "Seychelles",
-  "Sierra Leone",
-  "Singapore",
-  "Slovakia",
-  "Slovenia",
-  "Solomon Islands",
-  "Somalia",
-  "South Africa",
-  "South Korea",
-  "South Sudan",
-  "Spain",
-  "Sri Lanka",
-  "Sudan",
-  "Suriname",
-  "Sweden",
-  "Switzerland",
-  "Syria",
-  "Taiwan",
-  "Tajikistan",
-  "Tanzania",
-  "Thailand",
-  "Timor-Leste",
-  "Togo",
-  "Tonga",
-  "Trinidad and Tobago",
-  "Tunisia",
-  "Turkey",
-  "Turkmenistan",
-  "Tuvalu",
-  "Uganda",
-  "Ukraine",
-  "United Arab Emirates",
-  "United Kingdom",
-  "United States",
-  "Uruguay",
-  "Uzbekistan",
-  "Vanuatu",
-  "Vatican City",
-  "Venezuela",
-  "Vietnam",
-  "Yemen",
-  "Zambia",
-  "Zimbabwe"
-];
-
 function Err({ id, msg }: { id: string; msg?: string }) {
   if (!msg) return null;
   return (
@@ -235,17 +44,40 @@ function Err({ id, msg }: { id: string; msg?: string }) {
   );
 }
 
+const profileSavedAddressesHref = "/public/profile#saved-addresses";
+
+const addressToolbarLinkClass =
+  "inline-flex items-center justify-center rounded-xl border border-teal/35 bg-teal/10 px-3.5 py-2 text-xs font-semibold text-teal shadow-sm transition hover:border-teal/50 hover:bg-teal/15";
+
+const STEP_NAV_LABELS: Record<BookCourierStep, string> = {
+  1: "Route",
+  2: "Pickup",
+  3: "Delivery",
+  4: "Parcel",
+};
+
+const radioCardClass =
+  "flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-border-strong/70 bg-canvas/25 p-4 transition has-checked:border-teal/50 has-checked:bg-teal/[0.07] has-checked:shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--color-teal)_18%,transparent)] dark:has-checked:bg-teal/10";
+
 export function BookCourierForm() {
   const searchParams = useSearchParams();
+  const reduceMotion = useReducedMotion();
   const [pending, setPending] = useState(false);
   const [state, setState] = useState<BookCourierState>(initial);
   const [step, setStep] = useState<BookCourierStep>(1);
+  const [copiedRef, setCopiedRef] = useState(false);
   const [pickupTimeSlotValue, setPickupTimeSlotValue] = useState("");
   const [addressBook, setAddressBook] = useState<{
     sender: SavedAddress | null;
     recipient: SavedAddress | null;
   }>({ sender: null, recipient: null });
   const [addressHint, setAddressHint] = useState<string>("");
+  const [senderCountryLive, setSenderCountryLive] = useState("");
+  const [senderStateLive, setSenderStateLive] = useState("");
+  const [recipientCountryLive, setRecipientCountryLive] = useState("");
+  const [recipientStateLive, setRecipientStateLive] = useState("");
+  /** Mirrors “Number of parcels” for step 4 (one field group per parcel). */
+  const [parcelSlots, setParcelSlots] = useState(1);
   const todayDate = (() => {
     const now = new Date();
     const y = now.getFullYear();
@@ -254,15 +86,61 @@ export function BookCourierForm() {
     return `${y}-${m}-${d}`;
   })();
   const formRef = useRef<HTMLFormElement | null>(null);
+  const stepTopRef = useRef<HTMLDivElement | null>(null);
+  const skipStepScrollRef = useRef(true);
   const e = state.fieldErrors;
+
+  const stepPanelCls = (s: BookCourierStep) =>
+    `book-step-panel space-y-4 p-5 sm:p-6 ${step === s ? "" : "hidden"}`;
+
+  useEffect(() => {
+    if (skipStepScrollRef.current) {
+      skipStepScrollRef.current = false;
+      return;
+    }
+    const el = stepTopRef.current;
+    if (!el) return;
+    el.scrollIntoView({
+      behavior: reduceMotion ? "instant" : "smooth",
+      block: "start",
+    });
+  }, [step, reduceMotion]);
+
+  function goToStep(target: BookCourierStep) {
+    if (target >= step) return;
+    setState((prev) => ({ ...prev, message: "", fieldErrors: {} }));
+    setStep(target);
+  }
+
+  async function copyBookingReference() {
+    const ref = state.bookingReference?.trim();
+    if (!ref || typeof navigator === "undefined" || !navigator.clipboard?.writeText) return;
+    try {
+      await navigator.clipboard.writeText(ref);
+      setCopiedRef(true);
+      window.setTimeout(() => setCopiedRef(false), 2000);
+    } catch {
+      setCopiedRef(false);
+    }
+  }
   const stepMeta: Record<BookCourierStep, { title: string; note: string }> = {
-    1: { title: "Route & pickup", note: "Type and how we collect." },
+    1: { title: "Parcels & route", note: "Countries, route, and pickup time." },
     2: { title: "Sender", note: "Pickup contact and address." },
     3: { title: "Recipient", note: "Delivery contact and address." },
-    4: { title: "Parcel", note: "Size, contents, then submit." },
+    4: { title: "Parcels", note: "Per-box contents, weight, and submit." },
   };
 
-  const canShow = (target: BookCourierStep) => step === target;
+  const countryOptionsWithValue = (current: string) => {
+    const c = current.trim();
+    if (c && !COUNTRY_OPTIONS.includes(c)) return [...COUNTRY_OPTIONS, c];
+    return COUNTRY_OPTIONS;
+  };
+
+  const reloadAddressBook = useCallback(() => {
+    getAddressBookApi().then((res) => {
+      if (res.ok) setAddressBook(res.addressBook);
+    });
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -275,7 +153,15 @@ export function BookCourierForm() {
     };
   }, []);
 
-  const setFormValue = (name: string, value: string) => {
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible") reloadAddressBook();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [reloadAddressBook]);
+
+  const setFormValue = useCallback((name: string, value: string) => {
     if (!formRef.current) return;
     const el = formRef.current.elements.namedItem(name) as
       | HTMLInputElement
@@ -284,13 +170,61 @@ export function BookCourierForm() {
       | null;
     if (!el) return;
     el.value = value;
-  };
+  }, []);
 
   useEffect(() => {
     const postal = String(searchParams.get("postal") ?? "").trim();
     if (!postal) return;
     setFormValue("senderPostal", postal.slice(0, 32));
-  }, [searchParams]);
+  }, [searchParams, setFormValue]);
+
+  useEffect(() => {
+    if (step !== 4 || !formRef.current) return;
+    const form = formRef.current;
+    queueMicrotask(() => {
+      if (!form) return;
+      const fd = new FormData(form);
+      const n = Math.min(
+        99,
+        Math.max(1, parseInt(String(fd.get("parcelCount") ?? "1"), 10) || 1),
+      );
+      setParcelSlots(n);
+    });
+  }, [step]);
+
+  useEffect(() => {
+    if (step !== 2 || !formRef.current) return;
+    const form = formRef.current;
+    queueMicrotask(() => {
+      if (!form) return;
+      const fd = new FormData(form);
+      const hint = String(fd.get("pickupCountryHint") ?? "").trim();
+      let country = String(fd.get("senderCountry") ?? "").trim();
+      if (!country && hint) country = hint;
+      setSenderCountryLive((prev) => country || prev);
+      setSenderStateLive(String(fd.get("senderState") ?? "").trim());
+      const cityHint = String(fd.get("pickupCityHint") ?? "").trim();
+      const senderCity = String(fd.get("senderCity") ?? "").trim();
+      if (cityHint && !senderCity) setFormValue("senderCity", cityHint);
+    });
+  }, [step, setFormValue]);
+
+  useEffect(() => {
+    if (step !== 3 || !formRef.current) return;
+    const form = formRef.current;
+    queueMicrotask(() => {
+      if (!form) return;
+      const fd = new FormData(form);
+      const hint = String(fd.get("deliveryCountryHint") ?? "").trim();
+      let country = String(fd.get("recipientCountry") ?? "").trim();
+      if (!country && hint) country = hint;
+      setRecipientCountryLive((prev) => country || prev);
+      setRecipientStateLive(String(fd.get("recipientState") ?? "").trim());
+      const cityHint = String(fd.get("deliveryCityHint") ?? "").trim();
+      const recipientCity = String(fd.get("recipientCity") ?? "").trim();
+      if (cityHint && !recipientCity) setFormValue("recipientCity", cityHint);
+    });
+  }, [step, setFormValue]);
 
   const applySavedAddress = (kind: "sender" | "recipient") => {
     const saved = addressBook[kind];
@@ -302,24 +236,42 @@ export function BookCourierForm() {
     setFormValue(`${p}Street`, saved.street);
     setFormValue(`${p}City`, saved.city);
     setFormValue(`${p}Postal`, saved.postal);
-    setFormValue(`${p}Country`, saved.country);
+    if (kind === "sender") {
+      setSenderCountryLive(saved.country);
+      setSenderStateLive(saved.state ?? "");
+    } else {
+      setRecipientCountryLive(saved.country);
+      setRecipientStateLive(saved.state ?? "");
+    }
     setAddressHint(`Saved ${kind} address applied.`);
   };
 
   const saveCurrentAddress = async (kind: "sender" | "recipient") => {
     if (!formRef.current) return;
     const row = bookCourierRowFromFormData(new FormData(formRef.current));
+    const phoneRaw = kind === "sender" ? row.senderPhone : row.recipientPhone;
+    const phoneDigits = phoneRaw.replace(/\D/g, "").slice(0, 15);
+    const stateRaw = (kind === "sender" ? row.senderState : row.recipientState).trim();
     const draft: SavedAddress = {
       name: kind === "sender" ? row.senderName : row.recipientName,
       email: kind === "sender" ? row.senderEmail : row.recipientEmail,
-      phone: kind === "sender" ? row.senderPhone : row.recipientPhone,
+      phone: phoneDigits,
       street: kind === "sender" ? row.senderStreet : row.recipientStreet,
       city: kind === "sender" ? row.senderCity : row.recipientCity,
+      ...(stateRaw ? { state: stateRaw } : {}),
       postal: kind === "sender" ? row.senderPostal : row.recipientPostal,
       country: kind === "sender" ? row.senderCountry : row.recipientCountry,
     };
-    if (!draft.name || !draft.email || !draft.phone || !draft.street || !draft.city || !draft.postal || !draft.country) {
-      setAddressHint(`Please fill ${kind} fields before saving.`);
+    if (
+      !draft.name ||
+      !draft.email ||
+      phoneDigits.length < 7 ||
+      !draft.street ||
+      !draft.city ||
+      !draft.postal ||
+      !draft.country
+    ) {
+      setAddressHint(`Please fill ${kind} fields before saving (phone 7–15 digits).`);
       return;
     }
     const res = await updateAddressBookApi(
@@ -386,6 +338,10 @@ export function BookCourierForm() {
       });
       form.reset();
       setPickupTimeSlotValue("");
+      setSenderCountryLive("");
+      setSenderStateLive("");
+      setRecipientCountryLive("");
+      setRecipientStateLive("");
       setStep(1);
     } else {
       setState({
@@ -398,94 +354,220 @@ export function BookCourierForm() {
 
   return (
     <form ref={formRef} onSubmit={onSubmit} className="space-y-4 sm:space-y-5" noValidate>
-      <div className="rounded-xl border border-teal/25 bg-linear-to-r from-teal/10 to-canvas/20 p-3 sm:p-4">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-soft">
-            Booking steps
-          </p>
-          <p className="rounded-full border border-teal/30 bg-teal/10 px-2.5 py-1 text-xs font-semibold text-teal">
+      <datalist id="booking-country-options">
+        {COUNTRY_OPTIONS.map((c) => (
+          <option key={c} value={c} />
+        ))}
+      </datalist>
+      <div
+        ref={stepTopRef}
+        className="book-step-panel overflow-hidden p-4 sm:p-5"
+      >
+        <nav aria-label="Booking steps">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-soft">
             Step {step} of 4
           </p>
-        </div>
-        <h3 className="mt-2 font-display text-base font-semibold text-ink sm:text-[17px]">
-          {stepMeta[step].title}
-        </h3>
-        <p className="mt-1 text-xs text-muted sm:text-sm">{stepMeta[step].note}</p>
-        <div className="mt-3 grid grid-cols-4 gap-2">
-          {[1, 2, 3, 4].map((s) => (
+          <h3 className="mt-2 font-display text-lg font-bold tracking-tight text-ink sm:text-xl">
+            {stepMeta[step].title}
+          </h3>
+          <p className="mt-1 text-sm leading-relaxed text-muted">{stepMeta[step].note}</p>
+          <ol className="mt-5 grid grid-cols-4 gap-2 sm:gap-3">
+            {([1, 2, 3, 4] as const).map((n) => {
+              const done = step > n;
+              const current = step === n;
+              const canJumpBack = n < step;
+              return (
+                <li key={n} className="min-w-0">
+                  <button
+                    type="button"
+                    disabled={n >= step}
+                    onClick={() => n < step && goToStep(n)}
+                    aria-current={current ? "step" : undefined}
+                    title={
+                      canJumpBack
+                        ? `Go back to ${STEP_NAV_LABELS[n]}`
+                        : current
+                          ? `Current: ${STEP_NAV_LABELS[n]}`
+                          : "Complete previous steps first"
+                    }
+                    className={`flex w-full flex-col items-center gap-1.5 rounded-xl px-1 py-2 text-center transition sm:py-2.5 ${
+                      current
+                        ? "bg-teal/15 ring-2 ring-teal/40"
+                        : done
+                          ? "bg-canvas/40 hover:bg-teal/10"
+                          : "cursor-not-allowed opacity-45"
+                    } ${canJumpBack ? "cursor-pointer hover:ring-1 hover:ring-teal/25" : ""}`}
+                  >
+                    <span
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums sm:h-10 sm:w-10 sm:text-sm ${
+                        done
+                          ? "bg-teal text-slate-950"
+                          : current
+                            ? "bg-teal/25 text-teal"
+                            : "bg-border-strong/40 text-muted-soft"
+                      }`}
+                    >
+                      {done ? <Check className="h-4 w-4 sm:h-[1.15rem] sm:w-[1.15rem]" strokeWidth={2.5} aria-hidden /> : n}
+                    </span>
+                    <span className="w-full truncate text-[10px] font-semibold uppercase tracking-wide text-muted sm:text-[11px]">
+                      {STEP_NAV_LABELS[n]}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border-strong/40 sm:mt-4">
             <div
-              key={s}
-              className={`h-2 rounded-full transition ${
-                step >= s ? "bg-teal" : "bg-border/70"
-              }`}
+              className="h-full rounded-full bg-teal transition-[width] duration-500 ease-out"
+              style={{ width: `${(step / 4) * 100}%` }}
             />
-          ))}
-        </div>
+          </div>
+        </nav>
       </div>
 
-      <fieldset
-        className={`space-y-3 rounded-xl border border-border bg-surface-elevated/70 p-4 shadow-sm backdrop-blur-md sm:p-5 ${
-          canShow(1) ? "" : "hidden"
-        }`}
-      >
+      <fieldset className={stepPanelCls(1)}>
         <legend className="font-display text-base font-semibold text-ink px-1">
-          Step 1: Shipment route
+          Step 1: Parcels &amp; route
         </legend>
-        <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-strong bg-ghost-fill px-4 py-3 has-checked:border-teal/40 has-checked:bg-teal/5">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <label htmlFor="parcelCount" className="text-sm font-medium text-ink">
+              Number of parcels
+            </label>
             <input
-              type="radio"
-              name="routeType"
-              value="domestic"
-              className="h-4 w-4 border-border-strong text-teal focus:ring-teal/40"
+              id="parcelCount"
+              name="parcelCount"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={99}
+              defaultValue={1}
+              className={`${authFieldClass} mt-1.5 w-full max-w-[12rem]`}
+              aria-invalid={Boolean(e.parcelCount)}
+              aria-describedby={e.parcelCount ? "parcelCount-err" : undefined}
             />
-            <span className="text-sm font-medium text-ink">Domestic</span>
-          </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-strong bg-ghost-fill px-4 py-3 has-checked:border-teal/40 has-checked:bg-teal/5">
+            <Err id="parcelCount-err" msg={e.parcelCount} />
+          </div>
+          <div>
+            <label htmlFor="pickupCountryHint" className="text-sm font-medium text-ink">
+              Pickup country
+            </label>
             <input
-              type="radio"
-              name="routeType"
-              value="international"
-              className="h-4 w-4 border-border-strong text-teal focus:ring-teal/40"
+              id="pickupCountryHint"
+              name="pickupCountryHint"
+              type="text"
+              list="booking-country-options"
+              autoComplete="country-name"
+              placeholder="Where we collect"
+              className={`${authFieldClass} mt-1.5 w-full`}
+              aria-invalid={Boolean(e.pickupCountryHint)}
+              aria-describedby={e.pickupCountryHint ? "pickupCountryHint-err" : undefined}
             />
-            <span className="text-sm font-medium text-ink">
-              International (out of country)
-            </span>
-          </label>
+            <Err id="pickupCountryHint-err" msg={e.pickupCountryHint} />
+          </div>
+          <div>
+            <label htmlFor="pickupCityHint" className="text-sm font-medium text-ink">
+              Pickup city
+            </label>
+            <input
+              id="pickupCityHint"
+              name="pickupCityHint"
+              type="text"
+              autoComplete="address-level2"
+              placeholder="City we collect from"
+              className={`${authFieldClass} mt-1.5 w-full`}
+              aria-invalid={Boolean(e.pickupCityHint)}
+              aria-describedby={e.pickupCityHint ? "pickupCityHint-err" : undefined}
+            />
+            <Err id="pickupCityHint-err" msg={e.pickupCityHint} />
+          </div>
+          <div>
+            <label htmlFor="deliveryCountryHint" className="text-sm font-medium text-ink">
+              Delivery country
+            </label>
+            <input
+              id="deliveryCountryHint"
+              name="deliveryCountryHint"
+              type="text"
+              list="booking-country-options"
+              autoComplete="country-name"
+              placeholder="Where it arrives"
+              className={`${authFieldClass} mt-1.5 w-full`}
+              aria-invalid={Boolean(e.deliveryCountryHint)}
+              aria-describedby={e.deliveryCountryHint ? "deliveryCountryHint-err" : undefined}
+            />
+            <Err id="deliveryCountryHint-err" msg={e.deliveryCountryHint} />
+          </div>
+          <div>
+            <label htmlFor="deliveryCityHint" className="text-sm font-medium text-ink">
+              Delivery city
+            </label>
+            <input
+              id="deliveryCityHint"
+              name="deliveryCityHint"
+              type="text"
+              autoComplete="address-level2"
+              placeholder="City it arrives in"
+              className={`${authFieldClass} mt-1.5 w-full`}
+              aria-invalid={Boolean(e.deliveryCityHint)}
+              aria-describedby={e.deliveryCityHint ? "deliveryCityHint-err" : undefined}
+            />
+            <Err id="deliveryCityHint-err" msg={e.deliveryCityHint} />
+          </div>
         </div>
-        <Err id="routeType-err" msg={e.routeType} />
+        <div className="border-t border-border-strong/40 pt-5">
+          <p className="mb-3 text-sm font-semibold text-ink">Route type</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+            <label className={radioCardClass}>
+              <input
+                type="radio"
+                name="routeType"
+                value="domestic"
+                className="mt-0.5 h-4 w-4 shrink-0 border-border-strong text-teal focus:ring-teal/40"
+              />
+              <span className="text-sm font-medium text-ink">Domestic</span>
+            </label>
+            <label className={radioCardClass}>
+              <input
+                type="radio"
+                name="routeType"
+                value="international"
+                className="mt-0.5 h-4 w-4 shrink-0 border-border-strong text-teal focus:ring-teal/40"
+              />
+              <span className="text-sm font-medium text-ink">International</span>
+            </label>
+          </div>
+          <Err id="routeType-err" msg={e.routeType} />
+        </div>
       </fieldset>
 
-      <fieldset
-        className={`space-y-3 rounded-xl border border-border bg-surface-elevated/70 p-4 shadow-sm backdrop-blur-md sm:p-5 ${
-          canShow(1) ? "" : "hidden"
-        }`}
-      >
+      <fieldset className={stepPanelCls(1)}>
         <legend className="font-display text-base font-semibold text-ink px-1">
           Collection at your Postal Code / ZIP / address
         </legend>
         <p className="text-sm text-muted">
           Instant uses your postal code; scheduled needs date and time.
         </p>
-        <div className="flex flex-col gap-3 sm:flex-row sm:gap-6">
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-strong bg-ghost-fill px-4 py-3 has-checked:border-teal/40 has-checked:bg-teal/5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <label className={radioCardClass}>
             <input
               type="radio"
               name="collectionMode"
               value="instant"
               defaultChecked
-              className="h-4 w-4 border-border-strong text-teal focus:ring-teal/40"
+              className="mt-0.5 h-4 w-4 shrink-0 border-border-strong text-teal focus:ring-teal/40"
             />
             <span className="text-sm font-medium text-ink">
               Instant collection (Postal Code / ZIP)
             </span>
           </label>
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border-strong bg-ghost-fill px-4 py-3 has-checked:border-teal/40 has-checked:bg-teal/5">
+          <label className={radioCardClass}>
             <input
               type="radio"
               name="collectionMode"
               value="scheduled"
-              className="h-4 w-4 border-border-strong text-teal focus:ring-teal/40"
+              className="mt-0.5 h-4 w-4 shrink-0 border-border-strong text-teal focus:ring-teal/40"
             />
             <span className="text-sm font-medium text-ink">
               Schedule date &amp; time (Postal Code / ZIP)
@@ -569,30 +651,31 @@ export function BookCourierForm() {
         <Err id="collectionMode-err" msg={e.collectionMode} />
       </fieldset>
 
-      <fieldset
-        className={`space-y-3 rounded-xl border border-border bg-surface-elevated/70 p-4 shadow-sm backdrop-blur-md sm:p-5 ${
-          canShow(2) ? "" : "hidden"
-        }`}
-      >
+      <fieldset className={stepPanelCls(2)}>
         <legend className="font-display text-base font-semibold text-ink px-1">
           Step 2: Sender &amp; pickup
         </legend>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => applySavedAddress("sender")}
-            className="rounded-lg border border-border-strong bg-canvas/40 px-3 py-1.5 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
-            disabled={!addressBook.sender}
-          >
-            Use saved sender
-          </button>
-          <button
-            type="button"
-            onClick={() => void saveCurrentAddress("sender")}
-            className="rounded-lg border border-border-strong bg-canvas/40 px-3 py-1.5 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
-          >
-            Save sender address
-          </button>
+        <div className="flex flex-col gap-3 rounded-xl border border-border-strong/50 bg-canvas/20 p-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => applySavedAddress("sender")}
+              className="rounded-xl border border-border-strong bg-surface-elevated/60 px-3.5 py-2 text-xs font-semibold text-ink transition hover:border-teal/35 hover:bg-pill-hover disabled:cursor-not-allowed disabled:opacity-45"
+              disabled={!addressBook.sender}
+            >
+              Use saved sender
+            </button>
+            <button
+              type="button"
+              onClick={() => void saveCurrentAddress("sender")}
+              className="rounded-xl border border-border-strong bg-surface-elevated/60 px-3.5 py-2 text-xs font-semibold text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+            >
+              Save sender address
+            </button>
+          </div>
+          <Link href={profileSavedAddressesHref} prefetch={false} className={addressToolbarLinkClass}>
+            Edit saved addresses
+          </Link>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
@@ -677,6 +760,53 @@ export function BookCourierForm() {
             <Err id="senderCity-err" msg={e.senderCity} />
           </div>
           <div>
+            <label htmlFor="senderCountry" className="text-sm font-medium text-ink">
+              Country (pickup) <span className="text-teal">*</span>
+            </label>
+            <select
+              id="senderCountry"
+              name="senderCountry"
+              autoComplete="country-name"
+              className={authFieldClass}
+              aria-invalid={Boolean(e.senderCountry)}
+              aria-describedby={e.senderCountry ? "senderCountry-err" : undefined}
+              value={senderCountryLive}
+              onChange={(ev) => {
+                const v = ev.target.value;
+                setSenderCountryLive(v);
+                const ro = getRegionOptionsForCountry(v);
+                if (ro?.length) {
+                  setSenderStateLive((prev) =>
+                    prev && ro.includes(prev) ? prev : "",
+                  );
+                }
+              }}
+            >
+              <option value="">Select pickup country</option>
+              {countryOptionsWithValue(senderCountryLive).map((country) => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
+            <Err id="senderCountry-err" msg={e.senderCountry} />
+          </div>
+          <div>
+            <label htmlFor="senderState" className="text-sm font-medium text-ink">
+              State / province
+            </label>
+            <RegionFieldByCountry
+              id="senderState"
+              name="senderState"
+              country={senderCountryLive}
+              value={senderStateLive}
+              onChange={setSenderStateLive}
+              errorMsg={e.senderState}
+              autoComplete="address-level1"
+            />
+            <Err id="senderState-err" msg={e.senderState} />
+          </div>
+          <div>
             <label htmlFor="senderPostal" className="text-sm font-medium text-ink">
               Postal Code / ZIP <span className="text-teal">*</span>
             </label>
@@ -690,57 +820,34 @@ export function BookCourierForm() {
             />
             <Err id="senderPostal-err" msg={e.senderPostal} />
           </div>
-          <div className="sm:col-span-2">
-            <label htmlFor="senderCountry" className="text-sm font-medium text-ink">
-              Country (pickup) <span className="text-teal">*</span>
-            </label>
-            <select
-              id="senderCountry"
-              name="senderCountry"
-              autoComplete="country-name"
-              className={authFieldClass}
-              aria-invalid={Boolean(e.senderCountry)}
-              aria-describedby={e.senderCountry ? "senderCountry-err" : undefined}
-              defaultValue=""
-            >
-              <option value="" disabled>
-                Select pickup country
-              </option>
-              {COUNTRY_OPTIONS.map((country) => (
-                <option key={country} value={country}>
-                  {country}
-                </option>
-              ))}
-            </select>
-            <Err id="senderCountry-err" msg={e.senderCountry} />
-          </div>
         </div>
       </fieldset>
 
-      <fieldset
-        className={`space-y-3 rounded-xl border border-border bg-surface-elevated/70 p-4 shadow-sm backdrop-blur-md sm:p-5 ${
-          canShow(3) ? "" : "hidden"
-        }`}
-      >
+      <fieldset className={stepPanelCls(3)}>
         <legend className="font-display text-base font-semibold text-ink px-1">
           Step 3: Recipient &amp; delivery
         </legend>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => applySavedAddress("recipient")}
-            className="rounded-lg border border-border-strong bg-canvas/40 px-3 py-1.5 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
-            disabled={!addressBook.recipient}
-          >
-            Use saved recipient
-          </button>
-          <button
-            type="button"
-            onClick={() => void saveCurrentAddress("recipient")}
-            className="rounded-lg border border-border-strong bg-canvas/40 px-3 py-1.5 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
-          >
-            Save recipient address
-          </button>
+        <div className="flex flex-col gap-3 rounded-xl border border-border-strong/50 bg-canvas/20 p-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => applySavedAddress("recipient")}
+              className="rounded-xl border border-border-strong bg-surface-elevated/60 px-3.5 py-2 text-xs font-semibold text-ink transition hover:border-teal/35 hover:bg-pill-hover disabled:cursor-not-allowed disabled:opacity-45"
+              disabled={!addressBook.recipient}
+            >
+              Use saved recipient
+            </button>
+            <button
+              type="button"
+              onClick={() => void saveCurrentAddress("recipient")}
+              className="rounded-xl border border-border-strong bg-surface-elevated/60 px-3.5 py-2 text-xs font-semibold text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+            >
+              Save recipient address
+            </button>
+          </div>
+          <Link href={profileSavedAddressesHref} prefetch={false} className={addressToolbarLinkClass}>
+            Edit saved addresses
+          </Link>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
@@ -835,6 +942,61 @@ export function BookCourierForm() {
           </div>
           <div>
             <label
+              htmlFor="recipientCountry"
+              className="text-sm font-medium text-ink"
+            >
+              Country (delivery) <span className="text-teal">*</span>
+            </label>
+            <select
+              id="recipientCountry"
+              name="recipientCountry"
+              autoComplete="shipping country"
+              className={authFieldClass}
+              aria-invalid={Boolean(e.recipientCountry)}
+              aria-describedby={
+                e.recipientCountry ? "recipientCountry-err" : undefined
+              }
+              value={recipientCountryLive}
+              onChange={(ev) => {
+                const v = ev.target.value;
+                setRecipientCountryLive(v);
+                const ro = getRegionOptionsForCountry(v);
+                if (ro?.length) {
+                  setRecipientStateLive((prev) =>
+                    prev && ro.includes(prev) ? prev : "",
+                  );
+                }
+              }}
+            >
+              <option value="">Select delivery country</option>
+              {countryOptionsWithValue(recipientCountryLive).map((country) => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
+            <Err id="recipientCountry-err" msg={e.recipientCountry} />
+          </div>
+          <div>
+            <label
+              htmlFor="recipientState"
+              className="text-sm font-medium text-ink"
+            >
+              State / province
+            </label>
+            <RegionFieldByCountry
+              id="recipientState"
+              name="recipientState"
+              country={recipientCountryLive}
+              value={recipientStateLive}
+              onChange={setRecipientStateLive}
+              errorMsg={e.recipientState}
+              autoComplete="shipping address-level1"
+            />
+            <Err id="recipientState-err" msg={e.recipientState} />
+          </div>
+          <div>
+            <label
               htmlFor="recipientPostal"
               className="text-sm font-medium text-ink"
             >
@@ -852,125 +1014,128 @@ export function BookCourierForm() {
             />
             <Err id="recipientPostal-err" msg={e.recipientPostal} />
           </div>
-          <div className="sm:col-span-2">
-            <label
-              htmlFor="recipientCountry"
-              className="text-sm font-medium text-ink"
-            >
-              Country (delivery) <span className="text-teal">*</span>
-            </label>
-            <select
-              id="recipientCountry"
-              name="recipientCountry"
-              autoComplete="shipping country"
-              className={authFieldClass}
-              aria-invalid={Boolean(e.recipientCountry)}
-              aria-describedby={
-                e.recipientCountry ? "recipientCountry-err" : undefined
-              }
-              defaultValue=""
-            >
-              <option value="" disabled>
-                Select delivery country
-              </option>
-              {COUNTRY_OPTIONS.map((country) => (
-                <option key={country} value={country}>
-                  {country}
-                </option>
-              ))}
-            </select>
-            <Err id="recipientCountry-err" msg={e.recipientCountry} />
-          </div>
         </div>
       </fieldset>
 
-      <fieldset
-        className={`space-y-3 rounded-xl border border-border bg-surface-elevated/70 p-4 shadow-sm backdrop-blur-md sm:p-5 ${
-          canShow(4) ? "" : "hidden"
-        }`}
-      >
+      <fieldset className={stepPanelCls(4)}>
         <legend className="font-display text-base font-semibold text-ink px-1">
           Step 4: Parcel details
         </legend>
-        <div>
-          <label htmlFor="contentsDescription" className="text-sm font-medium text-ink">
-            Contents description <span className="text-teal">*</span>
-          </label>
-          <textarea
-            id="contentsDescription"
-            name="contentsDescription"
-            rows={3}
-            placeholder="e.g. Commercial samples, clothing, 2 books — for customs"
-            className={authFieldClass}
-            aria-invalid={Boolean(e.contentsDescription)}
-            aria-describedby={
-              e.contentsDescription ? "contentsDescription-err" : undefined
-            }
-          />
-          <Err id="contentsDescription-err" msg={e.contentsDescription} />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="weightKg" className="text-sm font-medium text-ink">
-              Total weight (kg) <span className="text-teal">*</span>
-            </label>
-            <input
-              id="weightKg"
-              name="weightKg"
-              inputMode="decimal"
-              placeholder="e.g. 2.5"
-              className={authFieldClass}
-              aria-invalid={Boolean(e.weightKg)}
-              aria-describedby={e.weightKg ? "weightKg-err" : undefined}
-            />
-            <Err id="weightKg-err" msg={e.weightKg} />
-          </div>
-          <div>
-            <label htmlFor="declaredValue" className="text-sm font-medium text-ink">
-              Declared value (optional)
-            </label>
-            <input
-              id="declaredValue"
-              name="declaredValue"
-              placeholder="e.g. USD 150"
-              className={authFieldClass}
-            />
-          </div>
-          <div>
-            <label htmlFor="lengthCm" className="text-sm font-medium text-ink">
-              L × W × H (cm, optional)
-            </label>
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              <input
-                name="lengthCm"
-                placeholder="L"
-                inputMode="numeric"
-                className={authInputClass}
-              />
-              <input
-                name="widthCm"
-                placeholder="W"
-                inputMode="numeric"
-                className={authInputClass}
-              />
-              <input
-                name="heightCm"
-                placeholder="H"
-                inputMode="numeric"
-                className={authInputClass}
-              />
-            </div>
-          </div>
+        <p className="text-sm text-muted">
+          You chose <span className="font-medium text-ink">{parcelSlots}</span> parcel
+          {parcelSlots === 1 ? "" : "s"} in step 1 — fill each box below. Total weight we use is the sum of
+          all parcels.
+        </p>
+        <div className="space-y-6">
+          {Array.from({ length: parcelSlots }, (_, i) => {
+            const pContents = e[`parcel_${i}_contentsDescription`];
+            const pWeight = e[`parcel_${i}_weightKg`];
+            const pLen = e[`parcel_${i}_lengthCm`];
+            const pWid = e[`parcel_${i}_widthCm`];
+            const pHt = e[`parcel_${i}_heightCm`];
+            return (
+              <div
+                key={i}
+                className="rounded-2xl border border-border-strong/80 bg-canvas/20 p-4 sm:p-5"
+              >
+                <p className="text-xs font-bold uppercase tracking-wide text-teal">
+                  Parcel {i + 1} of {parcelSlots}
+                </p>
+                <div className="mt-3">
+                  <label
+                    htmlFor={`parcel_${i}_contentsDescription`}
+                    className="text-sm font-medium text-ink"
+                  >
+                    Contents description <span className="text-teal">*</span>
+                  </label>
+                  <textarea
+                    id={`parcel_${i}_contentsDescription`}
+                    name={`parcel_${i}_contentsDescription`}
+                    rows={3}
+                    placeholder="e.g. Commercial samples, clothing — for customs"
+                    className={authFieldClass}
+                    aria-invalid={Boolean(pContents)}
+                    aria-describedby={pContents ? `parcel_${i}_contents-err` : undefined}
+                  />
+                  <Err id={`parcel_${i}_contents-err`} msg={pContents} />
+                </div>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor={`parcel_${i}_weightKg`}
+                      className="text-sm font-medium text-ink"
+                    >
+                      Weight (kg) <span className="text-teal">*</span>
+                    </label>
+                    <input
+                      id={`parcel_${i}_weightKg`}
+                      name={`parcel_${i}_weightKg`}
+                      inputMode="decimal"
+                      placeholder="e.g. 2.5"
+                      className={authFieldClass}
+                      aria-invalid={Boolean(pWeight)}
+                      aria-describedby={pWeight ? `parcel_${i}_weight-err` : undefined}
+                    />
+                    <Err id={`parcel_${i}_weight-err`} msg={pWeight} />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor={`parcel_${i}_declaredValue`}
+                      className="text-sm font-medium text-ink"
+                    >
+                      Declared value (optional)
+                    </label>
+                    <input
+                      id={`parcel_${i}_declaredValue`}
+                      name={`parcel_${i}_declaredValue`}
+                      placeholder="e.g. USD 150"
+                      className={authFieldClass}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <span className="text-sm font-medium text-ink">
+                      L × W × H (cm, optional)
+                    </span>
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      <input
+                        name={`parcel_${i}_lengthCm`}
+                        placeholder="L"
+                        inputMode="numeric"
+                        className={authInputClass}
+                        aria-invalid={Boolean(pLen)}
+                        aria-describedby={pLen ? `parcel_${i}_len-err` : undefined}
+                      />
+                      <input
+                        name={`parcel_${i}_widthCm`}
+                        placeholder="W"
+                        inputMode="numeric"
+                        className={authInputClass}
+                        aria-invalid={Boolean(pWid)}
+                        aria-describedby={pWid ? `parcel_${i}_wid-err` : undefined}
+                      />
+                      <input
+                        name={`parcel_${i}_heightCm`}
+                        placeholder="H"
+                        inputMode="numeric"
+                        className={authInputClass}
+                        aria-invalid={Boolean(pHt)}
+                        aria-describedby={pHt ? `parcel_${i}_ht-err` : undefined}
+                      />
+                    </div>
+                    <Err id={`parcel_${i}_len-err`} msg={pLen} />
+                    <Err id={`parcel_${i}_wid-err`} msg={pWid} />
+                    <Err id={`parcel_${i}_ht-err`} msg={pHt} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </fieldset>
 
-      <fieldset
-        className={`space-y-3 rounded-xl border border-border bg-surface-elevated/70 p-4 shadow-sm backdrop-blur-md sm:p-5 ${
-          canShow(4) ? "" : "hidden"
-        }`}
-      >
+      <fieldset className={stepPanelCls(4)}>
         <legend className="font-display text-base font-semibold text-ink px-1">
-          Pickup timing {"&"} notes
+          Pickup timing &amp; notes
         </legend>
         <p className="text-sm text-muted">Window or notes for the courier.</p>
         <div>
@@ -1010,8 +1175,8 @@ export function BookCourierForm() {
       </fieldset>
 
       <div
-        className={`rounded-2xl border border-border bg-ghost-fill p-5 ${
-          canShow(4) ? "" : "hidden"
+        className={`book-step-panel border-amber-500/20 bg-amber-500/[0.07] p-5 dark:bg-amber-500/10 ${
+          step === 4 ? "" : "hidden"
         }`}
       >
         <label className="flex cursor-pointer gap-3 text-sm text-muted">
@@ -1032,7 +1197,7 @@ export function BookCourierForm() {
         <Err id="agreed-err" msg={e.agreed} />
       </div>
 
-      <div className="mt-8 grid gap-3 sm:grid-cols-2">
+      <div className="mt-8 flex flex-col-reverse gap-3 sm:mt-10 sm:grid sm:grid-cols-2 sm:items-stretch sm:gap-4">
         {step > 1 ? (
           <button
             type="button"
@@ -1040,18 +1205,19 @@ export function BookCourierForm() {
               setState((prev) => ({ ...prev, message: "", fieldErrors: {} }));
               setStep((prev) => (prev - 1) as BookCourierStep);
             }}
-            className="rounded-2xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm font-semibold text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border-2 border-border-strong bg-canvas/40 px-5 py-3.5 text-sm font-semibold text-ink transition hover:border-teal/35 hover:bg-pill-hover"
           >
+            <ChevronLeft className="h-4 w-4 shrink-0 opacity-80" aria-hidden />
             Back
           </button>
         ) : (
-          <div />
+          <span className="hidden min-h-0 sm:block" aria-hidden />
         )}
         {step < 4 ? (
           <button
             type="button"
             onClick={() => onNextStep((step + 1) as BookCourierStep)}
-            className="btn-primary w-full rounded-2xl border border-teal/70 bg-teal py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25 transition hover:bg-teal/90"
+            className="btn-primary min-h-12 w-full rounded-2xl border border-teal/70 bg-teal py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25 transition hover:bg-teal/90 sm:justify-self-end"
           >
             Continue
           </button>
@@ -1061,35 +1227,95 @@ export function BookCourierForm() {
             disabled={pending}
             whileHover={{ scale: pending ? 1 : 1.01 }}
             whileTap={{ scale: pending ? 1 : 0.99 }}
-            className="btn-primary w-full rounded-2xl border border-teal/70 bg-teal py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25 transition hover:bg-teal/90 disabled:opacity-60"
+            className="btn-primary inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-teal/70 bg-teal py-3.5 text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25 transition hover:bg-teal/90 disabled:opacity-60 sm:justify-self-end"
           >
-            {pending ? "Submitting booking..." : "Submit booking"}
+            {pending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                Submitting…
+              </>
+            ) : (
+              "Submit booking"
+            )}
           </motion.button>
         )}
       </div>
 
       {state.ok && state.message ? (
-        <motion.p
-          className="rounded-2xl border border-teal/25 bg-teal/10 px-4 py-4 text-sm leading-relaxed text-teal"
+        <motion.div
+          className="rounded-2xl border border-teal/30 bg-linear-to-br from-teal/15 via-teal/8 to-canvas/30 p-5 shadow-[0_16px_40px_-24px_color-mix(in_oklab,var(--color-teal)_25%,transparent)] sm:p-6"
           role="status"
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          {state.message}
+          <p className="font-display text-base font-semibold text-ink">{state.message}</p>
           {state.bookingReference ? (
-            <span className="mt-2 block font-mono text-xs text-ink">
-              Booking reference: {state.bookingReference}
-            </span>
+            <div className="mt-4 space-y-3">
+              <div className="rounded-xl border border-border-strong/60 bg-canvas/40 px-4 py-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-soft">
+                  Your booking reference
+                </p>
+                <p className="mt-1 break-all font-mono text-sm font-medium text-ink">
+                  {state.bookingReference}
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => void copyBookingReference()}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-border-strong bg-surface-elevated/70 px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-teal/40"
+                >
+                  {copiedRef ? (
+                    <>
+                      <Check className="h-4 w-4 text-teal" aria-hidden />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 opacity-80" aria-hidden />
+                      Copy reference
+                    </>
+                  )}
+                </button>
+                <Link
+                  href={`/public/tsking?reference=${encodeURIComponent(state.bookingReference)}`}
+                  prefetch={false}
+                  className="btn-primary inline-flex items-center justify-center rounded-xl border border-teal/70 bg-teal px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-md shadow-teal/20"
+                >
+                  Track this shipment
+                </Link>
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-xl border border-border-strong px-4 py-2.5 text-sm font-semibold text-muted transition hover:border-teal/30 hover:text-ink"
+                  onClick={() => {
+                    formRef.current?.reset();
+                    setPickupTimeSlotValue("");
+                    setSenderCountryLive("");
+                    setSenderStateLive("");
+                    setRecipientCountryLive("");
+                    setRecipientStateLive("");
+                    setCopiedRef(false);
+                    setState(initial);
+                    setStep(1);
+                  }}
+                >
+                  Book another
+                </button>
+              </div>
+            </div>
           ) : null}
-        </motion.p>
+        </motion.div>
       ) : null}
       {addressHint ? (
-        <p className="rounded-xl border border-border bg-canvas/20 px-3 py-2 text-xs text-muted">
+        <p className="rounded-xl border border-teal/20 bg-teal/5 px-4 py-3 text-xs leading-relaxed text-muted sm:text-sm">
           {addressHint}
         </p>
       ) : null}
       {!state.ok && state.message ? (
-        <p className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-4 text-sm text-rose-300" role="alert">
+        <p
+          className="rounded-2xl border border-rose-500/35 bg-rose-500/10 px-4 py-4 text-sm text-rose-700 dark:text-rose-200"
+          role="alert"
+        >
           {state.message}
         </p>
       ) : null}

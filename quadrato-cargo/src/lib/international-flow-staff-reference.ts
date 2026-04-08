@@ -1,3 +1,5 @@
+import { siteName } from "@/lib/site";
+
 /**
  * Staff-only reference: maps each international **macro index** (0–11, same as Track cards and
  * `internationalAgencyStage`) to the professional sub-flow checklist. Keeps admin/agency aligned
@@ -10,64 +12,73 @@ export type InternationalMacroStaffBlock = {
   sectionLabel: string;
   /** Checklist lines shown to staff */
   checklist: string[];
+  /** Default customer map line when no per-card override (aligned with live Track hub copy). */
+  bulkLocationLine: string;
   /** How to apply in tools (status, macro override, note, EDD) */
   staffTip: string;
 };
 
 export const INTERNATIONAL_SMART_FEATURES_TIP =
-  "Customer Track shows only completed steps plus Latest update (macros 0 through current) — no future Upcoming cards. Open the full 12-step preview below in admin/agency to plan ahead. Per-step time: Card time in the editor; otherwise latest card and macro 0 show a clock. EDD on booking page; public search via consignment or barcode.";
+  "Customers see a simple vertical timeline (completed steps + current); the current row is unbadged, past steps show Completed. Staff preview still shows Latest update / Upcoming labels. Tracker edit sets default copy; overrides replace hub lines. Per-step time optional; macro 0 can use booking time. EDD on booking; public search via consignment or barcode.";
 
 export const INTERNATIONAL_MACRO_STAFF_REFERENCE: InternationalMacroStaffBlock[] = [
   {
     macroIndex: 0,
-    sectionLabel: "1 · Pickup stage (Origin – Rajkot)",
+    sectionLabel: `1 · Pickup stage (${siteName})`,
     checklist: [
       "Shipment created",
       "Pickup scheduled",
       "Shipment picked up",
-      "Picked up – Rajkot",
+      "Picked up – origin",
     ],
-    staffTip: "Macro 0. Edit title, map line, description, and time in Track editor (bulk or current card).",
+    bulkLocationLine:
+      "Pickup zone (sender city or agency area); with courier: “Courier name · collecting from …”",
+    staffTip: "Macro 0. Edit title, map line, description, and time in Tracker edit system (bulk or current card).",
   },
   {
     macroIndex: 1,
-    sectionLabel: "2 · Origin processing (Rajkot hub)",
+    sectionLabel: "2 · Origin processing (assigned agency)",
     checklist: [
-      "Arrived at origin facility – Rajkot",
+      "Arrived at origin facility",
       "Shipment processed at origin facility",
-      "Departed from facility – Rajkot",
+      "Departed from origin facility",
     ],
-    staffTip: "Macro 1. Reflect hub scans and departures in copy; optional per-card time.",
+    bulkLocationLine: "{Agency hub city} origin hub — or agency name + hub if city missing",
+    staffTip:
+      "Macro 1. Default card title uses the Dispatch-assigned agency display name when set; otherwise the catalog fallback.",
   },
   {
     macroIndex: 2,
-    sectionLabel: "3 · Domestic transit (Rajkot → Ahmedabad / Mumbai)",
+    sectionLabel: "3 · Domestic transit (agency hub → main sort hub)",
     checklist: [
       "In transit to next facility",
-      "Arrived at hub – Ahmedabad",
+      "Arrived at main sort hub",
       "Shipment processed at hub",
-      "Departed from hub – Ahmedabad",
+      "Departed from main sort hub",
     ],
-    staffTip: "Macro 2. Name the hub in the location line when known.",
+    bulkLocationLine: "{Origin hub city} → {main sort hub from site settings}",
+    staffTip:
+      "Macro 2. Live Track uses each agency’s hub city plus the site “main sort hub” setting in the default location line.",
   },
   {
     macroIndex: 3,
-    sectionLabel: "4 · Export hub processing (Mumbai / Delhi)",
+    sectionLabel: "4 · Export hub processing",
     checklist: [
-      "Arrived at export hub – Mumbai",
+      "Arrived at export gateway",
       "Shipment received at gateway",
       "Security check completed",
       "Handed over to customs",
     ],
-    staffTip: "Macro 3. Airport/gateway names (e.g. AMD) go well in the location override.",
+    bulkLocationLine:
+      "{Sender country from booking} export gateway — override with airport code when known",
+    staffTip:
+      "Macro 3. Default map line uses booking sender country; airport/gateway codes go well in overrides.",
   },
   {
     macroIndex: 4,
-    sectionLabel: "5 · Export customs (India)",
-    checklist: [
-      "Customs clearance in progress (India export)",
-      "Customs cleared (India export)",
-    ],
+    sectionLabel: "5 · Export customs (origin)",
+    checklist: ["Export customs in progress", "Export customs cleared"],
+    bulkLocationLine: "{Sender country} export customs",
     staffTip: "Macro 4. Keep wording aligned with actual clearance state.",
   },
   {
@@ -75,42 +86,47 @@ export const INTERNATIONAL_MACRO_STAFF_REFERENCE: InternationalMacroStaffBlock[]
     sectionLabel: "6 · Air transit (international movement)",
     checklist: [
       "Handed over to airline",
-      "Departed from origin country – India",
+      "Departed origin country",
       "In transit (air cargo)",
-      "Arrived at destination country – USA",
+      "Arrived in destination country",
     ],
-    staffTip: "Macro 5. Use for flight / lane messaging; optional times per milestone.",
+    bulkLocationLine: "International air cargo ({sender country} → {recipient country}) from booking",
+    staffTip: "Macro 5. Route countries come from the booking; use overrides for flight / lane detail.",
   },
   {
     macroIndex: 6,
-    sectionLabel: "7 · Import customs (USA)",
+    sectionLabel: "7 · Import customs (destination)",
     checklist: [
       "Shipment received at import hub",
-      "Customs clearance in progress (USA import)",
-      "Customs cleared (USA import)",
+      "Import customs in progress",
+      "Import customs cleared",
     ],
+    bulkLocationLine: "{Recipient country} import hub / gateway — add airport code in override when known",
     staffTip: "Macro 6. Import gateway (e.g. LAX) in location when relevant.",
   },
   {
     macroIndex: 7,
-    sectionLabel: "8 · Destination processing (USA hub)",
+    sectionLabel: "8 · Destination processing (import hub)",
     checklist: [
       "Arrived at destination facility",
       "Shipment processed at destination facility",
       "In transit to delivery location",
     ],
-    staffTip: "Macro 7. Agency hub name can appear via assignment + location line.",
+    bulkLocationLine: "{Assigned agency} or {recipient country} destination hub",
+    staffTip: "Macro 7. Prefers agency name when set; else destination country from booking.",
   },
   {
     macroIndex: 8,
     sectionLabel: "9a · Last mile – Out for delivery",
     checklist: ["Out for delivery"],
+    bulkLocationLine: "Recipient area / address — “Out for delivery · recipient area” if anonymized",
     staffTip: "Macro 8. Match status Out for delivery when appropriate; customer note for OTP / access.",
   },
   {
     macroIndex: 9,
     sectionLabel: "9b · Last mile – Delivery attempted",
     checklist: ["Delivery attempted (if failed)"],
+    bulkLocationLine: "Recipient area — delivery attempt",
     staffTip: "Macro 9. Use with status Delivery attempted; explain retry in customer note.",
   },
   {
@@ -122,12 +138,14 @@ export const INTERNATIONAL_MACRO_STAFF_REFERENCE: InternationalMacroStaffBlock[]
       "Address issue – customer action required",
       "Delivery rescheduled",
     ],
+    bulkLocationLine: "Operations / customs / dispatch review",
     staffTip: "Macro 10. Usually with status On hold; international macro override can pin this card as current.",
   },
   {
     macroIndex: 11,
     sectionLabel: "9c · Delivered",
     checklist: ["Delivered · proof of delivery captured"],
+    bulkLocationLine: "Recipient · delivery completed",
     staffTip: "Macro 11. Set status Delivered when POD is confirmed; clear override when journey is complete.",
   },
 ];

@@ -1,8 +1,38 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { PackageCheck, Search } from "lucide-react";
+import { Loader2, PackageCheck, Search } from "lucide-react";
+
+function BookNavInner() {
+  const { pending } = useLinkStatus();
+  return (
+    <>
+      {pending ? (
+        <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+      ) : (
+        <PackageCheck className="h-4 w-4" aria-hidden />
+      )}
+      Book
+      {pending ? <span className="sr-only">Loading</span> : null}
+    </>
+  );
+}
+
+function TrackNavInner() {
+  const { pending } = useLinkStatus();
+  return (
+    <>
+      {pending ? (
+        <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
+      ) : (
+        <Search className="h-4 w-4" aria-hidden />
+      )}
+      Track
+      {pending ? <span className="sr-only">Loading</span> : null}
+    </>
+  );
+}
 
 export function PublicBottomNav() {
   const pathname = usePathname();
@@ -24,8 +54,7 @@ export function PublicBottomNav() {
               : "border border-border-strong bg-surface-elevated/80 text-ink hover:border-teal/40 hover:bg-pill-hover"
           }`}
         >
-          <PackageCheck className="h-4 w-4" aria-hidden />
-          Book
+          <BookNavInner />
         </Link>
         <Link
           href="/public/tsking"
@@ -36,8 +65,7 @@ export function PublicBottomNav() {
               : "border border-border-strong bg-surface-elevated/80 text-ink hover:border-teal/40 hover:bg-pill-hover"
           }`}
         >
-          <Search className="h-4 w-4" aria-hidden />
-          Track
+          <TrackNavInner />
         </Link>
       </div>
     </nav>

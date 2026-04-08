@@ -33,6 +33,7 @@ import {
   formatEddDisplay,
   resolveEstimatedDeliveryDate,
 } from "@/lib/estimated-delivery";
+import { DEFAULT_DOMESTIC_MAIN_HUB_CITY } from "@/lib/professional-tracking-stages";
 import { PublicCard } from "@/components/public/PublicCard";
 import { ProfessionalTrackingTimeline } from "@/app/public/tsking/ProfessionalTrackingTimeline";
 
@@ -54,6 +55,12 @@ type State =
         customerTrackingNote: string | null;
         courierName: string | null;
         agencyName: string | null;
+        agencyCity?: string | null;
+        domesticMainHubCity?: string | null;
+        fromCity?: string | null;
+        toCity?: string | null;
+        senderCountry?: string | null;
+        recipientCountry?: string | null;
         senderName: string | null;
         senderAddress: string | null;
         recipientName: string | null;
@@ -101,7 +108,24 @@ function stepLocationLabel(
     return data.recipientAddress || "Delivery address";
   }
   if (stepId === "out_for_pickup" || stepId === "picked_up") {
-    return data.senderAddress || "Pickup address";
+    const addr = data.senderAddress || "Pickup address";
+    const cn = data.courierName?.trim();
+    if (cn) return `${cn} · ${addr}`;
+    return addr;
+  }
+  if (stepId === "agency_processing") {
+    const city = data.agencyCity?.trim();
+    const name = data.agencyName?.trim();
+    if (city && name) return `${name} · ${city}`;
+    if (city) return `${city} hub`;
+    return name || "Hub processing";
+  }
+  if (stepId === "in_transit") {
+    const city = data.agencyCity?.trim();
+    const hub =
+      data.domesticMainHubCity?.trim() || DEFAULT_DOMESTIC_MAIN_HUB_CITY;
+    if (city) return `${city} → ${hub}`;
+    return data.agencyName?.trim() || "In transit";
   }
   return data.agencyName || "Quadrato Cargo Hub";
 }
@@ -145,6 +169,19 @@ type SuccessTrackState = Extract<State, { kind: "success" }>;
 
 function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
   const { trackUi: ui, data } = state;
+  const timelineCtx = {
+    senderAddress: data.senderAddress,
+    recipientAddress: data.recipientAddress,
+    agencyName: data.agencyName,
+    agencyCity: data.agencyCity ?? null,
+    domesticMainHubCity:
+      data.domesticMainHubCity?.trim() || DEFAULT_DOMESTIC_MAIN_HUB_CITY,
+    fromCity: data.fromCity ?? null,
+    toCity: data.toCity ?? null,
+    senderCountry: data.senderCountry ?? null,
+    recipientCountry: data.recipientCountry ?? null,
+    courierName: data.courierName,
+  };
   const lastTouch = data.updatedAt ?? data.createdAt;
   const routeLabel = String(data.routeType || "").toLowerCase();
   const isInternational = routeLabel === "international";
@@ -185,6 +222,14 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
               </span>
             ) : null}
           </div>
+          {(normalized === "out_for_pickup" || normalized === "picked_up") &&
+          data.courierName?.trim() &&
+          ui.showRouteAndDates ? (
+            <p className="mt-4 rounded-xl border border-teal/35 bg-teal/8 px-4 py-3 text-sm text-ink ring-1 ring-teal/20">
+              <span className="font-medium text-muted-soft">Pickup courier: </span>
+              <span className="font-semibold text-ink">{data.courierName.trim()}</span>
+            </p>
+          ) : null}
           {eddResolved && ui.showRouteAndDates ? (
             <div className="mt-4 rounded-xl border border-teal/30 bg-linear-to-br from-teal/12 via-canvas/80 to-accent/5 px-4 py-3.5 shadow-sm shadow-teal/10 ring-1 ring-teal/15 dark:from-teal/20 dark:ring-teal/25">
               <div className="flex items-start gap-3">
@@ -210,6 +255,18 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                 <dt className="text-xs font-medium text-muted-soft">Route</dt>
                 <dd className="mt-0.5 font-medium capitalize text-ink">{data.routeType}</dd>
               </div>
+              {data.fromCity?.trim() ? (
+                <div>
+                  <dt className="text-xs font-medium text-muted-soft">Pickup city</dt>
+                  <dd className="mt-0.5 text-ink">{data.fromCity.trim()}</dd>
+                </div>
+              ) : null}
+              {data.toCity?.trim() ? (
+                <div>
+                  <dt className="text-xs font-medium text-muted-soft">Delivery city</dt>
+                  <dd className="mt-0.5 text-ink">{data.toCity.trim()}</dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="text-xs font-medium text-muted-soft">Created</dt>
                 <dd className="mt-0.5 text-ink">{prettyDate(data.createdAt)}</dd>
@@ -242,13 +299,19 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
             ) : null}
             <div className="mt-3 grid gap-2.5 text-xs text-muted sm:grid-cols-2">
               <p>
-                <span className="font-semibold text-ink">Pickup courier:</span>{" "}
-                {data.courierName || "Pending assignment"}
+                <span className="font-semibold text-ink">Courier:</span>{" "}
+                {data.courierName?.trim() ? data.courierName : "Not assigned yet"}
               </p>
               <p>
                 <span className="font-semibold text-ink">Agency:</span>{" "}
-                {data.agencyName || "Pending assignment"}
+                {data.agencyName?.trim() ? data.agencyName : "Not assigned yet"}
               </p>
+              {data.agencyCity?.trim() ? (
+                <p>
+                  <span className="font-semibold text-ink">Hub city (on timeline):</span>{" "}
+                  {data.agencyCity.trim()}
+                </p>
+              ) : null}
               <p>
                 <span className="font-semibold text-ink">Pickup address:</span>{" "}
                 {data.senderAddress || "-"}
@@ -381,11 +444,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                     updatedAt={data.updatedAt ?? data.createdAt}
                     bookedAtIso={data.createdAt}
                     latestNote={data.publicTrackingNote || data.customerTrackingNote}
-                    ctx={{
-                      senderAddress: data.senderAddress,
-                      recipientAddress: data.recipientAddress,
-                      agencyName: data.agencyName,
-                    }}
+                    ctx={timelineCtx}
                     timelineOverrides={data.publicTimelineOverrides ?? null}
                     publicTimelineStatusPath={data.publicTimelineStatusPath ?? null}
                     publicTimelineStepVisibility={data.publicTimelineStepVisibility ?? null}
@@ -401,11 +460,7 @@ function TrackingSuccessView({ state }: { state: SuccessTrackState }) {
                   updatedAt={data.updatedAt ?? data.createdAt}
                   bookedAtIso={data.createdAt}
                   latestNote={data.publicTrackingNote || data.customerTrackingNote}
-                  ctx={{
-                    senderAddress: data.senderAddress,
-                    recipientAddress: data.recipientAddress,
-                    agencyName: data.agencyName,
-                  }}
+                  ctx={timelineCtx}
                   timelineOverrides={data.publicTimelineOverrides ?? null}
                   publicTimelineStatusPath={data.publicTimelineStatusPath ?? null}
                   publicTimelineStepVisibility={data.publicTimelineStepVisibility ?? null}

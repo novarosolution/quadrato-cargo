@@ -1,5 +1,11 @@
 export type NavItem = { href: string; label: string };
 
+/** Shown in the header “log in” dropdown — only routes that already exist on the site. */
+export const portalLoginNav: NavItem[] = [
+  { href: "/public/login", label: "Customer log in" },
+  { href: "/public/register", label: "Create account" },
+];
+
 export const mainNav: NavItem[] = [
   { href: "/public", label: "Home" },
   { href: "/public/service", label: "Services" },

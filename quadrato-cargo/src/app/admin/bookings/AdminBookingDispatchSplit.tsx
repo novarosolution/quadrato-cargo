@@ -26,7 +26,10 @@ import {
 } from "../dashboard/actions";
 import { CalendarDays } from "lucide-react";
 import { dateInputToIso, isoToDateInputValue } from "@/lib/estimated-delivery";
-import { INTERNATIONAL_PROFESSIONAL_STAGES } from "@/lib/professional-tracking-stages";
+import {
+  defaultInternationalStageTitle,
+  INTERNATIONAL_PROFESSIONAL_STAGES,
+} from "@/lib/professional-tracking-stages";
 
 export type AgencyOption = { email: string; name: string | null };
 
@@ -113,6 +116,14 @@ export function AdminBookingDispatchSplit({
       ? String(internationalAgencyStage)
       : "",
   );
+
+  const agencyDisplayNameForStages = useMemo(() => {
+    const email = String(agency ?? "").trim().toLowerCase();
+    if (!email) return null;
+    const m = agencyOptions.find((o) => o.email.toLowerCase() === email);
+    const label = m?.name?.trim();
+    return label || String(agency ?? "").trim() || null;
+  }, [agency, agencyOptions]);
 
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [state, formAction, pending] = useActionState<
@@ -292,14 +303,14 @@ export function AdminBookingDispatchSplit({
                         <option value="">Auto (from shipment status)</option>
                         {INTERNATIONAL_PROFESSIONAL_STAGES.map((def, i) => (
                           <option key={def.id} value={String(i)}>
-                            {i}. {def.title}
+                            {i}. {defaultInternationalStageTitle(i, def.title, agencyDisplayNameForStages)}
                           </option>
                         ))}
                       </select>
                       <p className="mt-1.5 text-[11px] text-muted-soft">
-                        Macros <strong className="text-ink">0–11</strong> match the customer timeline and the{" "}
-                        <strong className="text-ink">International professional flow</strong> checklist on this page.
-                        Clear to follow shipment status again.
+                        Macros <strong className="text-ink">0–11</strong> match customer timeline cards. Edit card copy on{" "}
+                        <strong className="text-ink">Tracker edit</strong>; see every macro on{" "}
+                        <strong className="text-ink">Tracker preview</strong>. Clear to follow shipment status again.
                       </p>
                     </AdminFormField>
                   ) : null}

@@ -20,7 +20,7 @@ export default async function SiteLayout({
     <AppSessionProvider>
       <div className="app-shell flex min-h-full flex-col">
         {showAnnouncement ? (
-          <div className="border-b border-teal/20 bg-teal/10 px-4 py-2 text-center text-sm text-ink">
+          <div className="border-b border-teal/25 bg-linear-to-r from-teal/12 via-teal/8 to-accent/10 px-4 py-2.5 text-center text-sm text-ink backdrop-blur-sm">
             <span className="inline-block max-w-full wrap-break-word">{siteSettings.announcementText}</span>
             {siteSettings.announcementCtaLabel && siteSettings.announcementCtaHref ? (
               <Link

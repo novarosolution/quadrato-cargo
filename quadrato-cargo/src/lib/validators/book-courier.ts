@@ -1,8 +1,23 @@
 import { isValidEmail } from "@/lib/auth-validation";
-import type { CourierPayload } from "@/lib/db/submissions";
+import type { CourierPayload, ShipmentParcelPayload } from "@/lib/db/submissions";
+
+/** One row of parcel fields from the book form (per box). */
+export type BookCourierParcelRow = {
+  contentsDescription: string;
+  weightKg: string;
+  declaredValue: string;
+  lengthCm: string;
+  widthCm: string;
+  heightCm: string;
+};
 
 export type BookCourierRow = {
   routeType: string;
+  parcelCount: string;
+  pickupCountryHint: string;
+  pickupCityHint: string;
+  deliveryCountryHint: string;
+  deliveryCityHint: string;
   collectionMode: string;
   pickupDate: string;
   pickupTimeSlot: string;
@@ -12,6 +27,7 @@ export type BookCourierRow = {
   senderPhone: string;
   senderStreet: string;
   senderCity: string;
+  senderState: string;
   senderPostal: string;
   senderCountry: string;
   recipientName: string;
@@ -19,21 +35,27 @@ export type BookCourierRow = {
   recipientPhone: string;
   recipientStreet: string;
   recipientCity: string;
+  recipientState: string;
   recipientPostal: string;
   recipientCountry: string;
+  /** Legacy single-parcel fields; kept in sync with first parcel for compatibility. */
   contentsDescription: string;
   weightKg: string;
   lengthCm: string;
   widthCm: string;
   heightCm: string;
   declaredValue: string;
+  /** Populated from parcel_0_… parcel_N_… (length matches parcel count). */
+  parcels: BookCourierParcelRow[];
   pickupPreference: string;
   instructions: string;
   agreed: boolean;
 };
 
-function normalizePhone(raw: string) {
-  return String(raw || "").trim();
+function normalizePhoneDigits(raw: string) {
+  return String(raw || "")
+    .replace(/\D/g, "")
+    .slice(0, 15);
 }
 
 function isPhoneLikeEmail(value: string) {
@@ -51,7 +73,18 @@ function isStrictFutureDate(dateValue: string) {
 }
 
 export const BOOKING_STEP_FIELDS = {
-  1: ["routeType", "collectionMode", "pickupDate", "pickupTimeSlot", "pickupTimeSlotCustom"],
+  1: [
+    "parcelCount",
+    "pickupCountryHint",
+    "pickupCityHint",
+    "deliveryCountryHint",
+    "deliveryCityHint",
+    "routeType",
+    "collectionMode",
+    "pickupDate",
+    "pickupTimeSlot",
+    "pickupTimeSlotCustom",
+  ],
   2: [
     "senderName",
     "senderEmail",
@@ -79,11 +112,86 @@ export const BOOKING_STEP_FIELDS = {
     "lengthCm",
     "widthCm",
     "heightCm",
-    "pickupPreference"
+    "pickupPreference",
+    "pickupDate",
+    "pickupTimeSlot",
+    "pickupTimeSlotCustom"
   ]
 } as const;
 
 export type BookCourierStep = keyof typeof BOOKING_STEP_FIELDS;
+
+function readParcelsFromFormData(formData: FormData, parcelN: number): BookCourierParcelRow[] {
+  const g = (key: string) => String(formData.get(key) ?? "").trim();
+  const out: BookCourierParcelRow[] = [];
+  const n = Math.min(99, Math.max(1, parcelN));
+  for (let i = 0; i < n; i++) {
+    const pre = `parcel_${i}_`;
+    let contents = g(`${pre}contentsDescription`);
+    let weightKg = g(`${pre}weightKg`);
+    let declaredValue = g(`${pre}declaredValue`);
+    let lengthCm = g(`${pre}lengthCm`);
+    let widthCm = g(`${pre}widthCm`);
+    let heightCm = g(`${pre}heightCm`);
+    if (n === 1) {
+      if (!contents) contents = g("contentsDescription");
+      if (!weightKg) weightKg = g("weightKg");
+      if (!declaredValue) declaredValue = g("declaredValue");
+      if (!lengthCm) lengthCm = g("lengthCm");
+      if (!widthCm) widthCm = g("widthCm");
+      if (!heightCm) heightCm = g("heightCm");
+    }
+    out.push({ contentsDescription: contents, weightKg, declaredValue, lengthCm, widthCm, heightCm });
+  }
+  return out;
+}
+
+function addParcelFieldErrors(
+  row: BookCourierRow,
+  parcelN: number,
+  fieldErrors: Record<string, string>,
+) {
+  const n = Math.min(99, Math.max(1, parcelN));
+  for (let i = 0; i < n; i++) {
+    const p = row.parcels[i];
+    const pre = `parcel_${i}_`;
+    if (!p) continue;
+    if (!p.contentsDescription || p.contentsDescription.length < 5) {
+      fieldErrors[`${pre}contentsDescription`] =
+        `Parcel ${i + 1}: describe contents (at least a few words) for customs and handling.`;
+    }
+    const w = parseFloat(String(p.weightKg).replace(",", "."));
+    if (!p.weightKg || Number.isNaN(w) || w <= 0) {
+      fieldErrors[`${pre}weightKg`] = `Parcel ${i + 1}: enter weight in kg (greater than 0).`;
+    } else if (w > 1000) {
+      fieldErrors[`${pre}weightKg`] =
+        `Parcel ${i + 1}: weight is too high. Contact support for heavy cargo.`;
+    }
+    const lengthRaw = p.lengthCm.trim();
+    const widthRaw = p.widthCm.trim();
+    const heightRaw = p.heightCm.trim();
+    const hasAnyDimension = Boolean(lengthRaw || widthRaw || heightRaw);
+    if (hasAnyDimension) {
+      if (!lengthRaw || !widthRaw || !heightRaw) {
+        fieldErrors[`${pre}lengthCm`] =
+          `Parcel ${i + 1}: enter all dimensions (L, W, H) or leave all blank.`;
+      } else {
+        const l = Number.parseFloat(lengthRaw.replace(",", "."));
+        const wd = Number.parseFloat(widthRaw.replace(",", "."));
+        const h = Number.parseFloat(heightRaw.replace(",", "."));
+        if (!Number.isFinite(l) || l <= 0) {
+          fieldErrors[`${pre}lengthCm`] = `Parcel ${i + 1}: length must be a valid number.`;
+        }
+        if (!Number.isFinite(wd) || wd <= 0) {
+          fieldErrors[`${pre}widthCm`] = `Parcel ${i + 1}: width must be a valid number.`;
+        }
+        if (!Number.isFinite(h) || h <= 0) {
+          fieldErrors[`${pre}heightCm`] = `Parcel ${i + 1}: height must be a valid number.`;
+        }
+      }
+    }
+  }
+}
 
 export function validateBookCourier(row: BookCourierRow): {
   ok: true;
@@ -96,6 +204,38 @@ export function validateBookCourier(row: BookCourierRow): {
   const fieldErrors: Record<string, string> = {};
   const { routeType } = row;
 
+  const parcelN = parseInt(String(row.parcelCount || "").trim(), 10);
+  if (!row.parcelCount?.trim() || Number.isNaN(parcelN) || parcelN < 1) {
+    fieldErrors.parcelCount = "Enter how many parcels (at least 1).";
+  } else if (parcelN > 99) {
+    fieldErrors.parcelCount = "For more than 99 parcels, contact support.";
+  }
+
+  const pickC = String(row.pickupCountryHint || "").trim();
+  if (!pickC || pickC.length < 2) {
+    fieldErrors.pickupCountryHint = "Enter pickup (sender) country.";
+  }
+  const delC = String(row.deliveryCountryHint || "").trim();
+  if (!delC || delC.length < 2) {
+    fieldErrors.deliveryCountryHint = "Enter delivery (recipient) country.";
+  }
+
+  const pickCity = String(row.pickupCityHint || "").trim();
+  if (!pickCity || pickCity.length < 2) {
+    fieldErrors.pickupCityHint = "Enter pickup city.";
+  } else if (pickCity.length > 120) {
+    fieldErrors.pickupCityHint = "Pickup city is too long.";
+  }
+  const delCity = String(row.deliveryCityHint || "").trim();
+  if (!delCity || delCity.length < 2) {
+    fieldErrors.deliveryCityHint = "Enter delivery city.";
+  } else if (delCity.length > 120) {
+    fieldErrors.deliveryCityHint = "Delivery city is too long.";
+  }
+
+  const senderCountryEff = String(row.senderCountry || "").trim() || pickC;
+  const recipientCountryEff = String(row.recipientCountry || "").trim() || delC;
+
   if (!routeType || !["domestic", "international"].includes(routeType)) {
     fieldErrors.routeType = "Select domestic or international.";
   }
@@ -105,11 +245,20 @@ export function validateBookCourier(row: BookCourierRow): {
       "Choose instant collection or a scheduled pickup (with your Postal Code / ZIP).";
   }
 
+  const hintSameCountry =
+    pickC.length >= 2 &&
+    delC.length >= 2 &&
+    pickC.toLowerCase() === delC.toLowerCase();
+  if (routeType === "international" && hintSameCountry) {
+    fieldErrors.deliveryCountryHint =
+      "International: delivery country must differ from pickup country.";
+  }
   if (
     routeType === "international" &&
-    row.senderCountry &&
-    row.recipientCountry &&
-    row.senderCountry.toLowerCase() === row.recipientCountry.toLowerCase()
+    senderCountryEff &&
+    recipientCountryEff &&
+    senderCountryEff.toLowerCase() === recipientCountryEff.toLowerCase() &&
+    !hintSameCountry
   ) {
     fieldErrors.recipientCountry =
       "International booking: delivery country should be outside the pickup country.";
@@ -122,16 +271,16 @@ export function validateBookCourier(row: BookCourierRow): {
     fieldErrors.senderEmail = "Email cannot be only numbers.";
   else if (!isValidEmail(row.senderEmail))
     fieldErrors.senderEmail = "Enter a valid email.";
-  const senderPhoneDigits = normalizePhone(row.senderPhone);
-  if (!row.senderPhone) fieldErrors.senderPhone = "Enter sender phone.";
+  const senderPhoneDigits = normalizePhoneDigits(row.senderPhone);
+  if (!row.senderPhone?.replace(/\D/g, "").length) fieldErrors.senderPhone = "Enter sender phone.";
   else if (!/^\d{7,15}$/.test(senderPhoneDigits))
-    fieldErrors.senderPhone = "Phone must contain only numbers (7 to 15 digits).";
+    fieldErrors.senderPhone = "Phone must be 7 to 15 digits.";
   if (!row.senderStreet) fieldErrors.senderStreet = "Enter pickup street address.";
   if (!row.senderCity) fieldErrors.senderCity = "Enter pickup city.";
   if (!row.senderPostal) fieldErrors.senderPostal = "Enter pickup postal / ZIP code.";
   else if (row.senderPostal.length < 3)
     fieldErrors.senderPostal = "Pickup postal / ZIP is too short.";
-  if (!row.senderCountry) fieldErrors.senderCountry = "Enter pickup country.";
+  if (!senderCountryEff) fieldErrors.senderCountry = "Enter pickup country.";
 
   if (!row.recipientName) fieldErrors.recipientName = "Enter recipient full name.";
   else if (row.recipientName.length < 2) fieldErrors.recipientName = "Recipient name is too short.";
@@ -140,10 +289,10 @@ export function validateBookCourier(row: BookCourierRow): {
     fieldErrors.recipientEmail = "Email cannot be only numbers.";
   else if (!isValidEmail(row.recipientEmail))
     fieldErrors.recipientEmail = "Enter a valid email.";
-  const recipientPhoneDigits = normalizePhone(row.recipientPhone);
-  if (!row.recipientPhone) fieldErrors.recipientPhone = "Enter recipient phone.";
+  const recipientPhoneDigits = normalizePhoneDigits(row.recipientPhone);
+  if (!row.recipientPhone?.replace(/\D/g, "").length) fieldErrors.recipientPhone = "Enter recipient phone.";
   else if (!/^\d{7,15}$/.test(recipientPhoneDigits))
-    fieldErrors.recipientPhone = "Phone must contain only numbers (7 to 15 digits).";
+    fieldErrors.recipientPhone = "Phone must be 7 to 15 digits.";
   if (!row.recipientStreet)
     fieldErrors.recipientStreet = "Enter delivery street address.";
   if (!row.recipientCity) fieldErrors.recipientCity = "Enter delivery city.";
@@ -151,34 +300,14 @@ export function validateBookCourier(row: BookCourierRow): {
     fieldErrors.recipientPostal = "Enter delivery postal / ZIP code.";
   else if (row.recipientPostal.length < 3)
     fieldErrors.recipientPostal = "Delivery postal / ZIP is too short.";
-  if (!row.recipientCountry)
-    fieldErrors.recipientCountry = "Enter delivery country.";
+  if (!recipientCountryEff) fieldErrors.recipientCountry = "Enter delivery country.";
 
-  if (!row.contentsDescription || row.contentsDescription.length < 5)
-    fieldErrors.contentsDescription =
-      "Describe contents (at least a few words) for customs and handling.";
-
-  const w = parseFloat(row.weightKg.replace(",", "."));
-  if (!row.weightKg || Number.isNaN(w) || w <= 0)
-    fieldErrors.weightKg = "Enter total weight in kg (number greater than 0).";
-  else if (w > 1000)
-    fieldErrors.weightKg = "Weight is too high. Please contact support for heavy cargo.";
-
-  const lengthRaw = row.lengthCm.trim();
-  const widthRaw = row.widthCm.trim();
-  const heightRaw = row.heightCm.trim();
-  const hasAnyDimension = Boolean(lengthRaw || widthRaw || heightRaw);
-  if (hasAnyDimension) {
-    if (!lengthRaw || !widthRaw || !heightRaw) {
-      fieldErrors.lengthCm = "Enter all dimensions (L, W, H) or leave all blank.";
-    } else {
-      const l = Number.parseFloat(lengthRaw.replace(",", "."));
-      const wd = Number.parseFloat(widthRaw.replace(",", "."));
-      const h = Number.parseFloat(heightRaw.replace(",", "."));
-      if (!Number.isFinite(l) || l <= 0) fieldErrors.lengthCm = "Length must be a valid number.";
-      if (!Number.isFinite(wd) || wd <= 0) fieldErrors.widthCm = "Width must be a valid number.";
-      if (!Number.isFinite(h) || h <= 0) fieldErrors.heightCm = "Height must be a valid number.";
-    }
+  const parcelCountNum =
+    Number.isFinite(parcelN) && parcelN >= 1 && parcelN <= 99
+      ? Math.floor(parcelN)
+      : 1;
+  if (!fieldErrors.parcelCount) {
+    addParcelFieldErrors(row, parcelCountNum, fieldErrors);
   }
 
   const pickupTrim = row.pickupPreference.trim();
@@ -215,6 +344,31 @@ export function validateBookCourier(row: BookCourierRow): {
     return { ok: false, fieldErrors };
   }
 
+  const parcelsPayload: ShipmentParcelPayload[] = [];
+  let totalWeight = 0;
+  for (let i = 0; i < parcelCountNum; i++) {
+    const p = row.parcels[i];
+    const w = parseFloat(String(p.weightKg).replace(",", "."));
+    totalWeight += w;
+    const lengthRaw = p.lengthCm.trim();
+    const widthRaw = p.widthCm.trim();
+    const heightRaw = p.heightCm.trim();
+    const hasDims = lengthRaw && widthRaw && heightRaw;
+    parcelsPayload.push({
+      contentsDescription: p.contentsDescription.trim(),
+      weightKg: w,
+      declaredValue: p.declaredValue.trim() || undefined,
+      dimensionsCm: hasDims
+        ? { l: lengthRaw, w: widthRaw, h: heightRaw }
+        : undefined,
+    });
+  }
+  const joinedContents = parcelsPayload.map((x) => x.contentsDescription).join(" · ");
+  const joinedDeclared = parcelsPayload
+    .map((x) => x.declaredValue)
+    .filter((x): x is string => Boolean(x && String(x).trim()))
+    .join(" · ");
+
   const collectionMode = row.collectionMode as "instant" | "scheduled";
   const scheduledWindow =
     row.pickupDate && effectivePickupTimeSlot
@@ -226,35 +380,43 @@ export function validateBookCourier(row: BookCourierRow): {
         `Instant collection requested at pickup Postal Code / ZIP ${row.senderPostal} (target ~10 minutes where area is serviceable).`
       : pickupTrim || scheduledWindow;
 
+  const senderStateTrim = row.senderState.trim();
+  const recipientStateTrim = row.recipientState.trim();
   const bookingPayload: CourierPayload = {
     sender: {
       name: row.senderName,
       email: row.senderEmail,
-      phone: row.senderPhone,
+      phone: senderPhoneDigits,
       street: row.senderStreet,
       city: row.senderCity,
+      ...(senderStateTrim ? { state: senderStateTrim } : {}),
       postal: row.senderPostal,
-      country: row.senderCountry,
+      country: senderCountryEff,
     },
     recipient: {
       name: row.recipientName,
       email: row.recipientEmail,
-      phone: row.recipientPhone,
+      phone: recipientPhoneDigits,
       street: row.recipientStreet,
       city: row.recipientCity,
+      ...(recipientStateTrim ? { state: recipientStateTrim } : {}),
       postal: row.recipientPostal,
-      country: row.recipientCountry,
+      country: recipientCountryEff,
     },
     shipment: {
-      contentsDescription: row.contentsDescription,
-      weightKg: w,
+      contentsDescription: joinedContents,
+      weightKg: totalWeight,
+      parcelCount: parcelCountNum,
+      parcels: parcelsPayload,
       dimensionsCm:
-        row.lengthCm && row.widthCm && row.heightCm
-          ? { l: row.lengthCm, w: row.widthCm, h: row.heightCm }
+        parcelCountNum === 1 && parcelsPayload[0]?.dimensionsCm
+          ? parcelsPayload[0].dimensionsCm
           : undefined,
-      declaredValue: row.declaredValue || undefined,
+      declaredValue: joinedDeclared || undefined,
     },
     collectionMode,
+    pickupCityHint: pickCity,
+    deliveryCityHint: delCity,
     pickupDate: row.pickupDate || undefined,
     pickupTimeSlot: effectivePickupTimeSlot || undefined,
     pickupPreference,
@@ -275,6 +437,24 @@ export function validateBookCourierStep(
 ): Record<string, string> {
   const validation = validateBookCourier(row);
   if (validation.ok) return {};
+  if (step === 4) {
+    const allowed = new Set<string>([...BOOKING_STEP_FIELDS[4]]);
+    const n = Math.min(
+      99,
+      Math.max(1, parseInt(String(row.parcelCount || "").trim(), 10) || 1),
+    );
+    for (let i = 0; i < n; i++) {
+      allowed.add(`parcel_${i}_contentsDescription`);
+      allowed.add(`parcel_${i}_weightKg`);
+      allowed.add(`parcel_${i}_declaredValue`);
+      allowed.add(`parcel_${i}_lengthCm`);
+      allowed.add(`parcel_${i}_widthCm`);
+      allowed.add(`parcel_${i}_heightCm`);
+    }
+    return Object.fromEntries(
+      Object.entries(validation.fieldErrors).filter(([key]) => allowed.has(key))
+    );
+  }
   const allowed = new Set<string>(BOOKING_STEP_FIELDS[step]);
   return Object.fromEntries(
     Object.entries(validation.fieldErrors).filter(([key]) => allowed.has(key))
@@ -283,8 +463,17 @@ export function validateBookCourierStep(
 
 export function bookCourierRowFromFormData(formData: FormData): BookCourierRow {
   const s = (key: string) => String(formData.get(key) ?? "").trim();
+  const parcelNRaw = parseInt(s("parcelCount"), 10);
+  const parcelN = Math.min(99, Math.max(1, Number.isFinite(parcelNRaw) ? parcelNRaw : 1));
+  const parcels = readParcelsFromFormData(formData, parcelN);
+  const first = parcels[0];
   return {
     routeType: s("routeType"),
+    parcelCount: s("parcelCount"),
+    pickupCountryHint: s("pickupCountryHint"),
+    pickupCityHint: s("pickupCityHint"),
+    deliveryCountryHint: s("deliveryCountryHint"),
+    deliveryCityHint: s("deliveryCityHint"),
     collectionMode: s("collectionMode"),
     pickupDate: s("pickupDate"),
     pickupTimeSlot: s("pickupTimeSlot"),
@@ -294,6 +483,7 @@ export function bookCourierRowFromFormData(formData: FormData): BookCourierRow {
     senderPhone: s("senderPhone"),
     senderStreet: s("senderStreet"),
     senderCity: s("senderCity"),
+    senderState: s("senderState"),
     senderPostal: s("senderPostal"),
     senderCountry: s("senderCountry"),
     recipientName: s("recipientName"),
@@ -301,14 +491,16 @@ export function bookCourierRowFromFormData(formData: FormData): BookCourierRow {
     recipientPhone: s("recipientPhone"),
     recipientStreet: s("recipientStreet"),
     recipientCity: s("recipientCity"),
+    recipientState: s("recipientState"),
     recipientPostal: s("recipientPostal"),
     recipientCountry: s("recipientCountry"),
-    contentsDescription: s("contentsDescription"),
-    weightKg: s("weightKg"),
-    lengthCm: s("lengthCm"),
-    widthCm: s("widthCm"),
-    heightCm: s("heightCm"),
-    declaredValue: s("declaredValue"),
+    contentsDescription: first?.contentsDescription ?? s("contentsDescription"),
+    weightKg: first?.weightKg ?? s("weightKg"),
+    lengthCm: first?.lengthCm ?? s("lengthCm"),
+    widthCm: first?.widthCm ?? s("widthCm"),
+    heightCm: first?.heightCm ?? s("heightCm"),
+    declaredValue: first?.declaredValue ?? s("declaredValue"),
+    parcels,
     pickupPreference: s("pickupPreference"),
     instructions: s("instructions"),
     agreed: formData.get("agreed") === "on",

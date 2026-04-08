@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
-import { Boxes, Globe2, Truck } from "lucide-react";
+import { Boxes, Globe2, MessageCircle, Package, Truck, UserCircle } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,12 +10,10 @@ import { SectionHeading } from "@/components/Heading";
 import { easeOutExpo, scaleIn, springSoft } from "@/lib/motion";
 import { useMotionPreferences } from "@/lib/motion-preferences";
 import { getApiBaseUrl } from "@/lib/api/base-url";
-import {
-  homeHeroCallToActionData,
-  homeHeroStatData,
-  homeValueStoryData,
-} from "@/lib/site-content";
+import { siteName } from "@/lib/site";
+import { homeValueStoryData } from "@/lib/site-content";
 import { HeroVisual } from "./HeroCards";
+import { HomeOrbStats } from "./HomeOrbStats";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -36,23 +34,6 @@ const heroItem = {
   },
 };
 
-const statList = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.08 },
-  },
-};
-
-const statItem = {
-  hidden: { opacity: 0, y: 14 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.45, ease },
-  },
-};
-
 const cardReveal = {
   hidden: { opacity: 0, y: 20, scale: 0.98 },
   visible: {
@@ -63,65 +44,7 @@ const cardReveal = {
   },
 };
 
-const secondaryCtaClass =
-  "inline-flex items-center justify-center rounded-2xl border border-ghost-border bg-ghost-fill px-7 py-4 text-center text-sm font-semibold text-ink backdrop-blur-sm transition hover:border-teal/35 hover:bg-pill-hover";
-
-type HeroCta = (typeof homeHeroCallToActionData)[number];
-
-/** Literal `href` per route so static analysis does not treat CTA targets as untrusted URLs. */
-function HeroCtaLink({
-  cta,
-  isLoggedIn,
-}: {
-  cta: HeroCta;
-  isLoggedIn: boolean;
-}) {
-  const highlightLoggedInCta =
-    isLoggedIn &&
-    (cta.href === "/public/book" || cta.href === "/public/contact");
-  const usePrimaryStyle =
-    cta.kind === "primary" || highlightLoggedInCta;
-  const className = `${
-    usePrimaryStyle
-      ? "btn-primary inline-flex items-center justify-center rounded-2xl border border-teal/70 bg-teal px-7 py-4 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-teal/25"
-      : secondaryCtaClass
-  } w-full`;
-
-  switch (cta.href) {
-    case "/public/register":
-      return (
-        <Link href="/public/register" prefetch={false} className={className}>
-          {cta.label}
-        </Link>
-      );
-    case "/public/book":
-      return (
-        <Link href="/public/book" prefetch={false} className={className}>
-          {cta.label}
-        </Link>
-      );
-    case "/public/contact":
-      return (
-        <Link href="/public/contact" prefetch={false} className={className}>
-          {cta.label}
-        </Link>
-      );
-    case "/public/service":
-      return (
-        <Link href="/public/service" prefetch={false} className={className}>
-          {cta.label}
-        </Link>
-      );
-    default:
-      return (
-        <Link href="/public/book" prefetch={false} className={className}>
-          {cta.label}
-        </Link>
-      );
-  }
-}
-
-export function HomeView() {
+function HomeView() {
   const router = useRouter();
   const reduce = useReducedMotion();
   const { allowHoverMotion } = useMotionPreferences();
@@ -130,8 +53,6 @@ export function HomeView() {
   const [trackingError, setTrackingError] = useState("");
   // Keep one source of truth for motion gating so every section degrades consistently.
   const hoverMotion = allowHoverMotion && !reduce;
-  const ctaHoverUp = hoverMotion ? { y: -3 } : undefined;
-  const ctaTapScale = hoverMotion ? { scale: 0.98 } : undefined;
   const valueCardHover = hoverMotion
     ? { y: -8, transition: { type: "spring" as const, stiffness: 360, damping: 22 } }
     : undefined;
@@ -144,15 +65,33 @@ export function HomeView() {
   const sectionLinkTap = hoverMotion ? { scale: 0.98 } : undefined;
   const contactCtaHover = hoverMotion ? { scale: 1.04 } : undefined;
   const contactCtaTap = hoverMotion ? { scale: 0.97 } : undefined;
-  const heroCtas = useMemo(
-    () =>
-      isLoggedIn
-        ? homeHeroCallToActionData.filter(
-            (cta) => cta.href !== "/public/register" && cta.href !== "/public/service"
-          )
-        : homeHeroCallToActionData.filter((cta) => cta.href !== "/public/service"),
-    [isLoggedIn],
-  );
+  const quickActions = useMemo(() => {
+    return [
+      {
+        href: "/public/book",
+        title: "Book courier",
+        body: "Schedule domestic or international pickup.",
+        Icon: Package,
+        featured: false,
+      },
+      {
+        href: isLoggedIn ? "/public/profile" : "/public/login",
+        title: isLoggedIn ? "Your account" : "Log in",
+        body: isLoggedIn
+          ? "Bookings, profile, and tracking in one place."
+          : "Sign in to manage bookings and tracking.",
+        Icon: UserCircle,
+        featured: true,
+      },
+      {
+        href: "/public/contact",
+        title: "Get a Quote",
+        body: "Share your route — we confirm service and pricing.",
+        Icon: MessageCircle,
+        featured: false,
+      },
+    ] as const;
+  }, [isLoggedIn]);
 
   useEffect(() => {
     let active = true;
@@ -200,66 +139,140 @@ export function HomeView() {
 
   return (
     <>
-      <section className="relative border-b border-border page-section">
-        <div
-          className="pointer-events-none absolute right-0 top-0 h-[min(520px,90vw)] w-[min(520px,90vw)] translate-x-1/4 rounded-full bg-accent/10 blur-[90px]"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute bottom-0 left-0 h-80 w-80 rounded-full bg-teal/7 blur-[80px] sm:left-8 sm:h-96 sm:w-96"
-          aria-hidden
-        />
-        <Container wide className="relative">
-          <motion.form
-            initial="hidden"
-            animate="visible"
-            variants={heroContainer}
-            onSubmit={onGetStartedSubmit}
-            className="mx-auto mb-10 w-full max-w-5xl rounded-[1.75rem] border border-border-strong bg-surface-elevated/90 p-5 shadow-xl shadow-black/15 backdrop-blur-md dark:shadow-black/35 sm:p-6"
-            noValidate
-          >
-            <motion.label
-              variants={heroItem}
-              htmlFor="hero-postal-code"
-              className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-soft sm:text-sm"
-            >
-              Track shipment
-            </motion.label>
-            <motion.div
-              variants={heroItem}
-              className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center"
-            >
-              <input
-                id="hero-postal-code"
-                type="text"
-                value={trackingReference}
-                onChange={(ev) => setTrackingReference(ev.target.value)}
-                placeholder="Booking or tracking ID"
-                className="h-16 w-full rounded-2xl border border-border-strong bg-canvas/80 px-5 text-base text-ink placeholder:text-muted-soft focus:border-teal/45 focus:outline-none focus:ring-2 focus:ring-teal/20 sm:text-lg"
-                inputMode="text"
-                maxLength={40}
-                pattern="[A-Za-z0-9-]{6,40}"
-              />
-              <button
-                type="submit"
-                className="btn-primary inline-flex h-16 items-center justify-center rounded-2xl border border-teal/70 bg-teal px-8 text-lg font-semibold text-slate-950 shadow-lg shadow-teal/25 transition hover:-translate-y-0.5 hover:bg-teal/90 sm:min-w-[190px]"
-              >
-                Track Now
-              </button>
-            </motion.div>
-            {trackingError ? (
-              <p className="mt-3 text-sm text-rose-300">{trackingError}</p>
-            ) : null}
-          </motion.form>
-          <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-16">
+      <section className="home-hero-surface relative border-b border-border-strong/50">
+        <div className="relative z-[1] min-h-[min(60vh,560px)] overflow-hidden bg-linear-to-b from-surface-elevated via-canvas to-canvas px-4 pb-28 pt-16 sm:pb-36 sm:pt-[4.25rem] lg:min-h-[min(64vh,620px)] lg:pt-24">
+          <div
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_65%_at_50%_-12%,color-mix(in_oklab,var(--color-teal)_14%,transparent),transparent_58%)]"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_40%_at_80%_20%,color-mix(in_oklab,var(--color-accent)_8%,transparent),transparent_70%)]"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute right-0 top-0 h-[min(480px,85vw)] w-[min(480px,85vw)] translate-x-1/3 rounded-full bg-accent/14 blur-[100px]"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute bottom-0 left-0 h-72 w-72 rounded-full bg-teal/14 blur-[88px] sm:left-6 sm:h-96 sm:w-96"
+            aria-hidden
+          />
+          <Container wide className="relative z-[1]">
             <motion.div
               initial="hidden"
               animate="visible"
               variants={heroContainer}
+              className="mx-auto max-w-3xl text-center"
             >
               <motion.p
                 variants={heroItem}
-                className="inline-flex items-center gap-2.5 rounded-full border border-border-strong bg-ghost-fill px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-teal"
+                className="section-eyebrow text-[0.6875rem] tracking-[0.28em] text-teal sm:text-xs"
+              >
+                {siteName}
+              </motion.p>
+              <motion.h1
+                variants={heroItem}
+                className="type-display-premium mt-5 text-[1.95rem] leading-[1.1] tracking-tight sm:text-4xl md:text-[3.1rem]"
+              >
+                <span className="text-gradient inline-block max-w-full">Track your shipment</span>
+                <span className="mt-3 block font-display text-xl font-semibold tracking-tight text-ink sm:mt-4 sm:text-2xl md:text-[1.65rem]">
+                  Live status from pickup to delivery
+                </span>
+              </motion.h1>
+              <motion.p
+                variants={heroItem}
+                className="mx-auto mt-5 max-w-lg text-sm leading-relaxed text-muted sm:mt-6 sm:text-base"
+              >
+                Enter your booking or tracking ID — same view customers use on the track page, updated as your parcel moves.
+              </motion.p>
+              <motion.form
+                variants={heroItem}
+                onSubmit={onGetStartedSubmit}
+                className="mx-auto mt-10 w-full max-w-2xl sm:mt-12"
+                noValidate
+              >
+                <div className="flex flex-col gap-2 rounded-2xl border border-border-strong/80 bg-surface-elevated/90 p-1.5 shadow-[0_28px_64px_-28px_rgba(0,0,0,0.5),inset_0_1px_0_0_rgba(255,255,255,0.07),0_0_0_1px_color-mix(in_oklab,var(--color-teal)_14%,transparent)] backdrop-blur-xl dark:shadow-[0_32px_72px_-22px_rgba(0,0,0,0.62)] sm:flex-row sm:items-stretch sm:rounded-full sm:p-1.5 sm:pl-3">
+                  <label htmlFor="hero-track-id" className="sr-only">
+                    Booking or tracking ID
+                  </label>
+                  <input
+                    id="hero-track-id"
+                    type="text"
+                    value={trackingReference}
+                    onChange={(ev) => setTrackingReference(ev.target.value)}
+                    placeholder="Enter your booking or tracking ID"
+                    className="min-h-14 w-full flex-1 rounded-[1.05rem] border-0 bg-transparent px-5 py-3.5 text-base text-ink placeholder:text-muted-soft focus:outline-none focus:ring-2 focus:ring-teal/30 sm:min-h-0 sm:rounded-full sm:py-4 sm:text-lg"
+                    inputMode="text"
+                    maxLength={40}
+                    autoComplete="off"
+                    pattern="[A-Za-z0-9-]{6,40}"
+                  />
+                  <button
+                    type="submit"
+                    className="btn-primary inline-flex min-h-12 shrink-0 items-center justify-center rounded-full border border-teal/70 bg-teal px-8 text-base font-semibold text-slate-950 shadow-lg shadow-teal/25 transition hover:bg-teal/90 sm:min-h-0 sm:min-w-[8.5rem] sm:py-4"
+                  >
+                    Track
+                  </button>
+                </div>
+                {trackingError ? (
+                  <p
+                    className="mt-3 text-sm text-rose-600 dark:text-rose-300"
+                    role="alert"
+                  >
+                    {trackingError}
+                  </p>
+                ) : null}
+              </motion.form>
+            </motion.div>
+          </Container>
+        </div>
+
+        <Container wide className="relative z-[2] -mt-20 px-4 sm:-mt-28">
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:gap-5 md:grid-cols-3 md:items-stretch">
+            {quickActions.map((action) => (
+              <Link
+                key={action.href}
+                href={action.href}
+                prefetch={false}
+                className={`home-quick-action-card group relative flex flex-col items-center gap-4 overflow-hidden px-6 py-10 text-center backdrop-blur-md ${
+                  action.featured ? "home-quick-action-card--featured" : ""
+                }`}
+              >
+                {action.featured ? (
+                  <span
+                    className="pointer-events-none absolute right-0 top-0 border-l-[44px] border-l-transparent border-t-[44px] border-t-teal opacity-95"
+                    aria-hidden
+                  />
+                ) : null}
+                <span className="flex h-16 w-16 items-center justify-center rounded-2xl border border-teal/25 bg-linear-to-br from-teal-dim to-teal-dim/35 text-teal shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)] transition group-hover:scale-[1.06] group-hover:border-teal/40">
+                  <action.Icon className="h-8 w-8" strokeWidth={1.65} aria-hidden />
+                </span>
+                <span className="font-display text-lg font-bold tracking-tight text-ink md:text-xl">
+                  {action.title}
+                </span>
+                <span className="max-w-[18rem] text-sm leading-relaxed text-muted">
+                  {action.body}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </Container>
+
+        <Container wide className="relative pt-8 sm:pt-10 md:pt-12">
+          <HomeOrbStats />
+        </Container>
+
+        <Container wide className="relative page-section">
+          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20 lg:items-stretch">
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={heroContainer}
+              className="flex flex-col justify-center rounded-[1.85rem] border border-teal/15 bg-linear-to-br from-surface-elevated/55 via-surface-elevated/25 to-transparent p-6 shadow-[0_24px_56px_-36px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.04] sm:p-8 lg:border-teal/10 lg:bg-linear-to-br lg:from-surface-elevated/35 lg:via-transparent lg:to-transparent lg:shadow-none lg:ring-0"
+            >
+              <motion.p
+                variants={heroItem}
+                className="inline-flex w-fit items-center gap-2.5 rounded-full border border-teal/25 bg-teal-dim/50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-teal"
               >
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal/50 opacity-75" />
@@ -267,77 +280,43 @@ export function HomeView() {
                 </span>
                 International courier
               </motion.p>
-              <motion.h1
+              <motion.h2
                 variants={heroItem}
-                className="mt-6 text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.5rem] lg:leading-[1.05]"
-              >
-                <span className="text-ink">
-                  International Courier from Your Door in 10 Minutes.
-                </span>
-              </motion.h1>
-              <motion.p
-                variants={heroItem}
-                className="mt-4 max-w-xl text-base leading-relaxed text-muted"
+                className="type-display-premium mt-6 max-w-2xl text-balance text-3xl sm:text-4xl lg:text-[2.75rem]"
               >
                 Fast booking, quick pickup, and global tracking in one clean flow.
-              </motion.p>
-              <motion.div
-                variants={heroItem}
-                className="mt-9 grid max-w-xl gap-3 sm:grid-cols-3"
-              >
-                {heroCtas.map((heroCallToAction) => (
-                  <motion.div
-                    key={heroCallToAction.href}
-                    className="inline-flex w-full"
-                    whileHover={ctaHoverUp}
-                    whileTap={ctaTapScale}
-                    transition={springSoft}
-                  >
-                    <HeroCtaLink cta={heroCallToAction} isLoggedIn={isLoggedIn} />
-                  </motion.div>
-                ))}
-              </motion.div>
-              <motion.ul
-                variants={statList}
-                className="mt-10 flex flex-wrap gap-8 border-t border-border pt-8"
-              >
-                {homeHeroStatData.map((s) => (
-                  <motion.li key={s.value} variants={statItem}>
-                    <p className="font-display text-lg font-semibold text-ink">
-                      {s.value}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-soft">{s.label}</p>
-                  </motion.li>
-                ))}
-              </motion.ul>
+              </motion.h2>
             </motion.div>
-            <HeroVisual />
+            <div className="flex min-h-[min(22rem,50vh)] items-center rounded-[1.85rem] border border-border-strong/35 bg-canvas/20 p-4 ring-1 ring-inset ring-white/[0.03] lg:min-h-0 lg:border-0 lg:bg-transparent lg:p-0 lg:ring-0">
+              <HeroVisual />
+            </div>
           </div>
         </Container>
       </section>
 
       <section className="page-section">
         <Container>
-          <SectionHeading
-            eyebrow="Why us"
-            title="Doorstep collection, global handoffs"
-            description="Fast pickup where we serve, clear updates, reliable handoff to delivery."
-          />
-          <motion.ul
-            className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-50px" }}
-            variants={{
-              visible: { transition: { staggerChildren: 0.1 } },
-            }}
-          >
+          <div className="home-section-shell">
+            <SectionHeading
+              eyebrow="Why us"
+              title="Doorstep collection, global handoffs"
+              description="Fast pickup where we serve, clear updates, reliable handoff to delivery."
+            />
+            <motion.ul
+              className="mt-12 grid gap-5 sm:grid-cols-2 lg:mt-14 lg:grid-cols-4"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-50px" }}
+              variants={{
+                visible: { transition: { staggerChildren: 0.1 } },
+              }}
+            >
             {homeValueStoryData.map((valueStory) => (
               <motion.li
                 key={valueStory.title}
                 variants={scaleIn}
                 whileHover={valueCardHover}
-                className="card-interactive rounded-2xl border border-border bg-surface-elevated/70 p-6 backdrop-blur-sm"
+                className="card-interactive rounded-3xl border border-border-strong/55 bg-surface-elevated/85 p-6 shadow-sm backdrop-blur-sm ring-1 ring-teal/[0.06] md:p-7"
               >
                 <motion.div
                   className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-dim text-teal"
@@ -350,7 +329,7 @@ export function HomeView() {
                     aria-hidden
                   />
                 </motion.div>
-                <h3 className="mt-4 font-display text-lg font-semibold text-ink">
+                <h3 className="mt-4 font-display text-lg font-bold tracking-tight text-ink">
                   {valueStory.title}
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">
@@ -358,11 +337,12 @@ export function HomeView() {
                 </p>
               </motion.li>
             ))}
-          </motion.ul>
+            </motion.ul>
+          </div>
         </Container>
       </section>
 
-      <section className="page-section border-y border-border bg-surface/80 backdrop-blur-md">
+      <section className="home-process-band page-section border-y border-teal/10 backdrop-blur-md">
         <Container>
           <div className="flex flex-col justify-between gap-10 lg:flex-row lg:items-end">
             <SectionHeading
@@ -382,7 +362,7 @@ export function HomeView() {
               <Link
                 href="/public/howwork"
                 prefetch={false}
-                className="inline-flex items-center justify-center rounded-2xl border border-ghost-border bg-ghost-fill px-6 py-3.5 text-sm font-semibold text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+                className="inline-flex items-center justify-center rounded-2xl border border-border-strong/60 bg-surface-elevated/90 px-6 py-3.5 text-sm font-bold text-ink shadow-md transition hover:border-teal/40 hover:bg-pill-hover hover:shadow-lg"
               >
                 See full flow
               </Link>
@@ -405,16 +385,16 @@ export function HomeView() {
                 key={s.title}
                 variants={cardReveal}
                 whileHover={processCardHover}
-                className="rounded-2xl border border-border bg-surface-elevated/70 p-6 backdrop-blur-sm"
+                className="rounded-3xl border border-border-strong/50 bg-surface-elevated/92 p-6 shadow-md backdrop-blur-sm ring-1 ring-white/[0.04] md:p-7"
               >
                 <motion.div
-                  className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-teal to-teal/70 text-slate-950 shadow-lg shadow-teal/20"
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-teal to-teal/75 text-slate-950 shadow-lg shadow-teal/25 ring-1 ring-white/15"
                   whileHover={processStepHover}
                   transition={springSoft}
                 >
                   <s.Icon className="h-6 w-6" aria-hidden />
                 </motion.div>
-                <h3 className="mt-5 font-display text-lg font-semibold text-ink">{s.title}</h3>
+                <h3 className="mt-5 font-display text-lg font-bold tracking-tight text-ink">{s.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{s.body}</p>
               </motion.li>
             ))}
@@ -425,7 +405,7 @@ export function HomeView() {
       <section className="page-section">
         <Container>
           <motion.div
-            className="shimmer-border relative overflow-hidden rounded-[1.75rem] px-6 py-16 text-center sm:px-12 sm:py-20"
+            className="shimmer-border relative overflow-hidden rounded-[2.25rem] px-6 py-16 text-center shadow-[0_32px_80px_-36px_color-mix(in_oklab,var(--color-teal)_24%,transparent),0_0_0_1px_rgba(255,255,255,0.05)] sm:px-12 sm:py-20 md:py-24"
             initial={{ opacity: 0, y: 28, scale: 0.98 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: "-40px" }}
@@ -487,3 +467,6 @@ export function HomeView() {
     </>
   );
 }
+
+export { HomeView };
+export default HomeView;

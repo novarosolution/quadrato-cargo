@@ -23,6 +23,7 @@ import { resolveInternationalTimelineStageIndex } from "@/lib/international-time
 import {
   buildProfessionalTimelineSegments,
   buildProfessionalTimelineSegmentsFromStatusPath,
+  defaultInternationalStageTitle,
   DOMESTIC_PROFESSIONAL_STAGES,
   domesticHubLocation,
   getDomesticProfessionalStageIndex,
@@ -56,21 +57,15 @@ function formatTrackingTimestamp(iso: string): string {
   }
 }
 
-/** Default stage icons on neutral card surface. */
+/** Default stage icons on timeline cards. */
 const iconTeal = "size-4 text-teal";
-/**
- * Latest row uses a teal-tinted gradient; pure teal can wash out in light mode.
- * Dark mode keeps teal for brand consistency on near-black canvas.
- */
-const iconOnTealWash = "size-4 text-ink dark:text-teal";
 
 function stageIcon(
   stageIndex: number,
   isInternational: boolean,
   isException: boolean,
-  onTealWash: boolean,
 ): ReactNode {
-  const ic = onTealWash ? iconOnTealWash : iconTeal;
+  const ic = iconTeal;
   if (isException) {
     return <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" aria-hidden />;
   }
@@ -225,7 +220,10 @@ export function ProfessionalTrackingTimeline({
               ? internationalHubLocation(stageIndex, ctx)
               : domesticHubLocation(stageIndex, ctx);
             const o = modeOverrides?.[String(stageIndex)];
-            const titleText = o?.title?.trim() || def.title;
+            const baseListTitle = isInternational
+              ? defaultInternationalStageTitle(stageIndex, def.title, ctx.agencyName)
+              : def.title;
+            const titleText = o?.title?.trim() || baseListTitle;
             const location = o?.location?.trim() || defaultLocation;
             const hintText = o?.hint?.trim() || def.hint;
             const overrideTime =
@@ -283,11 +281,11 @@ export function ProfessionalTrackingTimeline({
 
                 <article
                   className={[
-                    "rounded-2xl border bg-canvas p-4 shadow-sm transition-colors",
+                    "rounded-xl border bg-canvas p-4 shadow-sm transition-colors",
                     isUpcoming
                       ? "border-border-strong/80 border-dashed bg-canvas/50 opacity-95"
                       : actuallyLatest
-                        ? "border-teal/40 bg-linear-to-br from-teal-dim to-canvas ring-1 ring-teal/25"
+                        ? "border-border-strong bg-canvas/40"
                         : isExceptionCard
                           ? "border-amber-500/50 bg-amber-500/10 ring-1 ring-amber-500/20"
                           : "border-border",
@@ -295,19 +293,14 @@ export function ProfessionalTrackingTimeline({
                 >
                   <div className="flex flex-wrap items-start gap-3">
                     <div className="mt-0.5 shrink-0">
-                      {stageIcon(
-                        stageIndex,
-                        isInternational,
-                        isExceptionCard,
-                        Boolean(actuallyLatest),
-                      )}
+                      {stageIcon(stageIndex, isInternational, isExceptionCard)}
                     </div>
                     <div className="min-w-0 flex-1 space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="font-display text-base font-bold text-ink">
                           {titleText}
                         </h3>
-                        {actuallyLatest ? (
+                        {actuallyLatest && showAllStages ? (
                           <span className="rounded-full border border-teal/30 bg-teal-dim px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink dark:border-teal/40 dark:text-teal">
                             Latest update
                           </span>
@@ -315,7 +308,7 @@ export function ProfessionalTrackingTimeline({
                           <span className="rounded-full border border-border-strong bg-pill px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-soft">
                             Completed
                           </span>
-                        ) : isUpcoming ? (
+                        ) : isUpcoming && showAllStages ? (
                           <span className="rounded-full border border-border-strong bg-canvas px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-soft">
                             Upcoming
                           </span>
@@ -328,15 +321,19 @@ export function ProfessionalTrackingTimeline({
                         />
                         <span className="break-words">{location}</span>
                       </p>
-                      <p className="text-sm font-bold leading-snug text-ink">{hintText}</p>
+                      <p className="text-sm leading-snug text-muted">{hintText}</p>
                       {actuallyLatest && latestNote?.trim() ? (
                         <p className="rounded-lg border border-border-strong bg-surface-highlight px-3 py-2 text-sm font-bold text-ink">
                           {latestNote.trim()}
                         </p>
                       ) : null}
-                      <p className="flex items-center gap-1.5 font-sans text-sm font-bold text-ink">
-                        <Clock className="size-3.5 shrink-0 text-teal" aria-hidden />
-                        {clockLabel}
+                      <p className="flex items-center gap-1.5 font-sans text-xs text-muted-soft">
+                        <Clock className="size-3.5 shrink-0 text-muted-soft" aria-hidden />
+                        {actuallyLatest ? (
+                          <span className="font-medium text-ink">Last updated: {clockLabel}</span>
+                        ) : (
+                          <span>{clockLabel}</span>
+                        )}
                       </p>
                     </div>
                   </div>

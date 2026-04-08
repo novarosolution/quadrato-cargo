@@ -19,11 +19,23 @@ npm install
 
 ### Run (development)
 
+From **`quadrato-cargo/`**:
+
 ```bash
 npm run dev
 ```
 
-Frontend runs on `http://localhost:3000`.
+From the **repo root** (same as `cd quadrato-cargo && npm run dev`):
+
+```bash
+npm run dev:web
+```
+
+Frontend defaults to **`http://localhost:3000`**. If that port is busy, Next prints another port (e.g. `3001`) — open the URL shown in the terminal.
+
+**API in parallel:** in a second terminal, `cd server && npm run dev` (or from root: `npm run dev:api`). The app expects the API at `NEXT_PUBLIC_API_BASE_URL` (see `quadrato-cargo/.env.example`, usually `http://localhost:4010`).
+
+**If dev says it cannot acquire `.next/dev/lock`:** stop any other `next dev` for this folder, or run `npm run dev:unlock` inside `quadrato-cargo/`, or `npm run dev:fresh` to wipe `.next` and start again.
 
 ## Backend (`server/` at repo root — recommended)
 

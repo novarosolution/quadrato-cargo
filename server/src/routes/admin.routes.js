@@ -131,7 +131,8 @@ const updateUserSchema = z.object({
   newPassword: z.string().max(72).optional().default(""),
   confirmPassword: z.string().max(72).optional().default(""),
   agencyAddress: z.string().max(500).optional(),
-  agencyPhone: z.string().max(40).optional()
+  agencyPhone: z.string().max(40).optional(),
+  agencyCity: z.string().max(80).optional()
 });
 
 const bookingControlsSchema = z.object({
@@ -153,18 +154,64 @@ const bookingControlsSchema = z.object({
   internationalAgencyStage: z.string().max(4).optional()
 });
 
-const bookingContactPartyPatchSchema = z
+const bookingPartyPatchSchema = z
   .object({
     name: z.string().trim().max(200).optional(),
     email: z.string().trim().max(320).optional(),
-    phone: z.string().trim().max(40).optional()
+    phone: z.string().trim().max(40).optional(),
+    street: z.string().trim().max(500).optional(),
+    city: z.string().trim().max(200).optional(),
+    state: z.string().trim().max(120).optional(),
+    postal: z.string().trim().max(32).optional(),
+    country: z.string().trim().max(120).optional()
+  })
+  .strict();
+
+const bookingShipmentParcelPatchSchema = z
+  .object({
+    contentsDescription: z.string().trim().max(4000).optional(),
+    declaredValue: z.string().trim().max(500).optional(),
+    weightKg: z.union([z.string().trim().max(32), z.number()]).optional(),
+    dimensionsCm: z
+      .object({
+        l: z.string().trim().max(32).optional(),
+        w: z.string().trim().max(32).optional(),
+        h: z.string().trim().max(32).optional()
+      })
+      .strict()
+      .optional()
+  })
+  .strict();
+
+const bookingShipmentPatchSchema = z
+  .object({
+    contentsDescription: z.string().trim().max(4000).optional(),
+    declaredValue: z.string().trim().max(500).optional(),
+    weightKg: z.union([z.string().trim().max(32), z.number()]).optional(),
+    parcelCount: z.union([z.string().trim().max(8), z.number().int().min(1).max(99)]).optional(),
+    dimensionsCm: z
+      .object({
+        l: z.string().trim().max(32).optional(),
+        w: z.string().trim().max(32).optional(),
+        h: z.string().trim().max(32).optional()
+      })
+      .strict()
+      .optional(),
+    parcels: z.array(bookingShipmentParcelPatchSchema).max(25).optional()
   })
   .strict();
 
 const bookingMergePayloadSchema = z
   .object({
-    sender: bookingContactPartyPatchSchema.optional(),
-    recipient: bookingContactPartyPatchSchema.optional()
+    sender: bookingPartyPatchSchema.optional(),
+    recipient: bookingPartyPatchSchema.optional(),
+    collectionMode: z.string().trim().max(32).optional(),
+    pickupDate: z.string().trim().max(64).optional(),
+    pickupTimeSlot: z.string().trim().max(120).optional(),
+    pickupTimeSlotCustom: z.string().trim().max(120).optional(),
+    pickupPreference: z.string().trim().max(2000).optional(),
+    instructions: z.string().trim().max(4000).optional(),
+    shipment: bookingShipmentPatchSchema.optional()
   })
   .strict();
 
@@ -174,13 +221,24 @@ const bookingDataSchema = z.object({
   payload: z.unknown()
 });
 
-function applyBookingContactPartyPatch(existingParty, patch) {
+const BOOKING_PARTY_PATCH_KEYS = [
+  "name",
+  "email",
+  "phone",
+  "street",
+  "city",
+  "state",
+  "postal",
+  "country"
+];
+
+function applyBookingPartyPatch(existingParty, patch) {
   const out =
     existingParty && typeof existingParty === "object" && !Array.isArray(existingParty)
       ? { ...existingParty }
       : {};
   if (!patch || typeof patch !== "object") return out;
-  for (const key of ["name", "email", "phone"]) {
+  for (const key of BOOKING_PARTY_PATCH_KEYS) {
     if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
     const raw = patch[key];
     if (raw === undefined) continue;
@@ -191,15 +249,134 @@ function applyBookingContactPartyPatch(existingParty, patch) {
   return out;
 }
 
+function mergeShipmentIntoExisting(existingShipment, patch) {
+  const base =
+    existingShipment && typeof existingShipment === "object" && !Array.isArray(existingShipment)
+      ? { ...existingShipment }
+      : {};
+  if (!patch || typeof patch !== "object") return base;
+  for (const key of ["contentsDescription", "declaredValue"]) {
+    if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
+    const raw = patch[key];
+    if (raw === undefined) continue;
+    const s = String(raw).trim();
+    if (s === "") delete base[key];
+    else base[key] = s;
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "weightKg") && patch.weightKg !== undefined) {
+    const w = patch.weightKg;
+    if (w === "" || w === null) delete base.weightKg;
+    else if (typeof w === "number" && Number.isFinite(w)) base.weightKg = w;
+    else {
+      const n = Number.parseFloat(String(w).replace(",", "."));
+      if (Number.isFinite(n)) base.weightKg = n;
+      else base.weightKg = String(w).trim();
+    }
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "parcelCount") && patch.parcelCount !== undefined) {
+    const pc = patch.parcelCount;
+    if (pc === "" || pc === null) delete base.parcelCount;
+    else if (typeof pc === "number" && Number.isFinite(pc)) base.parcelCount = pc;
+    else {
+      const n = Number.parseInt(String(pc).trim(), 10);
+      if (Number.isFinite(n)) base.parcelCount = n;
+    }
+  }
+  if (patch.dimensionsCm && typeof patch.dimensionsCm === "object") {
+    const prev =
+      base.dimensionsCm && typeof base.dimensionsCm === "object" ? { ...base.dimensionsCm } : {};
+    for (const dk of ["l", "w", "h"]) {
+      if (!Object.prototype.hasOwnProperty.call(patch.dimensionsCm, dk)) continue;
+      const raw = patch.dimensionsCm[dk];
+      if (raw === undefined) continue;
+      const s = String(raw).trim();
+      if (s === "") delete prev[dk];
+      else prev[dk] = s;
+    }
+    if (Object.keys(prev).length) base.dimensionsCm = prev;
+    else delete base.dimensionsCm;
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "parcels")) {
+    const rawList = patch.parcels;
+    if (Array.isArray(rawList)) {
+      const out = [];
+      for (const item of rawList) {
+        if (!item || typeof item !== "object") continue;
+        const row = {};
+        if (item.contentsDescription !== undefined) {
+          const s = String(item.contentsDescription).trim();
+          if (s) row.contentsDescription = s;
+        }
+        if (item.declaredValue !== undefined) {
+          const s = String(item.declaredValue).trim();
+          if (s) row.declaredValue = s;
+        }
+        if (Object.prototype.hasOwnProperty.call(item, "weightKg") && item.weightKg !== undefined) {
+          const w = item.weightKg;
+          if (w !== "" && w !== null) {
+            if (typeof w === "number" && Number.isFinite(w)) row.weightKg = w;
+            else {
+              const n = Number.parseFloat(String(w).replace(",", "."));
+              if (Number.isFinite(n)) row.weightKg = n;
+            }
+          }
+        }
+        if (item.dimensionsCm && typeof item.dimensionsCm === "object") {
+          const prevD = {};
+          for (const dk of ["l", "w", "h"]) {
+            if (!Object.prototype.hasOwnProperty.call(item.dimensionsCm, dk)) continue;
+            const rawD = item.dimensionsCm[dk];
+            if (rawD === undefined) continue;
+            const s = String(rawD).trim();
+            if (s) prevD[dk] = s;
+          }
+          if (Object.keys(prevD).length) row.dimensionsCm = prevD;
+        }
+        out.push(row);
+      }
+      base.parcels = out;
+    }
+  }
+  return base;
+}
+
 function mergeBookingContactPayloadIntoExisting(existingRaw, patch) {
   const base =
     existingRaw && typeof existingRaw === "object" && !Array.isArray(existingRaw)
       ? { ...existingRaw }
       : {};
-  if (patch.sender) base.sender = applyBookingContactPartyPatch(base.sender, patch.sender);
-  if (patch.recipient) base.recipient = applyBookingContactPartyPatch(base.recipient, patch.recipient);
+  if (!patch || typeof patch !== "object") return base;
+  if (patch.sender) base.sender = applyBookingPartyPatch(base.sender, patch.sender);
+  if (patch.recipient) base.recipient = applyBookingPartyPatch(base.recipient, patch.recipient);
+  const topKeys = [
+    "collectionMode",
+    "pickupDate",
+    "pickupTimeSlot",
+    "pickupTimeSlotCustom",
+    "pickupPreference",
+    "instructions"
+  ];
+  for (const key of topKeys) {
+    if (!Object.prototype.hasOwnProperty.call(patch, key)) continue;
+    const raw = patch[key];
+    if (raw === undefined) continue;
+    const s = String(raw).trim();
+    if (s === "") delete base[key];
+    else base[key] = s;
+  }
+  if (patch.shipment) {
+    base.shipment = mergeShipmentIntoExisting(base.shipment, patch.shipment);
+  }
   return base;
 }
+
+const invoiceLineItemSchema = z.object({
+  description: z.string().trim().max(500),
+  amount: z.string().trim().max(100).optional().default(""),
+  weightKg: z.string().trim().max(32).optional().default(""),
+  sizeCm: z.string().trim().max(80).optional().default(""),
+  declaredValue: z.string().trim().max(120).optional().default("")
+});
 
 const bookingInvoiceSchema = z.object({
   invoicePdfReady: z.boolean(),
@@ -209,12 +386,15 @@ const bookingInvoiceSchema = z.object({
       currency: z.string().trim().max(12).optional().default("INR"),
       subtotal: z.string().trim().max(500).optional().default(""),
       tax: z.string().trim().max(500).optional().default(""),
-      insurance: z.string().trim().max(500).optional().default(""),
+      /** Narrative (coverage, policy ref). */
+      insurance: z.string().trim().max(4000).optional().default(""),
+      /** Optional amount shown on PDF before total (e.g. 500.00). */
+      insurancePremium: z.string().trim().max(120).optional().default(""),
       customsDuties: z.string().trim().max(500).optional().default(""),
-      discount: z.string().trim().max(500).optional().default(""),
       total: z.string().trim().max(500).optional().default(""),
       lineDescription: z.string().trim().max(4000).optional().default(""),
-      notes: z.string().trim().max(4000).optional().default("")
+      notes: z.string().trim().max(4000).optional().default(""),
+      lineItems: z.array(invoiceLineItemSchema).max(25).optional()
     })
     .default({})
 });
@@ -228,8 +408,8 @@ function normalizeBookingInvoiceForDb(raw) {
     "subtotal",
     "tax",
     "insurance",
+    "insurancePremium",
     "customsDuties",
-    "discount",
     "total",
     "lineDescription",
     "notes"
@@ -239,11 +419,35 @@ function normalizeBookingInvoiceForDb(raw) {
     if (!v) continue;
     if (k === "currency") {
       out[k] = v.toUpperCase().slice(0, 12);
-    } else if (k === "lineDescription" || k === "notes") {
+    } else if (k === "lineDescription" || k === "notes" || k === "insurance") {
       out[k] = v.slice(0, 4000);
+    } else if (k === "insurancePremium") {
+      out[k] = v.slice(0, 120);
     } else {
       out[k] = v.slice(0, 500);
     }
+  }
+  if (Array.isArray(raw.lineItems)) {
+    const lines = [];
+    for (let idx = 0; idx < raw.lineItems.length && idx < 25; idx++) {
+      const row = raw.lineItems[idx];
+      if (!row || typeof row !== "object") {
+        lines.push({ description: `Item ${idx + 1}` });
+        continue;
+      }
+      const d = String(row.description ?? "").trim().slice(0, 500);
+      const a = String(row.amount ?? "").trim().slice(0, 100);
+      const w = String(row.weightKg ?? "").trim().slice(0, 32);
+      const sz = String(row.sizeCm ?? "").trim().slice(0, 80);
+      const dv = String(row.declaredValue ?? "").trim().slice(0, 120);
+      const entry = { description: d || `Item ${idx + 1}` };
+      if (a) entry.amount = a;
+      if (w) entry.weightKg = w;
+      if (sz) entry.sizeCm = sz;
+      if (dv) entry.declaredValue = dv;
+      lines.push(entry);
+    }
+    if (lines.length) out.lineItems = lines;
   }
   return Object.keys(out).length ? out : null;
 }
@@ -288,7 +492,8 @@ function createUserByRoleHandler(role) {
         ...(role === "agency"
           ? {
               agencyAddress: String(body.agencyAddress ?? "").trim().slice(0, 500) || null,
-              agencyPhone: String(body.agencyPhone ?? "").trim().slice(0, 40) || null
+              agencyPhone: String(body.agencyPhone ?? "").trim().slice(0, 40) || null,
+              agencyCity: String(body.agencyCity ?? "").trim().slice(0, 80) || null
             }
           : {})
       });
@@ -372,7 +577,133 @@ async function fetchUserBookingStats(db, userIds) {
   };
 }
 
+/**
+ * Agencies (hub profile + bookings assigned to their login email) and couriers (job + status mix).
+ */
+async function fetchAgencyCourierNetwork(db) {
+  const [agenciesRaw, couriersRaw, agencyAgg, courierAgg, globalStatusAgg] = await Promise.all([
+    db.collection("users").find({ role: "agency" }).sort({ name: 1, email: 1 }).toArray(),
+    db.collection("users").find({ role: "courier" }).sort({ name: 1, email: 1 }).toArray(),
+    db
+      .collection("bookings")
+      .aggregate([
+        { $match: { assignedAgency: { $exists: true, $nin: [null, ""] } } },
+        {
+          $group: {
+            _id: {
+              agencyKey: { $toLower: "$assignedAgency" },
+              status: "$status"
+            },
+            count: { $sum: 1 }
+          }
+        }
+      ])
+      .toArray(),
+    db
+      .collection("bookings")
+      .aggregate([
+        { $match: { courierId: { $exists: true, $ne: null } } },
+        {
+          $group: {
+            _id: {
+              courierId: "$courierId",
+              status: "$status"
+            },
+            count: { $sum: 1 }
+          }
+        }
+      ])
+      .toArray(),
+    db
+      .collection("bookings")
+      .aggregate([{ $group: { _id: "$status", count: { $sum: 1 } } }, { $sort: { count: -1 } }])
+      .toArray()
+  ]);
+
+  const courierIds = couriersRaw.map((c) => c._id);
+  const courierOpenRows =
+    courierIds.length === 0
+      ? []
+      : await db
+          .collection("bookings")
+          .aggregate([
+            {
+              $match: {
+                courierId: { $in: courierIds },
+                status: { $in: COURIER_OPEN_STATUSES }
+              }
+            },
+            { $group: { _id: "$courierId", count: { $sum: 1 } } }
+          ])
+          .toArray();
+
+  /** @type {Map<string, Map<string, number>>} */
+  const agencyByEmail = new Map();
+  for (const row of agencyAgg) {
+    const key = String(row._id.agencyKey ?? "");
+    const st = String(row._id.status ?? "unknown");
+    if (!agencyByEmail.has(key)) agencyByEmail.set(key, new Map());
+    agencyByEmail.get(key).set(st, Number(row.count));
+  }
+
+  /** @type {Map<string, Map<string, number>>} */
+  const courierById = new Map();
+  for (const row of courierAgg) {
+    const cid = String(row._id.courierId);
+    const st = String(row._id.status ?? "unknown");
+    if (!courierById.has(cid)) courierById.set(cid, new Map());
+    courierById.get(cid).set(st, Number(row.count));
+  }
+
+  const courierOpen = new Map(courierOpenRows.map((x) => [String(x._id), Number(x.count)]));
+
+  const agencies = agenciesRaw.map((a) => {
+    const pub = toPublicUser(a);
+    const key = String(a.email ?? "").toLowerCase();
+    const sm = agencyByEmail.get(key) || new Map();
+    const assignedByStatus = Object.fromEntries(sm);
+    const assignedBookingTotal = [...sm.values()].reduce((sum, n) => sum + n, 0);
+    return { ...pub, assignedBookingTotal, assignedByStatus };
+  });
+
+  const couriers = couriersRaw.map((c) => {
+    const pub = toPublicUser(c);
+    const cid = String(c._id);
+    const sm = courierById.get(cid) || new Map();
+    const courierByStatus = Object.fromEntries(sm);
+    const courierJobTotal = [...sm.values()].reduce((sum, n) => sum + n, 0);
+    const courierOpenJobs = courierOpen.get(cid) ?? 0;
+    return {
+      ...pub,
+      courierJobTotal,
+      courierOpenJobs,
+      courierByStatus,
+      /** Active + on duty: may be assigned additional open jobs (multi-job). */
+      readyForJob: c.isActive !== false && c.isOnDuty !== false
+    };
+  });
+
+  return {
+    agencies,
+    couriers,
+    allBookingStatusCounts: globalStatusAgg.map((x) => ({
+      status: String(x._id ?? "unknown"),
+      count: Number(x.count)
+    }))
+  };
+}
+
 router.use(requireAdminApi);
+
+router.get("/network", async (_req, res, next) => {
+  try {
+    const db = await getDb();
+    const data = await fetchAgencyCourierNetwork(db);
+    return res.json({ ok: true, ...data });
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get("/overview", async (_req, res, next) => {
   try {
@@ -617,9 +948,7 @@ router.get("/users", async (req, res, next) => {
         readyForJob:
           (u.role ?? "customer") !== "courier"
             ? undefined
-            : u.isActive !== false &&
-              u.isOnDuty !== false &&
-              (bookingStats.courierOpen.get(String(u._id)) ?? 0) === 0
+            : u.isActive !== false && u.isOnDuty !== false
       }))
     });
   } catch (error) {
@@ -654,28 +983,84 @@ router.get("/users/:id", async (req, res, next) => {
 router.get("/bookings", async (req, res, next) => {
   try {
     const db = await getDb();
-    const bookingQuery = String(req.query.q ?? "").trim();
+    const bookingQuery = String(req.query.q ?? "").trim().slice(0, 200);
     const statusFilter = String(req.query.status ?? "").trim();
     const routeFilter = String(req.query.route ?? "").trim();
     const accountFilter = String(req.query.account ?? "").trim();
+    const fromCity = String(req.query.fromCity ?? "").trim().slice(0, 80);
+    const toCity = String(req.query.toCity ?? "").trim().slice(0, 80);
+    const courierFilter = String(req.query.courier ?? "").trim();
+    const agencyFilter = String(req.query.agency ?? "").trim().slice(0, 120);
     const page = Math.max(1, Number.parseInt(String(req.query.page ?? "1"), 10) || 1);
+    const pageSizeRaw = Number.parseInt(String(req.query.pageSize ?? ""), 10);
+    const pageSize =
+      pageSizeRaw === 50 || pageSizeRaw === 100 ? pageSizeRaw : PAGE_SIZE;
 
-    const bookingFilter = {};
-    if (statusFilter) bookingFilter.status = statusFilter;
-    if (routeFilter) bookingFilter.routeType = routeFilter;
-    if (accountFilter === "guest") bookingFilter.userId = null;
-    if (accountFilter === "linked") bookingFilter.userId = { $ne: null };
+    const clauses = [];
+
+    if (statusFilter && ALLOWED_BOOKING_STATUSES.has(statusFilter)) {
+      clauses.push({ status: statusFilter });
+    }
+    if (routeFilter === "domestic" || routeFilter === "international") {
+      clauses.push({ routeType: routeFilter });
+    }
+    if (accountFilter === "guest") {
+      clauses.push({ userId: null });
+    }
+    if (accountFilter === "linked") {
+      clauses.push({ userId: { $ne: null } });
+    }
+    if (fromCity) {
+      clauses.push({
+        "payload.sender.city": { $regex: escapeRegex(fromCity), $options: "i" }
+      });
+    }
+    if (toCity) {
+      clauses.push({
+        "payload.recipient.city": { $regex: escapeRegex(toCity), $options: "i" }
+      });
+    }
+    if (courierFilter === "assigned") {
+      clauses.push({ courierId: { $exists: true, $ne: null } });
+    } else if (courierFilter === "unassigned") {
+      clauses.push({
+        $or: [{ courierId: null }, { courierId: { $exists: false } }]
+      });
+    } else if (courierFilter) {
+      const courierUserId = parseObjectId(courierFilter);
+      if (courierUserId) {
+        const courierUser = await db
+          .collection("users")
+          .findOne({ _id: courierUserId, role: "courier" });
+        if (courierUser) {
+          clauses.push({ courierId: courierUserId });
+        }
+      }
+    }
+    if (agencyFilter) {
+      clauses.push({
+        assignedAgency: { $regex: escapeRegex(agencyFilter), $options: "i" }
+      });
+    }
+
     if (bookingQuery) {
       const safeBookingQuery = escapeRegex(bookingQuery);
       const bookingSearchClauses = [
         { consignmentNumber: { $regex: safeBookingQuery, $options: "i" } },
         { publicBarcodeCode: { $regex: safeBookingQuery, $options: "i" } },
-        { routeType: { $regex: safeBookingQuery, $options: "i" } }
+        { routeType: { $regex: safeBookingQuery, $options: "i" } },
+        { "payload.sender.city": { $regex: safeBookingQuery, $options: "i" } },
+        { "payload.recipient.city": { $regex: safeBookingQuery, $options: "i" } },
+        { "payload.sender.name": { $regex: safeBookingQuery, $options: "i" } },
+        { "payload.recipient.name": { $regex: safeBookingQuery, $options: "i" } }
       ];
       const queryObjectId = parseObjectId(bookingQuery);
       if (queryObjectId) bookingSearchClauses.push({ _id: queryObjectId });
-      bookingFilter.$or = bookingSearchClauses;
+      clauses.push({ $or: bookingSearchClauses });
     }
+
+    const bookingFilter =
+      clauses.length === 0 ? {} : clauses.length === 1 ? clauses[0] : { $and: clauses };
 
     const [total, bookingRows] = await Promise.all([
       db.collection("bookings").countDocuments(bookingFilter),
@@ -683,8 +1068,8 @@ router.get("/bookings", async (req, res, next) => {
         .collection("bookings")
         .find(bookingFilter)
         .sort({ createdAt: -1 })
-        .skip((page - 1) * PAGE_SIZE)
-        .limit(PAGE_SIZE)
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
         .toArray()
     ]);
 
@@ -705,7 +1090,7 @@ router.get("/bookings", async (req, res, next) => {
       courier: bookingDoc.courierId ? relatedMap.get(String(bookingDoc.courierId)) ?? null : null
     }));
 
-    return res.json({ ok: true, total, page, pageSize: PAGE_SIZE, bookings });
+    return res.json({ ok: true, total, page, pageSize, bookings });
   } catch (error) {
     next(error);
   }
@@ -772,7 +1157,7 @@ router.get("/bookings/:id", async (req, res, next) => {
         return {
           ...pub,
           courierActiveJobCount: activeJobs,
-          readyForJob: c.isActive !== false && c.isOnDuty !== false && activeJobs === 0
+          readyForJob: c.isActive !== false && c.isOnDuty !== false
         };
       })
     });
@@ -920,10 +1305,14 @@ router.patch("/users/:id", async (req, res, next) => {
         const p = String(parsed.data.agencyPhone ?? "").trim();
         update.agencyPhone = p ? p.slice(0, 40) : null;
       }
+      if (parsed.data.agencyCity !== undefined) {
+        const c = String(parsed.data.agencyCity ?? "").trim();
+        update.agencyCity = c ? c.slice(0, 80) : null;
+      }
     }
     const mongoUpdate = { $set: update };
     if (role !== "agency") {
-      mongoUpdate.$unset = { agencyAddress: "", agencyPhone: "" };
+      mongoUpdate.$unset = { agencyAddress: "", agencyPhone: "", agencyCity: "" };
     }
     await db.collection("users").updateOne({ _id }, mongoUpdate);
     return sendOk(res);
@@ -1144,13 +1533,38 @@ router.patch("/bookings/:id/invoice", async (req, res, next) => {
     if (!_id) return;
     const parsed = bookingInvoiceSchema.safeParse(req.body ?? {});
     if (!parsed.success) return sendError(res, "Invalid invoice payload.");
-    const invoiceDoc = normalizeBookingInvoiceForDb(parsed.data.invoice);
+    const existing = await db.collection("bookings").findOne({ _id }, { projection: { invoice: 1 } });
+    const prevInv =
+      existing?.invoice && typeof existing.invoice === "object" && !Array.isArray(existing.invoice)
+        ? existing.invoice
+        : {};
+    const patchInv = normalizeBookingInvoiceForDb(parsed.data.invoice);
+    const rawInv = parsed.data.invoice;
+    const nextInv =
+      patchInv && Object.keys(patchInv).length ? { ...prevInv, ...patchInv } : { ...prevInv };
+    const clearableInvoiceKeys = [
+      "number",
+      "currency",
+      "subtotal",
+      "tax",
+      "insurance",
+      "insurancePremium",
+      "customsDuties",
+      "total",
+      "lineDescription",
+      "notes"
+    ];
+    for (const k of clearableInvoiceKeys) {
+      if (k in rawInv && !String(rawInv[k] ?? "").trim()) {
+        delete nextInv[k];
+      }
+    }
     await db.collection("bookings").updateOne(
       { _id },
       {
         $set: {
           invoicePdfReady: parsed.data.invoicePdfReady,
-          invoice: invoiceDoc,
+          invoice: nextInv,
           updatedAt: new Date()
         }
       }
@@ -1209,14 +1623,6 @@ router.patch("/bookings/:id/assign-courier", async (req, res, next) => {
     }
     if (courier.isOnDuty === false) {
       return sendError(res, "Selected courier is off duty. Turn on duty status first.");
-    }
-    const openJobs = await db.collection("bookings").countDocuments({
-      courierId,
-      _id: { $ne: _id },
-      status: { $in: COURIER_OPEN_STATUSES }
-    });
-    if (openJobs > 0) {
-      return sendError(res, "Selected courier is busy with another active job. Assign only to ready courier.");
     }
     await db.collection("bookings").updateOne({ _id }, { $set: { courierId, updatedAt: new Date() } });
     return sendOk(res);

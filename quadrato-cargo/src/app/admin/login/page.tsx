@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { PublicCard } from "@/components/public/PublicCard";
+import { PublicPageHeader } from "@/components/layout/AppPageHeader";
+import { Container } from "@/components/Wrap";
+import { publicUi } from "@/components/public/public-ui";
 import { isAdminSessionValid } from "@/lib/admin-auth";
 import { AdminLoginForm } from "./AdminLoginForm";
 
@@ -15,26 +19,36 @@ export default async function AdminLoginPage() {
   }
 
   return (
-    <div className="app-shell flex min-h-[70vh] flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl border border-border-strong bg-surface-elevated/80 p-8 shadow-2xl backdrop-blur-md">
-        <h1 className="font-display text-2xl font-semibold text-ink">
-          Quadrato Cargo — Admin
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          Sign in with the admin email and password from your API environment (
-          <code className="rounded bg-pill px-1 py-0.5 text-xs">ADMIN_EMAIL</code> /{" "}
-          <code className="rounded bg-pill px-1 py-0.5 text-xs">ADMIN_PASSWORD</code>
-          ). Courier, agency, and customer accounts use the public login — not this screen.
-        </p>
-        <div className="mt-8">
+    <div className="flex min-h-screen flex-col bg-linear-to-b from-teal/[0.07] via-canvas to-canvas px-4 py-12 sm:py-16">
+      <div
+        className="pointer-events-none fixed -right-32 -top-32 h-72 w-72 rounded-full bg-teal/10 blur-3xl"
+        aria-hidden
+      />
+      <Container className="relative mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
+        <PublicPageHeader
+          eyebrow="Admin"
+          title="Sign in"
+          description={
+            <>
+              <code className="rounded bg-pill px-1 py-0.5 text-[11px]">ADMIN_EMAIL</code> &amp;{" "}
+              <code className="rounded bg-pill px-1 py-0.5 text-[11px]">ADMIN_PASSWORD</code> from the API env.
+              Customers:{" "}
+              <Link href="/public/login" className={publicUi.link}>
+                public login
+              </Link>
+              .
+            </>
+          }
+        />
+        <PublicCard className="mt-6 shadow-2xl shadow-black/35 sm:p-8">
           <AdminLoginForm />
-        </div>
-        <p className="mt-8 text-center text-xs text-muted-soft">
-          <Link href="/public" className="underline-offset-2 hover:underline">
+        </PublicCard>
+        <p className={publicUi.authFooterNote}>
+          <Link href="/public" className={publicUi.linkQuiet}>
             Back to site
           </Link>
         </p>
-      </div>
+      </Container>
     </div>
   );
 }

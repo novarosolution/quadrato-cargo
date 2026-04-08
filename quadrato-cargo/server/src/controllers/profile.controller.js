@@ -9,6 +9,7 @@ import {
 import { getDb } from "../db/mongo.js";
 import { toPublicUser } from "../models/user.model.js";
 import {
+  backfillGuestBookingsToUserId,
   findBookingByUserAndId,
   getPickupOtpForUserBooking,
   listBookingsByUserId
@@ -36,12 +37,19 @@ const updatePasswordSchema = z.object({
   newPassword: passwordComplexitySchema,
   confirmPassword: z.string().min(MIN_PASSWORD_LENGTH).max(72)
 });
+const digitsPhoneSchema = z
+  .string()
+  .trim()
+  .transform((s) => s.replace(/\D/g, "").slice(0, 15))
+  .refine((d) => d.length >= 7 && d.length <= 15, "Phone must be 7–15 digits.");
+
 const addressSchema = z.object({
   name: z.string().trim().min(1),
   email: z.string().trim().email(),
-  phone: z.string().trim().regex(/^\d{7,15}$/),
+  phone: digitsPhoneSchema,
   street: z.string().trim().min(1),
   city: z.string().trim().min(1),
+  state: z.string().trim().max(120).optional().default(""),
   postal: z.string().trim().min(1),
   country: z.string().trim().min(1)
 });
@@ -124,10 +132,12 @@ export async function listMyBookings(req, res, next) {
   try {
     const limitRaw = Number.parseInt(String(req.query.limit ?? "100"), 10);
     const summary = String(req.query.summary ?? "0").trim() === "1";
+    const backfillRaw = String(req.query.backfill ?? "1").trim().toLowerCase();
+    const shouldBackfill = backfillRaw === "1" || backfillRaw === "true" || backfillRaw === "yes";
     const rows = await listBookingsByUserId(req.auth.user.id, req.auth.user.email, {
       limit: Number.isFinite(limitRaw) ? limitRaw : 100,
       summary,
-      backfill: false
+      backfill: shouldBackfill
     });
     const courierIds = Array.from(
       new Set(
@@ -140,13 +150,20 @@ export async function listMyBookings(req, res, next) {
     const courierMap = new Map(
       couriers.map((courier) => [
         String(courier._id),
-        String(courier?.name || courier?.email || "").trim() || null
+        {
+          name: String(courier?.name ?? "").trim() || null,
+          email: String(courier?.email ?? "").trim() || null
+        }
       ])
     );
-    const bookings = rows.map((row) => ({
-      ...row,
-      courierName: row?.courierId ? courierMap.get(String(row.courierId)) || null : null
-    }));
+    const bookings = rows.map((row) => {
+      const c = row?.courierId ? courierMap.get(String(row.courierId)) : null;
+      return {
+        ...row,
+        courierName: c?.name ?? null,
+        courierEmail: c?.email ?? null
+      };
+    });
     const db = await getDb();
     const mapped = await mapBookingsAssignedAgencyForCustomer(db, bookings);
     const bookingsForCustomer = mapped.map(withCustomerFacingBookingDates);
@@ -162,18 +179,28 @@ export async function getMyBookingById(req, res, next) {
     if (!idParsed.success) {
       return sendError(res, idParsed.error.issues[0]?.message ?? "Invalid booking id.");
     }
-    const row = await findBookingByUserAndId(
+    let row = await findBookingByUserAndId(
       req.auth.user.id,
       idParsed.data,
       req.auth.user.email
     );
     if (!row) {
+      await backfillGuestBookingsToUserId(req.auth.user.id, req.auth.user.email);
+      row = await findBookingByUserAndId(
+        req.auth.user.id,
+        idParsed.data,
+        req.auth.user.email
+      );
+    }
+    if (!row) {
       return sendNotFound(res, "Booking not found.");
     }
     let courierName = null;
+    let courierEmail = null;
     if (row.courierId) {
       const courier = await findUserById(row.courierId);
-      courierName = String(courier?.name || courier?.email || "").trim() || null;
+      courierName = String(courier?.name ?? "").trim() || null;
+      courierEmail = String(courier?.email ?? "").trim() || null;
     }
     const db = await getDb();
     const agencyDisplay = await resolveAssignedAgencyDisplayName(db, row.assignedAgency);
@@ -181,6 +208,7 @@ export async function getMyBookingById(req, res, next) {
       booking: withCustomerFacingBookingDates({
         ...row,
         courierName,
+        courierEmail,
         assignedAgency: agencyDisplay || null
       })
     });
@@ -195,11 +223,19 @@ export async function getMyBookingPickupOtp(req, res, next) {
     if (!idParsed.success) {
       return sendError(res, idParsed.error.issues[0]?.message ?? "Invalid booking id.");
     }
-    const otp = await getPickupOtpForUserBooking(
+    let otp = await getPickupOtpForUserBooking(
       req.auth.user.id,
       idParsed.data,
       req.auth.user.email
     );
+    if (!otp) {
+      await backfillGuestBookingsToUserId(req.auth.user.id, req.auth.user.email);
+      otp = await getPickupOtpForUserBooking(
+        req.auth.user.id,
+        idParsed.data,
+        req.auth.user.email
+      );
+    }
     if (!otp) {
       return sendNotFound(res, "Booking not found.");
     }

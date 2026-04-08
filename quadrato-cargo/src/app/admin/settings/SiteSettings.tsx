@@ -361,6 +361,27 @@ export function AdminSiteSettingsForm({ initialSettings }: Props) {
           title="Public tracking page"
           description="Choose which sections appear when customers look up a booking or tracking ID"
         >
+          <div className="mb-4 rounded-xl border border-border-strong bg-canvas/30 p-4">
+            <label
+              htmlFor="domestic-main-hub-city"
+              className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
+            >
+              Main sort hub (domestic linehaul)
+            </label>
+            <input
+              id="domestic-main-hub-city"
+              name="domesticMainHubCity"
+              type="text"
+              defaultValue={initialSettings.domesticMainHubCity}
+              placeholder="Quadrato Cargo"
+              className={field}
+            />
+            <p className="mt-1.5 text-[11px] text-muted-soft">
+              Shown on the professional timeline after each agency&apos;s hub city (e.g.{" "}
+              <span className="font-medium text-muted">Rajkot → Quadrato Cargo</span>). Agencies set their
+              own city in Hub profile.
+            </p>
+          </div>
           <div className="grid gap-3">
             <label className="flex items-center gap-3 text-sm">
               <input

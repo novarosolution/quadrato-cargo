@@ -157,6 +157,18 @@ export type PublicTrackingResponse =
         customerTrackingNote: string | null;
         courierName: string | null;
         agencyName: string | null;
+        /** Hub city for timeline copy; street address is never exposed here. */
+        agencyCity?: string | null;
+        /** Site setting: main sort hub for domestic linehaul (e.g. Quadrato Cargo). */
+        domesticMainHubCity?: string | null;
+        /** Pickup / sender city (full address wins over step-1 hint). */
+        fromCity?: string | null;
+        /** Delivery / recipient city (full address wins over step-1 hint). */
+        toCity?: string | null;
+        /** Sender country from booking payload (international timeline map lines). */
+        senderCountry?: string | null;
+        /** Recipient country from booking payload (international timeline map lines). */
+        recipientCountry?: string | null;
         senderName: string | null;
         senderAddress: string | null;
         recipientName: string | null;

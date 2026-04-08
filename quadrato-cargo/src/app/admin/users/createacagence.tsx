@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import {
-  createAgencyUserAdmin,
-  type DataManageState,
-} from "../dashboard/actions";
+import { AdminPanel } from "@/components/admin/AdminPrimitives";
+import { adminUi } from "@/components/admin/admin-ui";
+import { adminUsersCopy } from "@/lib/admin-users-content";
+import { createAgencyUserAdmin, type DataManageState } from "../dashboard/actions";
 
 export function AdminCreateAgencyForm() {
   const [state, formAction, pending] = useActionState<
@@ -13,20 +13,13 @@ export function AdminCreateAgencyForm() {
   >(createAgencyUserAdmin, undefined);
 
   return (
-    <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-6">
-      <h2 className="font-display text-lg font-semibold">Create agency account</h2>
-      <p className="mt-1 text-xs text-muted-soft">
-        Agency teams sign in on normal <strong className="font-medium text-muted">Log in</strong>{" "}
-        and open <span className="font-mono text-[11px]">/agency</span> to verify handover using
-        reference + OTP.
-      </p>
-      <form action={formAction} className="mt-6 max-w-md space-y-4">
-        <div>
-          <label
-            htmlFor="admin-agency-name"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
-            Agency / contact name
+    <AdminPanel>
+      <h2 className={adminUi.sectionTitle}>{adminUsersCopy.createAgencyTitle}</h2>
+      <p className={adminUi.sectionDesc}>{adminUsersCopy.createAgencyBlurb}</p>
+      <form action={formAction} className="mt-5 max-w-2xl space-y-4 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0">
+        <div className="sm:col-span-2">
+          <label htmlFor="admin-agency-name" className={adminUi.labelBlock}>
+            Agency / hub name
           </label>
           <input
             id="admin-agency-name"
@@ -34,15 +27,12 @@ export function AdminCreateAgencyForm() {
             type="text"
             required
             autoComplete="name"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={`mt-2 ${adminUi.input}`}
           />
         </div>
-        <div>
-          <label
-            htmlFor="admin-agency-email"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
-            Email (sign-in)
+        <div className="sm:col-span-2">
+          <label htmlFor="admin-agency-email" className={adminUi.labelBlock}>
+            Email
           </label>
           <input
             id="admin-agency-email"
@@ -50,43 +40,42 @@ export function AdminCreateAgencyForm() {
             type="email"
             required
             autoComplete="email"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={`mt-2 ${adminUi.input}`}
           />
         </div>
-        <div>
-          <label
-            htmlFor="admin-agency-address"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
+        <div className="sm:col-span-2">
+          <label htmlFor="admin-agency-address" className={adminUi.labelBlock}>
             Hub address (optional)
           </label>
           <textarea
             id="admin-agency-address"
             name="agencyAddress"
             rows={2}
-            className="mt-2 w-full resize-y rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
-            placeholder="Street, city — appears on agency portal"
+            className={`mt-2 resize-y ${adminUi.input}`}
+            placeholder="Street, city"
           />
         </div>
         <div>
-          <label
-            htmlFor="admin-agency-phone"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
-            Operations phone (optional)
+          <label htmlFor="admin-agency-city" className={adminUi.labelBlock}>
+            Hub city (optional)
           </label>
           <input
-            id="admin-agency-phone"
-            name="agencyPhone"
-            type="tel"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            id="admin-agency-city"
+            name="agencyCity"
+            type="text"
+            maxLength={80}
+            className={`mt-2 ${adminUi.input}`}
+            placeholder="Timeline city on Track"
           />
         </div>
         <div>
-          <label
-            htmlFor="admin-agency-pw"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
+          <label htmlFor="admin-agency-phone" className={adminUi.labelBlock}>
+            Phone (optional)
+          </label>
+          <input id="admin-agency-phone" name="agencyPhone" type="tel" className={`mt-2 ${adminUi.input}`} />
+        </div>
+        <div>
+          <label htmlFor="admin-agency-pw" className={adminUi.labelBlock}>
             Password
           </label>
           <input
@@ -95,14 +84,11 @@ export function AdminCreateAgencyForm() {
             type="password"
             required
             autoComplete="new-password"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={`mt-2 ${adminUi.input}`}
           />
         </div>
         <div>
-          <label
-            htmlFor="admin-agency-pw2"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
+          <label htmlFor="admin-agency-pw2" className={adminUi.labelBlock}>
             Confirm password
           </label>
           <input
@@ -111,27 +97,29 @@ export function AdminCreateAgencyForm() {
             type="password"
             required
             autoComplete="new-password"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={`mt-2 ${adminUi.input}`}
           />
         </div>
-        {state?.ok === false && state.error ? (
-          <p className="text-sm text-rose-400" role="alert">
-            {state.error}
-          </p>
-        ) : null}
-        {state?.ok === true ? (
-          <p className="text-sm text-teal" role="status">
-            {state.message}
-          </p>
-        ) : null}
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-        >
-          {pending ? "Creating..." : "Create agency account"}
-        </button>
+        <div className="sm:col-span-2">
+          {state?.ok === false && state.error ? (
+            <p className="text-sm text-rose-400" role="alert">
+              {state.error}
+            </p>
+          ) : null}
+          {state?.ok === true ? (
+            <p className="text-sm text-teal" role="status">
+              {state.message}
+            </p>
+          ) : null}
+          <button
+            type="submit"
+            disabled={pending}
+            className={`${adminUi.btnPrimary} mt-2 disabled:opacity-50`}
+          >
+            {pending ? "Creating…" : "Create agency"}
+          </button>
+        </div>
       </form>
-    </div>
+    </AdminPanel>
   );
 }

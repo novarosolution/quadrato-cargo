@@ -13,6 +13,7 @@ export type SessionLike = {
     role?: string | null;
     agencyAddress?: string | null;
     agencyPhone?: string | null;
+    agencyCity?: string | null;
   };
 };
 
@@ -52,6 +53,7 @@ export async function auth(): Promise<SessionLike | null> {
         role?: string | null;
         agencyAddress?: string | null;
         agencyPhone?: string | null;
+        agencyCity?: string | null;
       } | null;
     };
     if (!data?.ok || !data.user?.id) return null;

@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import {
-  createCourierUserAdmin,
-  type DataManageState,
-} from "../dashboard/actions";
+import { AdminPanel } from "@/components/admin/AdminPrimitives";
+import { adminUi } from "@/components/admin/admin-ui";
+import { adminUsersCopy } from "@/lib/admin-users-content";
+import { createCourierUserAdmin, type DataManageState } from "../dashboard/actions";
 
 export function AdminCreateCourierForm() {
   const [state, formAction, pending] = useActionState<
@@ -13,19 +13,12 @@ export function AdminCreateCourierForm() {
   >(createCourierUserAdmin, undefined);
 
   return (
-    <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-6">
-      <h2 className="font-display text-lg font-semibold">Create courier account</h2>
-      <p className="mt-1 text-xs text-muted-soft">
-        Field couriers sign in with <strong className="font-medium text-muted">Log in</strong>{" "}
-        (same as customers) and open <span className="font-mono text-[11px]">/courier</span>{" "}
-        to see assigned jobs and update status.
-      </p>
-      <form action={formAction} className="mt-6 max-w-md space-y-4">
+    <AdminPanel>
+      <h2 className={adminUi.sectionTitle}>{adminUsersCopy.createCourierTitle}</h2>
+      <p className={adminUi.sectionDesc}>{adminUsersCopy.createCourierBlurb}</p>
+      <form action={formAction} className="mt-5 max-w-md space-y-4">
         <div>
-          <label
-            htmlFor="admin-courier-name"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
+          <label htmlFor="admin-courier-name" className={adminUi.labelBlock}>
             Full name
           </label>
           <input
@@ -34,15 +27,12 @@ export function AdminCreateCourierForm() {
             type="text"
             required
             autoComplete="name"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={`mt-2 ${adminUi.input}`}
           />
         </div>
         <div>
-          <label
-            htmlFor="admin-courier-email"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
-            Email (sign-in)
+          <label htmlFor="admin-courier-email" className={adminUi.labelBlock}>
+            Email
           </label>
           <input
             id="admin-courier-email"
@@ -50,14 +40,11 @@ export function AdminCreateCourierForm() {
             type="email"
             required
             autoComplete="email"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={`mt-2 ${adminUi.input}`}
           />
         </div>
         <div>
-          <label
-            htmlFor="admin-courier-pw"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
+          <label htmlFor="admin-courier-pw" className={adminUi.labelBlock}>
             Password
           </label>
           <input
@@ -66,14 +53,11 @@ export function AdminCreateCourierForm() {
             type="password"
             required
             autoComplete="new-password"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={`mt-2 ${adminUi.input}`}
           />
         </div>
         <div>
-          <label
-            htmlFor="admin-courier-pw2"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
+          <label htmlFor="admin-courier-pw2" className={adminUi.labelBlock}>
             Confirm password
           </label>
           <input
@@ -82,7 +66,7 @@ export function AdminCreateCourierForm() {
             type="password"
             required
             autoComplete="new-password"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={`mt-2 ${adminUi.input}`}
           />
         </div>
         {state?.ok === false && state.error ? (
@@ -95,14 +79,10 @@ export function AdminCreateCourierForm() {
             {state.message}
           </p>
         ) : null}
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-        >
-          {pending ? "Creating…" : "Create courier account"}
+        <button type="submit" disabled={pending} className={`${adminUi.btnPrimary} disabled:opacity-50`}>
+          {pending ? "Creating…" : "Create courier"}
         </button>
       </form>
-    </div>
+    </AdminPanel>
   );
 }

@@ -13,7 +13,10 @@ export function PublicZone({ children }: { children: React.ReactNode }) {
   const zone = isAuthPublicPath(pathname) ? "auth" : "site";
 
   return (
-    <div data-public-zone={zone} className="public-zone min-w-0 flex flex-1 flex-col">
+    <div
+      data-public-zone={zone}
+      className="public-zone min-w-0 flex flex-1 flex-col leading-relaxed antialiased"
+    >
       {children}
     </div>
   );

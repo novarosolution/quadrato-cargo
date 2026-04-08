@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { roleUi } from "@/components/role/role-ui";
 import { postLogoutApi } from "@/lib/api/auth-client";
+import { agencyLogoutCopy } from "@/lib/agency-content";
 
 export function AgencyLogoutButton() {
   const router = useRouter();
@@ -21,9 +23,9 @@ export function AgencyLogoutButton() {
       type="button"
       onClick={onLogout}
       disabled={pending}
-      className="rounded-lg border border-border-strong bg-canvas/50 px-3 py-2 text-sm font-medium text-muted transition hover:bg-pill-hover hover:text-ink disabled:opacity-50"
+      className={`${roleUi.signOutBtn} disabled:opacity-50`}
     >
-      {pending ? "Signing out..." : "Sign out"}
+      {pending ? agencyLogoutCopy.pending : agencyLogoutCopy.label}
     </button>
   );
 }

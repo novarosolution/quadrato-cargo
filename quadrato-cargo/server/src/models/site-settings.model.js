@@ -45,7 +45,10 @@ export function normalizeSiteSettings(row) {
     trackShowShipmentCard: trackShowFlag(row?.trackShowShipmentCard),
     trackShowTimeline: trackShowFlag(row?.trackShowTimeline),
     trackShowInternationalHelp: trackShowFlag(row?.trackShowInternationalHelp),
-    trackShowOnHoldBanner: trackShowFlag(row?.trackShowOnHoldBanner)
+    trackShowOnHoldBanner: trackShowFlag(row?.trackShowOnHoldBanner),
+    /** Domestic / intl origin linehaul label on professional timeline (e.g. main sort hub). */
+    domesticMainHubCity: String(row?.domesticMainHubCity ?? "Quadrato Cargo").trim().slice(0, 80) ||
+      "Quadrato Cargo"
   };
 }
 
@@ -98,6 +101,7 @@ export const siteSettingsModelSchema = {
         trackShowTimeline: { bsonType: ["bool", "null"] },
         trackShowInternationalHelp: { bsonType: ["bool", "null"] },
         trackShowOnHoldBanner: { bsonType: ["bool", "null"] },
+        domesticMainHubCity: { bsonType: ["string", "null"] },
         updatedAt: { bsonType: ["date", "null"] }
       }
     }

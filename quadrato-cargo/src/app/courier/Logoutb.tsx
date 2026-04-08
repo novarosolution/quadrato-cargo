@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { roleUi } from "@/components/role/role-ui";
 import { postLogoutApi } from "@/lib/api/auth-client";
 
 export function CourierLogoutButton() {
@@ -21,7 +22,7 @@ export function CourierLogoutButton() {
       type="button"
       onClick={onLogout}
       disabled={pending}
-      className="rounded-lg border border-border-strong bg-canvas/50 px-3 py-2 text-sm font-medium text-muted transition hover:bg-pill-hover hover:text-ink disabled:opacity-50"
+      className={`${roleUi.signOutBtn} disabled:opacity-50`}
     >
       {pending ? "Signing out..." : "Sign out"}
     </button>

@@ -2,7 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { adminUi } from "@/components/admin/admin-ui";
 import { verifyAgencyHandoverApi } from "@/lib/api/agency-client";
+import { agencyHandoverFormCopy } from "@/lib/agency-content";
+import { agencyUi } from "@/lib/agency-ui";
 
 function readPartyName(payload: unknown, key: "sender" | "recipient") {
   const root = payload && typeof payload === "object" ? payload : {};
@@ -86,95 +89,113 @@ export function AgencyHandoverForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3">
-      <div>
-        <label
-          htmlFor="agency-reference"
-          className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-        >
-          Reference (Tracking ID or booking ID)
-        </label>
-        <input
-          id="agency-reference"
-          value={reference}
-          onChange={(e) => setReference(e.target.value)}
-          required
-          className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 font-mono text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
-          placeholder="QC-2026-0001 or booking id"
-        />
+    <form onSubmit={onSubmit} className="space-y-5">
+      <div className={agencyUi.formBlock}>
+        <h3 className={agencyUi.formBlockTitle}>{agencyHandoverFormCopy.stepReferenceTitle}</h3>
+        <p className={agencyUi.formBlockHint}>{agencyHandoverFormCopy.stepReferenceHint}</p>
+        <div className={agencyUi.fieldStack}>
+          <div>
+            <label htmlFor="agency-reference" className={adminUi.labelBlock}>
+              {agencyHandoverFormCopy.referenceLabel}
+            </label>
+            <input
+              id="agency-reference"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              required
+              className={`${adminUi.input} mt-2 font-mono text-sm`}
+              placeholder={agencyHandoverFormCopy.referencePlaceholder}
+              autoComplete="off"
+            />
+          </div>
+        </div>
       </div>
-      <div>
-        <label
-          htmlFor="agency-otp"
-          className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-        >
-          Agency handover OTP
-        </label>
-        <input
-          id="agency-otp"
-          value={otpCode}
-          onChange={(e) => {
-            const next = e.currentTarget.value.replace(/\D/g, "").slice(0, 6);
-            setOtpCode(next);
-            if (next.length === 6) {
-              void autoVerifyIfReady(next);
-            }
-          }}
-          required
-          inputMode="numeric"
-          pattern="[0-9]{6}"
-          maxLength={6}
-          className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 font-mono text-sm tracking-[0.2em] text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
-          placeholder="Enter OTP"
-        />
-        <p className="mt-1 text-[11px] text-muted-soft">
-          OTP is booking-specific. Enter 6 digits to auto-verify.
-        </p>
+
+      <div className={agencyUi.formBlock}>
+        <h3 className={agencyUi.formBlockTitle}>{agencyHandoverFormCopy.stepOtpTitle}</h3>
+        <p className={agencyUi.formBlockHint}>{agencyHandoverFormCopy.otpHint}</p>
+        <div className={agencyUi.fieldStack}>
+          <div>
+            <label htmlFor="agency-otp" className={adminUi.labelBlock}>
+              {agencyHandoverFormCopy.otpLabel}
+            </label>
+            <input
+              id="agency-otp"
+              value={otpCode}
+              onChange={(e) => {
+                const next = e.currentTarget.value.replace(/\D/g, "").slice(0, 6);
+                setOtpCode(next);
+                if (next.length === 6) {
+                  void autoVerifyIfReady(next);
+                }
+              }}
+              required
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              className={`${adminUi.input} mt-2 font-mono text-lg tracking-[0.35em] sm:text-xl`}
+              placeholder={agencyHandoverFormCopy.otpPlaceholder}
+              autoComplete="one-time-code"
+            />
+          </div>
+        </div>
       </div>
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-xl bg-teal px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-      >
-        {pending ? "Verifying..." : "Verify handover & start agency job"}
-      </button>
+
+      <div className={agencyUi.actionsBar}>
+        <button type="submit" disabled={pending} className={agencyUi.btnPrimary}>
+          {pending ? agencyHandoverFormCopy.submitPending : agencyHandoverFormCopy.submit}
+        </button>
+      </div>
+
       {state?.ok ? (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
-          <p className="text-emerald-400" role="status">
-            {state.message}
-          </p>
+        <div
+          className="rounded-xl border border-teal/35 bg-linear-to-br from-teal/12 to-transparent p-4 shadow-sm ring-1 ring-teal/15 sm:p-5"
+          role="status"
+        >
+          <p className="text-sm font-medium text-teal">{state.message}</p>
           {state.booking ? (
-            <div className="mt-2 space-y-1 text-xs text-muted">
-              <p>
-                <span className="text-muted-soft">Reference:</span>{" "}
-                <span className="font-mono text-ink">
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-1">
+              <div className="rounded-lg border border-border-strong/50 bg-canvas/25 px-3 py-2">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
+                  {agencyHandoverFormCopy.resultReference}
+                </dt>
+                <dd className="mt-0.5 font-mono text-ink">
                   {state.booking.consignmentNumber || state.booking.id}
-                </span>
-              </p>
-              <p>
-                <span className="text-muted-soft">Route:</span>{" "}
-                <span className="capitalize text-ink">{state.booking.routeType}</span>
-                <span className="mx-2 text-muted-soft">|</span>
-                <span className="text-muted-soft">Status:</span>{" "}
-                <span className="text-ink">{state.booking.status}</span>
-              </p>
-              <p>
-                <span className="text-muted-soft">Sender:</span>{" "}
-                <span className="text-ink">
-                  {readPartyName(state.booking.payload, "sender") || "—"}
-                </span>
-                <span className="mx-2 text-muted-soft">|</span>
-                <span className="text-muted-soft">Recipient:</span>{" "}
-                <span className="text-ink">
-                  {readPartyName(state.booking.payload, "recipient") || "—"}
-                </span>
-              </p>
-            </div>
+                </dd>
+              </div>
+              <div className="rounded-lg border border-border-strong/50 bg-canvas/25 px-3 py-2">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
+                  {agencyHandoverFormCopy.resultRoute} / {agencyHandoverFormCopy.resultStatus}
+                </dt>
+                <dd className="mt-0.5 capitalize text-ink">
+                  {state.booking.routeType}
+                  <span className="mx-2 text-muted-soft">·</span>
+                  {state.booking.status}
+                </dd>
+              </div>
+              <div className="rounded-lg border border-border-strong/50 bg-canvas/25 px-3 py-2">
+                <dt className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
+                  {agencyHandoverFormCopy.resultPartiesTitle}
+                </dt>
+                <dd className="mt-1 space-y-1 text-muted">
+                  <p>
+                    <span className="text-muted-soft">{agencyHandoverFormCopy.resultSender}</span>{" "}
+                    <span className="text-ink">{readPartyName(state.booking.payload, "sender") || "—"}</span>
+                  </p>
+                  <p>
+                    <span className="text-muted-soft">{agencyHandoverFormCopy.resultRecipient}</span>{" "}
+                    <span className="text-ink">
+                      {readPartyName(state.booking.payload, "recipient") || "—"}
+                    </span>
+                  </p>
+                </dd>
+              </div>
+            </dl>
           ) : null}
         </div>
       ) : null}
       {state?.ok === false ? (
-        <p className="text-sm text-rose-400" role="alert">
+        <p className={agencyUi.messageErr} role="alert">
           {state.error}
         </p>
       ) : null}

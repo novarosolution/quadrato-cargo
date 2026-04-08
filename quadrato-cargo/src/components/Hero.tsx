@@ -63,7 +63,7 @@ export function PageHero({ eyebrow, title, description }: PageHeroProps) {
           ) : null}
           <motion.h1
             variants={itemVariants}
-            className="mt-3 max-w-4xl text-3xl font-semibold tracking-tight text-ink sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]"
+            className="type-display-premium mt-3 max-w-4xl text-3xl sm:text-4xl lg:text-[2.75rem]"
           >
             {title}
           </motion.h1>

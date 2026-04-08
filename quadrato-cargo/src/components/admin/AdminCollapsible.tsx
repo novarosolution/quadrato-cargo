@@ -2,6 +2,7 @@
 
 import { ChevronDown } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
+import { adminClass, adminUi } from "./admin-ui";
 
 type Props = {
   title: string;
@@ -25,13 +26,7 @@ export function AdminCollapsible({
   const baseId = idProp ?? `admin-panel-${reactId.replace(/:/g, "")}`;
   const regionId = `${baseId}-region`;
   const [open, setOpen] = useState(defaultOpen);
-  const outerClass = [
-    "rounded-2xl border border-border-strong bg-surface-elevated/50",
-    idProp ? "scroll-mt-24" : "",
-    className,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const outerClass = adminClass(adminUi.collapsible, idProp ? "scroll-mt-6" : "", className);
 
   return (
     <div id={idProp} className={outerClass.trim()}>
@@ -44,7 +39,7 @@ export function AdminCollapsible({
         className="flex w-full items-start justify-between gap-3 rounded-2xl px-5 py-4 text-left transition hover:bg-canvas/20"
       >
         <span className="min-w-0">
-          <span className="font-display text-lg font-semibold text-ink">{title}</span>
+          <span className={adminUi.sectionTitleSm}>{title}</span>
           {description ? (
             <span className="mt-1 block text-xs text-muted-soft">{description}</span>
           ) : null}

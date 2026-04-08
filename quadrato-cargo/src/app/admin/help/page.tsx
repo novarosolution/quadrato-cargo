@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdminPageBody, AdminPanel } from "@/components/admin/AdminPrimitives";
+import { adminUi } from "@/components/admin/admin-ui";
 import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 
 export const metadata: Metadata = {
@@ -9,81 +11,63 @@ export const metadata: Metadata = {
 
 export default function AdminHelpPage() {
   return (
-    <div className="stack-page content-narrow gap-8">
+    <AdminPageBody className="gap-8 max-sm:gap-6">
       <AdminPageHeader
-        title="Admin quick reference"
-        description="Use this panel to run the public site and operations. Full technical detail lives in the repo under docs/."
+        title="Help"
+        description="Quick reference for the admin console. Couriers, agencies, and customers use separate apps with their own logins."
       />
 
-      <section className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-6">
-        <h2 className="font-display text-base font-semibold text-ink">Who signs in here</h2>
-        <p className="mt-2 text-sm text-muted">
-          Only the credentials configured on the API as{" "}
-          <code className="rounded bg-pill px-1 py-0.5 text-xs">ADMIN_EMAIL</code> and{" "}
-          <code className="rounded bg-pill px-1 py-0.5 text-xs">ADMIN_PASSWORD</code>. Staff,
-          courier, and agency users are separate accounts (created under Users) and use their own
-          dashboards — not this login form.
+      <AdminPanel as="section" aria-labelledby="help-access-heading">
+        <h2 id="help-access-heading" className={adminUi.sectionTitle}>
+          Access
+        </h2>
+        <p className={`${adminUi.sectionDesc} mt-2 max-w-2xl`}>
+          Console login uses environment credentials{" "}
+          <code className="rounded-md bg-pill px-1.5 py-0.5 text-[11px] text-ink">ADMIN_EMAIL</code> /{" "}
+          <code className="rounded-md bg-pill px-1.5 py-0.5 text-[11px] text-ink">ADMIN_PASSWORD</code>.
         </p>
-      </section>
+      </AdminPanel>
 
-      <section className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-6">
-        <h2 className="font-display text-base font-semibold text-ink">Main areas</h2>
-        <ul className="mt-3 list-inside list-disc space-y-2 text-sm text-muted">
-          <li>
-            <strong className="text-ink">Dashboard</strong> — counts, recent activity, status
-            breakdown.
+      <AdminPanel as="section" aria-labelledby="help-areas-heading">
+        <h2 id="help-areas-heading" className={adminUi.sectionTitle}>
+          Areas
+        </h2>
+        <ul className="mt-4 grid gap-4 sm:grid-cols-2">
+          <li className={adminUi.rowCard}>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">Overview</p>
+            <p className="mt-2 text-sm text-muted">
+              <span className="font-medium text-ink">Dashboard</span> — counts and recent activity.
+            </p>
           </li>
-          <li>
-            <strong className="text-ink">Reports</strong> — monthly aggregates.
+          <li className={adminUi.rowCard}>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">Operations</p>
+            <p className="mt-2 text-sm text-muted">
+              <span className="font-medium text-ink">Bookings</span> — list, filters, and detail tabs.
+            </p>
           </li>
-          <li>
-            <strong className="text-ink">Data &amp; site</strong> — public phone/email, banner, PDF
-            branding, tracking toggles, <strong>CSV exports</strong> for users, contacts, and bookings.
+          <li className={adminUi.rowCard}>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">People</p>
+            <p className="mt-2 text-sm text-muted">
+              <span className="font-medium text-ink">Users / Network / Contacts</span> — accounts and workload.
+            </p>
           </li>
-          <li>
-            <strong className="text-ink">Users</strong> — create courier/agency/staff, edit roles,
-            reset access.
-          </li>
-          <li>
-            <strong className="text-ink">Contacts</strong> — contact form submissions.
-          </li>
-          <li>
-            <strong className="text-ink">Bookings</strong> — search, open by reference, edit status,
-            dispatch, pickup and delivery details, shipment fields, invoice, timeline, JSON fallback.
+          <li className={adminUi.rowCard}>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-soft">Config</p>
+            <p className="mt-2 text-sm text-muted">
+              <span className="font-medium text-ink">Settings / Reports</span> — site copy, exports, monthly CSV.
+            </p>
           </li>
         </ul>
-      </section>
 
-      <section className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-6">
-        <h2 className="font-display text-base font-semibold text-ink">Documentation</h2>
-        <p className="mt-2 text-sm text-muted">
-          In the project folder, open{" "}
-          <code className="rounded bg-pill px-1.5 py-0.5 text-xs">
-            quadrato-cargo/docs/ROLES_AND_FLOWS.md
-          </code>{" "}
-          for API routes, roles, and customer/courier/agency flows.{" "}
-          <code className="rounded bg-pill px-1.5 py-0.5 text-xs">
-            quadrato-cargo/docs/ADMIN_IMPROVEMENT_ROADMAP.md
-          </code>{" "}
-          lists planned upgrades.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-3">
-          <Link
-            href="/admin/settings"
-            prefetch={false}
-            className="text-sm font-medium text-teal hover:underline"
-          >
-            Data &amp; site →
+        <div className={`${adminUi.divider} mt-8 flex flex-wrap gap-3 pt-6`}>
+          <Link href="/admin/settings" prefetch={false} className={adminUi.btnSecondary}>
+            Settings
           </Link>
-          <Link
-            href="/admin/bookings"
-            prefetch={false}
-            className="text-sm font-medium text-teal hover:underline"
-          >
-            Bookings →
+          <Link href="/admin/bookings" prefetch={false} className={adminUi.btnSecondary}>
+            Bookings
           </Link>
         </div>
-      </section>
-    </div>
+      </AdminPanel>
+    </AdminPageBody>
   );
 }

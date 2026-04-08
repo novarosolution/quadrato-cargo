@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { getApiBaseUrl } from "@/lib/api/base-url";
+import { getApiUpstreamBaseUrl } from "@/lib/api/base-url";
 import { ADMIN_API_SECRET } from "@/lib/admin-api-secret";
 
 const KINDS = new Set(["users", "contacts", "bookings"]);
@@ -22,7 +22,7 @@ export async function GET(
 
   const store = await cookies();
   const cookieHeader = store.toString();
-  const base = getApiBaseUrl();
+  const base = getApiUpstreamBaseUrl();
 
   const me = await fetch(`${base}/api/admin/auth/me`, {
     method: "GET",

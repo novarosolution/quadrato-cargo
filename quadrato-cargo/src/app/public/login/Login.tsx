@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
-import { authFieldClass } from "@/components/auth/authStyles";
+import { authAlertError, authFieldClass } from "@/components/auth/authStyles";
 import { emailLocalMinPattern } from "@/lib/auth-validation";
 import { postLoginApi } from "@/lib/api/auth-client";
 
@@ -60,10 +60,7 @@ export function LoginForm({
     <form onSubmit={onSubmit} className="space-y-5" noValidate>
       <input type="hidden" name="redirectTo" value={redirectTo} />
       {callbackError ? (
-        <p
-          className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300"
-          role="alert"
-        >
+        <p className={authAlertError} role="alert">
           {callbackError}
         </p>
       ) : null}
@@ -148,7 +145,7 @@ export function LoginForm({
 
       {!state.ok && state.message ? (
         <motion.p
-          className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300"
+          className={authAlertError}
           role="alert"
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}

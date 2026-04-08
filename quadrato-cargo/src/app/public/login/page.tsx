@@ -2,12 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { PublicCard } from "@/components/public/PublicCard";
-import { PublicPageSection } from "@/components/public/PublicPageSection";
-import { PublicPageHeader } from "@/components/layout/AppPageHeader";
-import { Container } from "@/components/Wrap";
+import { CustomerAuthLayout } from "@/components/auth/CustomerAuthLayout";
 import { formatAuthCallbackError } from "@/lib/auth-callback-errors";
 import { safeRedirectPath } from "@/lib/auth-redirect";
+import { publicUi } from "@/components/public/public-ui";
 import { LoginForm } from "./Login";
 
 export const metadata: Metadata = {
@@ -43,51 +41,24 @@ export default async function LoginPage({ searchParams }: PageProps) {
   }
 
   const callbackError = formatAuthCallbackError(q.error);
+  const registerHref = `/public/register?callbackUrl=${encodeURIComponent(redirectAfterLogin)}`;
 
   return (
-    <div className="stack-page content-full">
-      <section className="border-b border-border py-10 sm:py-14">
-        <Container className="max-w-lg">
-          <PublicPageHeader
-            eyebrow="Account"
-            title="Log in"
-            description={
-              <>
-                <span className="block">
-                  Sign in with the email and password from your registration. First time?{" "}
-                  <Link href="/public/register" className="font-medium text-teal hover:underline">
-                    Create an account
-                  </Link>{" "}
-                  — it is instant and does not require admin approval.
-                </span>
-                <span className="mt-2 block text-xs text-muted-soft">
-                  Staff / team: use{" "}
-                  <Link href="/admin/login" className="text-teal hover:underline">
-                    Admin login
-                  </Link>{" "}
-                  — not this page.
-                </span>
-              </>
-            }
-          />
-        </Container>
-      </section>
-
-      <PublicPageSection>
-        <Container className="max-w-lg">
-          <PublicCard className="shadow-2xl shadow-black/40 sm:p-8">
-            <LoginForm
-              callbackError={callbackError}
-              redirectTo={redirectAfterLogin}
-            />
-          </PublicCard>
-          <p className="mt-8 text-center text-xs text-muted-soft">
-            <Link href="/public" className="underline-offset-2 hover:underline">
-              Back to home
-            </Link>
-          </p>
-        </Container>
-      </PublicPageSection>
-    </div>
+    <CustomerAuthLayout
+      title="Log in"
+      description={
+        <>
+          <span className="block">
+            Sign in with the email and password from your registration. First time?{" "}
+            <Link href={registerHref} className={publicUi.link}>
+              Create an account
+            </Link>{" "}
+            — it is instant and does not require admin approval.
+          </span>
+        </>
+      }
+    >
+      <LoginForm callbackError={callbackError} redirectTo={redirectAfterLogin} />
+    </CustomerAuthLayout>
   );
 }

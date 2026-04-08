@@ -1,128 +1,67 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { fetchAgencyBookingsServer } from "@/lib/api/agency-client";
+import { agencyDefaults, agencyIntakePageCopy, agencyMeta } from "@/lib/agency-content";
 import { AppSurfacePageHeader } from "@/components/layout/AppPageHeader";
-import { AgencyHandoverForm } from "./Handover";
-import { AgencyIntakeTable, type AgencyIntakeRow } from "./AgencyIntakeTable";
-import { AgencyProfileForm } from "./AgencyProfileForm";
+import { mapAgencyBookingsToIntakeRows } from "./_lib/map-agency-intake-rows";
+import { AgencyBookingsListClient } from "./AgencyBookingsListClient";
 
 export const metadata: Metadata = {
-  title: "Agency Intake",
+  title: agencyMeta.pageTitleIntake,
   robots: { index: false, follow: false },
 };
 
-function partyName(payload: unknown, key: "sender" | "recipient"): string {
-  const root = payload && typeof payload === "object" ? (payload as Record<string, unknown>) : {};
-  const section = root[key];
-  if (!section || typeof section !== "object") return "—";
-  const name = (section as Record<string, unknown>).name;
-  return typeof name === "string" && name.trim() ? name : "—";
-}
-
-export default async function AgencyPage() {
+export default async function AgencyIntakePage() {
   const session = await auth();
   const u = session?.user;
   const agencyIdentity = {
-    displayName: (u?.name && u.name.trim()) || "Your agency hub",
-    email: String(u?.email ?? "").trim(),
+    displayName: (u?.name && u.name.trim()) || agencyDefaults.hubDisplayName,
     agencyAddress: u?.agencyAddress?.trim() || null,
     agencyPhone: u?.agencyPhone?.trim() || null,
-  };
-  const profileInitial = {
-    name: u?.name?.trim() ?? "",
-    agencyAddress: u?.agencyAddress?.trim() ?? "",
-    agencyPhone: u?.agencyPhone?.trim() ?? "",
+    agencyCity: u?.agencyCity?.trim() || null,
   };
 
   const cookieHeader = (await cookies()).toString();
   const res = await fetchAgencyBookingsServer(cookieHeader);
-  const rows: AgencyIntakeRow[] = res.ok
-    ? (res.data.bookings || []).map((b) => ({
-        id: b.id,
-        createdAt: new Date(b.createdAt).toISOString(),
-        updatedAt: (b.updatedAt && new Date(b.updatedAt).toISOString()) || new Date(b.createdAt).toISOString(),
-        consignmentNumber: b.consignmentNumber,
-        routeType: b.routeType,
-        status: b.status,
-        publicTrackingNote: b.publicTrackingNote ?? null,
-        trackingNotes: b.trackingNotes ?? null,
-        agencyHandoverVerifiedAt: b.agencyHandoverVerifiedAt ?? null,
-        senderName: partyName(b.payload, "sender"),
-        recipientName: partyName(b.payload, "recipient"),
-        senderAddress: b.senderAddress ?? null,
-        recipientAddress: b.recipientAddress ?? null,
-        publicTimelineOverrides: b.publicTimelineOverrides ?? null,
-        publicTimelineStepVisibility: b.publicTimelineStepVisibility ?? null,
-        publicTimelineStatusPath: Array.isArray(b.publicTimelineStatusPath)
-          ? b.publicTimelineStatusPath.map((s) => String(s ?? "").trim()).filter(Boolean)
-          : null,
-        internationalAgencyStage:
-          b.internationalAgencyStage != null &&
-          Number.isInteger(b.internationalAgencyStage) &&
-          b.internationalAgencyStage >= 0 &&
-          b.internationalAgencyStage < 12
-            ? b.internationalAgencyStage
-            : null,
-        courierId: b.courierId ?? null,
-        payload: b.payload,
-      }))
-    : [];
+  const rows = res.ok ? mapAgencyBookingsToIntakeRows(res.data.bookings || []) : [];
+  const count = rows.length;
 
   return (
     <div className="stack-page content-wide gap-8 max-sm:gap-6">
       <AppSurfacePageHeader
-        title="Agency intake queue"
-        description={
-          <>
-            Use <strong className="font-medium text-muted">Open</strong> to update status and the message
-            shown on tracking. Use <strong className="font-medium text-muted">Accept &amp; open</strong> when
-            you need to enter the OTP from the courier first. Your hub name and address appear on this
-            portal and help keep the same agency on every booking you process.{" "}
-            <span className="text-muted-soft">
-              International and domestic bookings share the same lifecycle; when admin assigns your agency
-              or changes a status, it appears here after you refresh or reopen a row.
+        eyebrow={agencyIntakePageCopy.pageEyebrow}
+        title={agencyIntakePageCopy.headerTitle}
+        description={agencyIntakePageCopy.headerLead}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-2xl border border-border-strong/60 bg-surface-elevated/50 px-4 py-2 text-center text-sm tabular-nums text-ink">
+              <span className="block text-2xl font-semibold tracking-tight">{count}</span>
+              <span className="text-xs font-medium text-muted-soft">assigned</span>
             </span>
-          </>
+          </div>
         }
       />
 
-      <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-6">
-        <h2 className="font-display text-lg font-semibold">Agency hub details</h2>
-        <p className="mt-1 text-xs text-muted-soft">
-          Save your operating name, address, and phone. After you accept a handover or save a status
-          update, the booking is linked to your sign-in account so customers see a consistent agency name
-          on tracking.
-        </p>
-        <div className="mt-6 max-w-xl">
-          <AgencyProfileForm
-            initialName={profileInitial.name}
-            initialAddress={profileInitial.agencyAddress}
-            initialPhone={profileInitial.agencyPhone}
-          />
+      <section className="space-y-3">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="font-display text-sm font-semibold tracking-tight text-ink">Queue</h2>
+            <p className="mt-0.5 max-w-xl text-sm text-muted">{agencyIntakePageCopy.bookingsSectionBlurb}</p>
+          </div>
         </div>
-      </div>
+        <AgencyBookingsListClient rows={rows} agencyIdentity={agencyIdentity} />
+      </section>
 
-      <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-6">
-        <h2 className="font-display text-lg font-semibold">Verify courier handover</h2>
-        <p className="mt-1 text-xs text-muted-soft">
-          Optional shortcut: reference + OTP here, or accept from a row with{" "}
-          <span className="font-medium">Accept & open</span>.
-        </p>
-        <div className="mt-6 max-w-xl">
-          <AgencyHandoverForm />
-        </div>
-      </div>
-
-      <AgencyIntakeTable rows={rows} agencyIdentity={agencyIdentity} />
-
-      <p className="text-xs text-muted-soft">
-        Pickup-side jobs live on{" "}
-        <Link href="/courier" className="text-teal hover:underline">
-          /courier
+      <p className="text-center text-xs text-muted-soft sm:text-left">
+        <Link href="/courier" className="font-medium text-teal hover:underline">
+          {agencyIntakePageCopy.footerPickupLinkLabel}
         </Link>
-        .
+        <span className="text-muted-soft"> · </span>
+        <Link href="/agency/guide" prefetch={false} className="font-medium text-teal hover:underline">
+          Guide
+        </Link>
       </p>
     </div>
   );

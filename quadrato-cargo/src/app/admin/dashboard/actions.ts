@@ -345,7 +345,9 @@ export async function saveCustomerTimelineAdmin(
     return { ok: false, error: result.message || "Failed to save customer timeline." };
   }
   revalidatePath("/admin/bookings");
-  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath(`/admin/bookings/${bookingId}`, "layout");
+  revalidatePath(`/admin/bookings/${bookingId}/timeline`, "layout");
+  revalidatePath(`/admin/bookings/${bookingId}/track-preview`, "layout");
   revalidatePath("/public/tsking");
   return {
     ok: true,
@@ -401,7 +403,9 @@ export async function saveCustomerTimelineStepAdmin(
     return { ok: false, error: result.message || "Failed to save this timeline step." };
   }
   revalidatePath("/admin/bookings");
-  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath(`/admin/bookings/${bookingId}`, "layout");
+  revalidatePath(`/admin/bookings/${bookingId}/timeline`, "layout");
+  revalidatePath(`/admin/bookings/${bookingId}/track-preview`, "layout");
   revalidatePath("/public/tsking");
   return {
     ok: true,
@@ -438,67 +442,13 @@ export async function saveCustomerTimelineStepVisibilityOnly(
     return { ok: false, error: result.message || "Failed to save step visibility." };
   }
   revalidatePath("/admin/bookings");
-  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidatePath(`/admin/bookings/${bookingId}`, "layout");
+  revalidatePath(`/admin/bookings/${bookingId}/timeline`, "layout");
+  revalidatePath(`/admin/bookings/${bookingId}/track-preview`, "layout");
   revalidatePath("/public/tsking");
   return {
     ok: true,
     message: "Visibility saved.",
-  };
-}
-
-type LocationStagePatch = Record<string, { location: string }>;
-
-/** Merges location lines for every timeline step in one request (current route only). Empty string clears an override. */
-export async function saveCustomerTimelineLocationsAdmin(
-  _prev: BookingAdminUpdateState | undefined,
-  formData: FormData,
-): Promise<BookingAdminUpdateState> {
-  const bookingId = String(formData.get("bookingId") ?? "").trim();
-  const modeKey = String(formData.get("modeKey") ?? "").trim();
-  const raw = String(formData.get("locationsJson") ?? "").trim();
-  if (!bookingId) return { ok: false, error: "Missing booking." };
-  if (modeKey !== "domestic" && modeKey !== "international") {
-    return { ok: false, error: "Invalid timeline route." };
-  }
-  let parsed: unknown;
-  try {
-    parsed = raw ? JSON.parse(raw) : {};
-  } catch {
-    return { ok: false, error: "Location data is not valid JSON." };
-  }
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    return { ok: false, error: "Invalid location payload." };
-  }
-  const inner: LocationStagePatch = {};
-  for (const [idx, val] of Object.entries(parsed as Record<string, unknown>)) {
-    if (!/^\d+$/.test(idx)) continue;
-    if (!val || typeof val !== "object" || Array.isArray(val)) continue;
-    const loc = (val as { location?: unknown }).location;
-    inner[idx] = { location: typeof loc === "string" ? loc : "" };
-  }
-  if (Object.keys(inner).length === 0) {
-    return {
-      ok: false,
-      error: "Tick at least one step (Apply checkboxes).",
-    };
-  }
-  const body: Record<string, unknown> = {
-    merge: true,
-    [modeKey]: inner,
-  };
-  const result = await adminMutation(
-    `/api/admin/bookings/${encodeURIComponent(bookingId)}/timeline-overrides`,
-    body,
-  );
-  if (!result.ok) {
-    return { ok: false, error: result.message || "Failed to save timeline locations." };
-  }
-  revalidatePath("/admin/bookings");
-  revalidatePath(`/admin/bookings/${bookingId}`);
-  revalidatePath("/public/tsking");
-  return {
-    ok: true,
-    message: "Locations saved.",
   };
 }
 
@@ -665,12 +615,34 @@ export async function updateBookingPickupAdmin(
   return { ok: true, message: "Pickup and sender address saved." };
 }
 
+function parseInvoiceLineItemsFromForm(formData: FormData): Array<{
+  description: string;
+  amount: string;
+  weightKg: string;
+  sizeCm: string;
+}> {
+  const slotRaw = Number.parseInt(String(formData.get("invoiceLineSlotCount") ?? "1"), 10);
+  const slotCount = Math.min(25, Math.max(1, Number.isFinite(slotRaw) ? slotRaw : 1));
+  /** One element per table row index so row N always maps to parcel/line N in the API and PDF. */
+  const out: Array<{ description: string; amount: string; weightKg: string; sizeCm: string }> = [];
+  for (let i = 0; i < slotCount; i++) {
+    out.push({
+      description: String(formData.get(`invoiceLineDesc_${i}`) ?? "").trim(),
+      amount: String(formData.get(`invoiceLineAmt_${i}`) ?? "").trim(),
+      weightKg: String(formData.get(`invoiceLineWeight_${i}`) ?? "").trim(),
+      sizeCm: String(formData.get(`invoiceLineSizeCm_${i}`) ?? "").trim(),
+    });
+  }
+  return out;
+}
+
 export async function updateBookingInvoiceAdmin(
   _prev: DataManageState | undefined,
   formData: FormData,
 ): Promise<DataManageState> {
   const bookingId = String(formData.get("bookingId") ?? "").trim();
   const invoicePdfReady = String(formData.get("invoicePdfReady") ?? "") === "on";
+  const lineItems = parseInvoiceLineItemsFromForm(formData);
   const result = await adminMutation(
     `/api/admin/bookings/${encodeURIComponent(bookingId)}/invoice`,
     {
@@ -680,12 +652,13 @@ export async function updateBookingInvoiceAdmin(
         currency: String(formData.get("invoiceCurrency") ?? "INR").trim(),
         subtotal: String(formData.get("invoiceSubtotal") ?? "").trim(),
         tax: String(formData.get("invoiceTax") ?? "").trim(),
-        insurance: String(formData.get("invoiceInsurance") ?? "").trim(),
         customsDuties: String(formData.get("invoiceCustomsDuties") ?? "").trim(),
-        discount: String(formData.get("invoiceDiscount") ?? "").trim(),
+        insurancePremium: String(formData.get("invoiceInsurancePremium") ?? "").trim(),
         total: String(formData.get("invoiceTotal") ?? "").trim(),
+        insurance: String(formData.get("invoiceInsurance") ?? "").trim(),
         lineDescription: String(formData.get("invoiceLineDescription") ?? "").trim(),
         notes: String(formData.get("invoiceNotes") ?? "").trim(),
+        lineItems,
       },
     },
   );
@@ -695,7 +668,8 @@ export async function updateBookingInvoiceAdmin(
   revalidatePath("/admin/bookings");
   revalidatePath(`/admin/bookings/${bookingId}`);
   revalidatePath("/public/tsking");
-  return { ok: true, message: "Invoice PDF settings saved." };
+  revalidatePath("/public/profile");
+  return { ok: true, message: "Invoice saved — line items and totals updated." };
 }
 
 export async function updateContactSubmissionAdmin(

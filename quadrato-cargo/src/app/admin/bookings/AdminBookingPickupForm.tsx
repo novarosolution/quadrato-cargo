@@ -15,6 +15,7 @@ export type BookingPickupInitial = {
   instructions: string;
   senderStreet: string;
   senderCity: string;
+  senderState: string;
   senderPostal: string;
   senderCountry: string;
 };
@@ -144,7 +145,7 @@ export function AdminBookingPickupForm({ bookingId, routeType, initial }: Props)
             className={field}
           />
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <div>
             <label htmlFor="admin-pickup-city" className="text-xs font-medium text-muted-soft">
               City
@@ -154,6 +155,20 @@ export function AdminBookingPickupForm({ bookingId, routeType, initial }: Props)
               name="senderCity"
               type="text"
               defaultValue={initial.senderCity}
+              autoComplete="off"
+              className={field}
+            />
+          </div>
+          <div>
+            <label htmlFor="admin-pickup-state" className="text-xs font-medium text-muted-soft">
+              State / province
+            </label>
+            <input
+              id="admin-pickup-state"
+              name="senderState"
+              type="text"
+              defaultValue={initial.senderState}
+              placeholder="e.g. Gujarat"
               autoComplete="off"
               className={field}
             />

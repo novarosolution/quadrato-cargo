@@ -2,25 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { adminClass, adminUi } from "@/components/admin/admin-ui";
+import { roleUi } from "@/components/role/role-ui";
 import { CourierLogoutButton } from "./Logoutb";
 
 export function CourierNav({ email }: { email: string }) {
   const pathname = usePathname();
+  const jobsActive = pathname === "/courier";
+
   return (
-    <header className="sticky top-0 z-30 border-b border-border-strong/80 bg-surface-elevated/95 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.35)] backdrop-blur-xl dark:shadow-[0_12px_40px_-16px_rgba(0,0,0,0.55)]">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
-        <div>
-          <p className="font-display text-lg font-semibold tracking-tight text-ink">Courier</p>
-          <p className="text-xs text-muted-soft">Assigned deliveries · {email}</p>
+    <header className={roleUi.headerShell}>
+      <div className={roleUi.headerInner}>
+        <div className={roleUi.brandBlock}>
+          <p className={roleUi.brandTitle}>Courier</p>
+          <p className={roleUi.brandMeta}>Assigned deliveries · {email}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className={roleUi.navCluster}>
           <Link
             href="/courier"
-            className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-              pathname === "/courier"
-                ? "bg-teal font-semibold text-slate-950 shadow-sm"
-                : "text-muted hover:bg-pill-hover hover:text-ink"
-            }`}
+            prefetch={false}
+            aria-current={jobsActive ? "page" : undefined}
+            className={adminClass(
+              adminUi.navPillBase,
+              jobsActive ? adminUi.navPillActive : adminUi.navPill,
+            )}
           >
             My jobs
           </Link>

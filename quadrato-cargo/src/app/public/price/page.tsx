@@ -5,6 +5,7 @@ import { PublicPageSection } from "@/components/public/PublicPageSection";
 import { Container } from "@/components/Wrap";
 import { PageHero } from "@/components/Hero";
 import { pricingWeightBands, pricingZoneCards } from "@/lib/site-content";
+import { publicUi } from "@/components/public/public-ui";
 import { QuoteRequestButton } from "./QuoteRequestButton";
 
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function PricingPage() {
   return (
-    <div className="stack-page content-full">
+    <div className={publicUi.page}>
       <PageHero
         eyebrow="Rates"
         title="Pricing by service type"
@@ -24,7 +25,7 @@ export default function PricingPage() {
 
       <PublicPageSection>
         <Container>
-          <h2 className="font-display text-xl font-semibold text-ink">Coverage zones</h2>
+          <h2 className={publicUi.sectionTitle}>Coverage zones</h2>
           <p className="mt-2 max-w-2xl text-sm text-muted">
             Compare where instant dispatch is available and where scheduled service is used.
           </p>
@@ -41,7 +42,7 @@ export default function PricingPage() {
             ))}
           </ul>
 
-          <h2 className="mt-16 font-display text-xl font-semibold text-ink">
+          <h2 className={`mt-16 ${publicUi.sectionTitle}`}>
             Weight &amp; size bands
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-muted">
@@ -68,7 +69,7 @@ export default function PricingPage() {
           </ul>
 
           <PublicCard className="mt-14 sm:p-10">
-            <h2 className="font-display text-lg font-semibold text-ink">Get a written quote</h2>
+            <h2 className={publicUi.sectionTitleMd}>Get a written quote</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">
               Share your route, shipment type, and preferred timeline. We will return clear options
               for your use case.

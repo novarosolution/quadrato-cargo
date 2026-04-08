@@ -2,6 +2,7 @@
 
 import { useActionState, useCallback, useMemo, useState } from "react";
 import {
+  defaultInternationalStageTitle,
   DOMESTIC_PROFESSIONAL_STAGES,
   INTERNATIONAL_PROFESSIONAL_STAGES,
 } from "@/lib/professional-tracking-stages";
@@ -15,7 +16,6 @@ import type {
 import { AdminFormField, adminInputClassName } from "@/components/admin/AdminFormField";
 import {
   saveCustomerTimelineAdmin,
-  saveCustomerTimelineLocationsAdmin,
   saveCustomerTimelineStepAdmin,
   saveCustomerTimelineStepVisibilityOnly,
   type BookingAdminUpdateState,
@@ -110,23 +110,18 @@ type Props = {
   routeType: string;
   initial: PublicTimelineOverrides | null | undefined;
   initialStepVisibility?: PublicTimelineStepVisibility | null | undefined;
+  /** Resolved display name for assigned agency (international macro 1 default title). */
+  assignedAgencyName?: string | null;
 };
 
 const inputClass = adminInputClassName();
-
-function defaultLocationSaveMask(stepCount: number): Record<string, boolean> {
-  const m: Record<string, boolean> = {};
-  for (let i = 0; i < stepCount; i++) {
-    m[String(i)] = true;
-  }
-  return m;
-}
 
 export function AdminCustomerTimelineForm({
   bookingId,
   routeType,
   initial,
   initialStepVisibility = null,
+  assignedAgencyName = null,
 }: Props) {
   const isInternational = String(routeType).toLowerCase() === "international";
   const stages = isInternational ? INTERNATIONAL_PROFESSIONAL_STAGES : DOMESTIC_PROFESSIONAL_STAGES;
@@ -164,15 +159,6 @@ export function AdminCustomerTimelineForm({
     FormData
   >(saveCustomerTimelineStepVisibilityOnly, undefined);
 
-  const [locState, locFormAction, locPending] = useActionState<
-    BookingAdminUpdateState | undefined,
-    FormData
-  >(saveCustomerTimelineLocationsAdmin, undefined);
-
-  const [locSaveMask, setLocSaveMask] = useState<Record<string, boolean>>(() =>
-    defaultLocationSaveMask(stages.length),
-  );
-
   const updateField = useCallback(
     (idx: number, field: keyof StageFields, value: string) => {
       const k = String(idx);
@@ -195,6 +181,11 @@ export function AdminCustomerTimelineForm({
 
   const last = stages.length - 1;
   const def = stages[step];
+  const catalogDefaultTitle = useMemo(() => {
+    if (!def) return "";
+    if (!isInternational) return def.title;
+    return defaultInternationalStageTitle(step, def.title, assignedAgencyName);
+  }, [def, isInternational, step, assignedAgencyName]);
   const row = modeState[String(step)] ?? {
     title: "",
     location: "",
@@ -224,30 +215,13 @@ export function AdminCustomerTimelineForm({
     });
   }, [modeKey, step, visibleInternational, visibleDomestic]);
 
-  const locationsPayloadJson = useMemo(() => {
-    const inner: Record<string, { location: string }> = {};
-    for (let i = 0; i <= last; i++) {
-      const k = String(i);
-      if (!locSaveMask[k]) continue;
-      inner[k] = { location: (modeState[k]?.location ?? "").trim() };
-    }
-    return JSON.stringify(inner);
-  }, [modeState, last, locSaveMask]);
-
-  const selectedLocationStepCount = useMemo(() => {
-    let n = 0;
-    for (let i = 0; i <= last; i++) {
-      if (locSaveMask[String(i)]) n += 1;
-    }
-    return n;
-  }, [locSaveMask, last]);
-
   return (
     <div className="space-y-5">
       <p className="text-sm text-muted-soft">
-        <span className="font-medium capitalize text-ink">{routeType}</span>, {stages.length} steps. Edit below,
-        then <strong className="text-ink">Save all</strong> for one update, or save each section as you go. Status:
-        use <strong className="text-ink">Status, notes &amp; dates</strong> above.
+        <span className="font-medium capitalize text-ink">{routeType}</span>, {stages.length} steps. Use{" "}
+        <strong className="text-ink">Step … / {stages.length}</strong> with Back/Next to edit title, location,
+        description, and time per card. <strong className="text-ink">Save all</strong> writes every step + visibility.
+        Status: Dispatch.
       </p>
 
       <div
@@ -259,14 +233,14 @@ export function AdminCustomerTimelineForm({
           <input type="hidden" name="timelineJson" value={payloadJson} />
           <button
             type="submit"
-            disabled={pending || locPending || stepPending || stepVisPending}
+            disabled={pending || stepPending || stepVisPending}
             className="rounded-xl bg-teal px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-60"
           >
             {pending ? "Saving…" : "Save all"}
           </button>
           <button
             type="button"
-            disabled={pending || locPending || stepPending || stepVisPending}
+            disabled={pending || stepPending || stepVisPending}
             className="rounded-xl border border-border-strong bg-canvas px-4 py-2.5 text-sm font-medium text-ink disabled:opacity-60"
             onClick={() => {
               setDomestic(initMode(DOMESTIC_TIMELINE_MAX_INDEX, undefined));
@@ -282,98 +256,7 @@ export function AdminCustomerTimelineForm({
         <p className="text-xs text-muted-soft">Saves every step + show/hide for both routes.</p>
       </div>
 
-      <div className="space-y-3 rounded-xl border border-border-strong bg-surface-elevated/30 p-4">
-        <div>
-          <h3 className="text-sm font-semibold text-ink">Bulk location lines</h3>
-          <p className="mt-1 text-xs text-muted-soft">
-            Tick steps to update. Empty = default location on Track.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="rounded-lg border border-border-strong bg-canvas px-3 py-1.5 text-xs font-medium text-ink hover:border-teal/40"
-            onClick={() => {
-              setLocSaveMask(() => {
-                const next: Record<string, boolean> = {};
-                for (let i = 0; i <= last; i++) next[String(i)] = true;
-                return next;
-              });
-            }}
-          >
-            All
-          </button>
-          <button
-            type="button"
-            className="rounded-lg border border-border-strong bg-canvas px-3 py-1.5 text-xs font-medium text-ink hover:border-teal/40"
-            onClick={() => {
-              setLocSaveMask(() => {
-                const next: Record<string, boolean> = {};
-                for (let i = 0; i <= last; i++) next[String(i)] = false;
-                return next;
-              });
-            }}
-          >
-            None
-          </button>
-          <span className="self-center text-xs text-muted-soft">
-            {selectedLocationStepCount}/{last + 1} selected
-          </span>
-        </div>
-        <ul className="space-y-4">
-          {stages.map((stageDef, idx) => {
-            const k = String(idx);
-            const loc = modeState[k]?.location ?? "";
-            const checked = locSaveMask[k] !== false;
-            return (
-              <li
-                key={`all-loc-${k}`}
-                className="flex flex-col gap-2 rounded-lg border border-border-strong/60 bg-canvas/20 p-3 sm:flex-row sm:items-start sm:gap-4"
-              >
-                <label className="flex shrink-0 cursor-pointer items-center gap-2 text-xs font-medium text-ink sm:pt-2.5">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={(e) =>
-                      setLocSaveMask((prev) => ({ ...prev, [k]: e.target.checked }))
-                    }
-                    className="h-4 w-4 rounded border-border-strong bg-canvas/50 text-teal focus:ring-teal/30"
-                  />
-                  Apply
-                </label>
-                <div className="min-w-0 flex-1">
-                  <AdminFormField label={`${idx + 1}. ${stageDef.title}`} htmlFor={`tl-all-loc-${modeKey}-${k}`}>
-                    <input
-                      id={`tl-all-loc-${modeKey}-${k}`}
-                      className={inputClass}
-                      value={loc}
-                      onChange={(e) => updateField(idx, "location", e.target.value)}
-                      placeholder="e.g. hub name or address (optional)"
-                      maxLength={500}
-                    />
-                  </AdminFormField>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-        <form action={locFormAction} className="pt-1">
-          <input type="hidden" name="bookingId" value={bookingId} />
-          <input type="hidden" name="modeKey" value={modeKey} />
-          <input type="hidden" name="locationsJson" value={locationsPayloadJson} />
-          <button
-            type="submit"
-            disabled={
-              locPending || pending || stepPending || stepVisPending || selectedLocationStepCount === 0
-            }
-            className="rounded-xl border border-teal/50 bg-teal-dim/80 px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-teal disabled:opacity-60 dark:bg-teal-dim/40"
-          >
-            {locPending ? "Saving…" : "Save locations"}
-          </button>
-        </form>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border-strong bg-canvas/30 px-3 py-2 text-xs text-muted-soft">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-teal/30 bg-teal-dim/40 px-3 py-2 text-xs text-muted-soft dark:bg-teal-dim/25">
         <span className="font-medium text-ink">
           Step {step + 1} / {stages.length}
         </span>
@@ -400,7 +283,7 @@ export function AdminCustomerTimelineForm({
       {def ? (
         <div className="space-y-4 rounded-xl border border-border-strong bg-surface-elevated/40 p-4">
           <p className="text-xs text-muted-soft">
-            Default: <span className="text-ink">{def.title}</span> — {def.hint}
+            Default: <span className="text-ink">{catalogDefaultTitle}</span> — {def.hint}
           </p>
           <AdminFormField label="Title" htmlFor={`tl-${modeKey}-${step}-title`}>
             <input
@@ -408,7 +291,7 @@ export function AdminCustomerTimelineForm({
               className={inputClass}
               value={row.title}
               onChange={(e) => updateField(step, "title", e.target.value)}
-              placeholder={def.title}
+              placeholder={catalogDefaultTitle}
               maxLength={200}
             />
           </AdminFormField>
@@ -450,7 +333,7 @@ export function AdminCustomerTimelineForm({
             <input type="hidden" name="stepPayloadJson" value={stepPayloadJson} />
             <button
               type="submit"
-              disabled={stepPending || pending || locPending || stepVisPending}
+              disabled={stepPending || pending || stepVisPending}
               className="rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
             >
               {stepPending ? "Saving…" : "Save text"}
@@ -475,7 +358,7 @@ export function AdminCustomerTimelineForm({
               <input type="hidden" name="stepVisibilityOnlyJson" value={stepVisibilitySubmitJson} />
               <button
                 type="submit"
-                disabled={stepVisPending || pending || locPending || stepPending}
+                disabled={stepVisPending || pending || stepPending}
                 className="rounded-xl border border-border-strong bg-canvas px-4 py-2.5 text-sm font-semibold text-ink transition hover:border-teal/40 disabled:opacity-60"
               >
                 {stepVisPending ? "Saving…" : "Save visibility"}
@@ -483,20 +366,6 @@ export function AdminCustomerTimelineForm({
             </form>
           </div>
         </div>
-      ) : null}
-
-      {locState?.ok === false ? (
-        <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-200">
-          {locState.error}
-        </p>
-      ) : null}
-      {locState?.ok === true ? (
-        <p className="rounded-lg border border-teal/30 bg-teal-dim/50 px-3 py-2 text-sm text-ink">
-          {locState.message}
-          {locState.warning ? (
-            <span className="mt-1 block text-xs text-amber-800 dark:text-amber-200">{locState.warning}</span>
-          ) : null}
-        </p>
       ) : null}
 
       {stepState?.ok === false ? (

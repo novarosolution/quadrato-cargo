@@ -5,6 +5,7 @@ import { PublicCardIcon } from "@/components/public/PublicCardIcon";
 import { PublicPageSection } from "@/components/public/PublicPageSection";
 import { Container } from "@/components/Wrap";
 import { PageHero } from "@/components/Hero";
+import { publicClass, publicUi } from "@/components/public/public-ui";
 import { howItWorksSteps } from "@/lib/site-content";
 
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function HowItWorksPage() {
   return (
-    <div className="stack-page content-full">
+    <div className={publicUi.page}>
       <PageHero
         eyebrow="Flow"
         title="From booking to delivery"
@@ -34,7 +35,9 @@ export default function HowItWorksPage() {
                 </div>
                 <PublicCard interactive className="flex-1 md:p-6">
                   <PublicCardIcon Icon={step.Icon} />
-                  <h2 className="font-display text-lg font-semibold text-ink -mt-2">{step.title}</h2>
+                  <h2 className={publicClass(publicUi.sectionTitleMd, "-mt-2")}>
+                    {step.title}
+                  </h2>
                   <p className="mt-2 text-sm leading-relaxed text-muted">{step.body}</p>
                 </PublicCard>
               </li>

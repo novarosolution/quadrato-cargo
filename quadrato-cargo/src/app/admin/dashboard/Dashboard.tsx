@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { AdminPanel } from "@/components/admin/AdminPrimitives";
+import { adminClass, adminUi } from "@/components/admin/admin-ui";
 import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import {
   BOOKING_STATUS_LABELS,
@@ -71,7 +73,7 @@ function StatCard({
     <Link
       href={href}
       prefetch={false}
-      className="group relative overflow-hidden rounded-2xl border border-border-strong bg-surface-elevated/60 p-6 transition hover:border-teal/35 hover:shadow-[0_0_0_1px_rgba(45,212,191,0.12)]"
+      className={`group ${adminUi.statCard}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -114,45 +116,30 @@ export function AdminDashboardView(data: DashboardSnapshot) {
     userCount === 0 && contactCount === 0 && bookingCount === 0;
 
   return (
-    <div className="stack-page content-wide gap-10 max-sm:gap-6">
+    <div className={`${adminUi.page} gap-10 max-sm:gap-6`}>
       {isEmptyDb ? (
-        <div className="rounded-2xl border border-teal/35 bg-teal/10 p-5 text-sm text-muted">
-          <p className="font-medium text-ink">No data in MongoDB yet</p>
-          <p className="mt-2">
-            If all metrics are zero, backend is connected but database has no
-            records yet.
+        <AdminPanel as="section" variant="accent" className="text-sm text-muted">
+          <p className="font-semibold text-ink">No records yet</p>
+          <p className="mt-2 text-xs text-muted-soft">
+            Run the API, then create bookings or contacts from the public site.
           </p>
-          <ol className="mt-3 list-inside list-decimal space-y-1.5 text-left text-muted">
-            <li>
-              Start the API from the <code className="rounded bg-pill px-1.5 py-0.5 text-xs text-ink">quadrato-cargo/server</code> folder:{" "}
-              <code className="rounded bg-pill px-1.5 py-0.5 text-xs text-ink">npm run dev</code>
-            </li>
-            <li>Create test data from the public site: book, contact, or register.</li>
-          </ol>
-          <p className="mt-3 text-xs text-muted-soft">
-            Refresh this page after creating new records to see live analytics.
-          </p>
-        </div>
+        </AdminPanel>
       ) : null}
       <div className="border-b border-border-strong pb-8">
         <AdminPageHeader
           title="Dashboard"
-          description="Live counts and recent activity. Click any number to open that list and edit records."
+          description="Live counts — cards link to lists."
           actions={
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/admin/settings"
                 prefetch={false}
-                className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/50 px-4 py-2.5 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
+                className={adminUi.btnSecondaryIcon}
               >
                 <ClipboardList className="h-4 w-4 text-teal" strokeWidth={2} />
-                Data &amp; exports
+                Settings
               </Link>
-              <Link
-                href="/admin/help"
-                prefetch={false}
-                className="inline-flex items-center gap-2 rounded-xl border border-border-strong bg-canvas/50 px-4 py-2.5 text-sm font-medium text-ink transition hover:border-teal/40 hover:bg-pill-hover"
-              >
+              <Link href="/admin/help" prefetch={false} className={adminUi.btnSecondaryIcon}>
                 <CircleHelp className="h-4 w-4 text-teal" strokeWidth={2} />
                 Help
               </Link>
@@ -161,71 +148,68 @@ export function AdminDashboardView(data: DashboardSnapshot) {
         />
       </div>
 
-      <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-5">
-        <h2 className="font-display text-sm font-semibold text-ink">Shortcuts</h2>
-        <p className="mt-1 text-xs text-muted-soft">
-          Common jumps — same tab, signed-in session.
-        </p>
-        <ul className="mt-4 flex flex-wrap gap-2">
+      <AdminPanel as="section">
+        <h2 className={adminUi.sectionTitleXs}>Shortcuts</h2>
+        <ul className="mt-3 flex flex-wrap gap-2">
           <Link
             href="/public/book"
             prefetch={false}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border-strong bg-canvas/40 px-3 py-2 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+            className={adminClass(adminUi.shortcutPill, adminUi.shortcutPillIdle)}
           >
-            New booking (public)
+            Public book page
             <ExternalLink className="h-3.5 w-3.5 opacity-70" strokeWidth={2} />
           </Link>
           <Link
             href="/admin/bookings?status=in_transit"
             prefetch={false}
-            className="rounded-xl border border-border-strong bg-canvas/40 px-3 py-2 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+            className={adminClass(adminUi.shortcutPill, adminUi.shortcutPillIdle)}
           >
             In transit
           </Link>
           <Link
             href="/admin/bookings?status=submitted"
             prefetch={false}
-            className="rounded-xl border border-border-strong bg-canvas/40 px-3 py-2 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+            className={adminClass(adminUi.shortcutPill, adminUi.shortcutPillIdle)}
           >
             Submitted
           </Link>
           <Link
             href="/admin/reports"
             prefetch={false}
-            className="rounded-xl border border-border-strong bg-canvas/40 px-3 py-2 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+            className={adminClass(adminUi.shortcutPill, adminUi.shortcutPillIdle)}
           >
             Reports
           </Link>
           <Link
             href="/api/admin/exports/bookings"
             prefetch={false}
-            className="rounded-xl border border-border-strong bg-canvas/40 px-3 py-2 text-xs font-medium text-ink transition hover:border-teal/35 hover:bg-pill-hover"
+            className={adminClass(adminUi.shortcutPill, adminUi.shortcutPillIdle)}
           >
             Download bookings CSV
           </Link>
         </ul>
-      </section>
+      </AdminPanel>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           href="/admin/users"
-          label="Customer accounts"
+          label="Users"
           value={userCount}
-          hint="Registered users"
+          hint="Registered"
           icon={Users}
           accent="ink"
         />
         <StatCard
           href="/admin/contacts"
-          label="Contact messages"
+          label="Contacts"
           value={contactCount}
-          hint="Enquiries"
+          hint="Inbox"
           icon={Mail}
           accent="teal"
         />
         <StatCard
           href="/admin/bookings"
-          label="Courier bookings"
+          label="Bookings"
           value={bookingCount}
           hint="All time"
           icon={Package}
@@ -233,23 +217,18 @@ export function AdminDashboardView(data: DashboardSnapshot) {
         />
         <StatCard
           href="/admin/bookings"
-          label="Active pipeline"
+          label="Active"
           value={activeBookingCount}
-          hint="Not delivered or cancelled"
+          hint="Excl. delivered / cancelled"
           icon={BarChart3}
           accent="teal"
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6 lg:col-span-2">
-          <h2 className="font-display text-lg font-semibold">
-            Bookings by status
-          </h2>
-          <p className="mt-1 text-xs text-muted-soft">
-            Distribution across all booking statuses.
-          </p>
-          <ul className="mt-6 space-y-4">
+        <AdminPanel as="section" className="lg:col-span-2">
+          <h2 className={adminUi.sectionTitle}>By status</h2>
+          <ul className="mt-5 space-y-4">
             {statusStats.length === 0 ? (
               <li className="text-sm text-muted">No bookings yet.</li>
             ) : (
@@ -278,14 +257,11 @@ export function AdminDashboardView(data: DashboardSnapshot) {
               })
             )}
           </ul>
-        </section>
+        </AdminPanel>
 
-        <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
-          <h2 className="font-display text-lg font-semibold">Activity</h2>
-          <p className="mt-1 text-xs text-muted-soft">
-            New records in the last 24 hours vs last 7 days.
-          </p>
-          <div className="mt-6 space-y-6">
+        <AdminPanel as="section">
+          <h2 className={adminUi.sectionTitle}>Activity</h2>
+          <div className="mt-5 space-y-6">
             <div>
               <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-soft">
                 <Calendar className="h-3.5 w-3.5" strokeWidth={2} />
@@ -332,13 +308,13 @@ export function AdminDashboardView(data: DashboardSnapshot) {
               </dl>
             </div>
           </div>
-        </section>
+        </AdminPanel>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
-        <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
+        <AdminPanel as="section">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="font-display text-lg font-semibold">Recent contacts</h2>
+            <h2 className={adminUi.sectionTitle}>Recent contacts</h2>
             <Link href="/admin/contacts" prefetch={false} className="text-sm text-teal hover:underline">
               View all
             </Link>
@@ -364,11 +340,11 @@ export function AdminDashboardView(data: DashboardSnapshot) {
               ))
             )}
           </ul>
-        </section>
+        </AdminPanel>
 
-        <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
+        <AdminPanel as="section">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="font-display text-lg font-semibold">Recent bookings</h2>
+            <h2 className={adminUi.sectionTitle}>Recent bookings</h2>
             <Link href="/admin/bookings" prefetch={false} className="text-sm text-teal hover:underline">
               View all
             </Link>
@@ -401,11 +377,11 @@ export function AdminDashboardView(data: DashboardSnapshot) {
               })
             )}
           </ul>
-        </section>
+        </AdminPanel>
 
-        <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
+        <AdminPanel as="section">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="font-display text-lg font-semibold">Recent users</h2>
+            <h2 className={adminUi.sectionTitle}>Recent users</h2>
             <Link href="/admin/users" prefetch={false} className="text-sm text-teal hover:underline">
               View all
             </Link>
@@ -436,7 +412,7 @@ export function AdminDashboardView(data: DashboardSnapshot) {
               ))
             )}
           </ul>
-        </section>
+        </AdminPanel>
       </div>
     </div>
   );

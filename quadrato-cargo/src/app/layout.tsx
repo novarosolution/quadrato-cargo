@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Manrope, Outfit } from "next/font/google";
+import { NavigationProgress } from "@/components/navigation/NavigationProgress";
 import { ThemeInit } from "@/components/ThemeBoot";
 import { siteDescription, siteName, getSiteUrl } from "@/lib/site";
 import "./globals.css";
@@ -78,13 +80,18 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${manrope.variable} ${outfit.variable} h-full scroll-smooth antialiased`}
     >
-      <body className="min-h-full font-sans">
+      <body className="min-h-full font-sans text-ink accent-teal">
         <ThemeInit />
         <div className="body-gradient" aria-hidden />
         <div className="body-grid" aria-hidden />
         <div className="body-noise" aria-hidden />
         {/* Keep all routes above fixed background layers (avoids rare clipping). */}
-        <div className="relative z-10 isolate min-h-full">{children}</div>
+        <div className="relative z-10 isolate min-h-full">
+          <Suspense fallback={null}>
+            <NavigationProgress />
+          </Suspense>
+          {children}
+        </div>
       </body>
     </html>
   );

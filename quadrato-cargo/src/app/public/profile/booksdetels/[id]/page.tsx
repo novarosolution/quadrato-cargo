@@ -211,7 +211,12 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
               ) : null}
               <div>
                 <dt className="text-muted-soft">Pickup courier</dt>
-                <dd className="mt-0.5 text-ink">{row.courierName || "Pending assignment"}</dd>
+                <dd className="mt-0.5 text-ink">
+                  {row.courierName || row.courierEmail || "Pending assignment"}
+                </dd>
+                {row.courierName && row.courierEmail ? (
+                  <dd className="mt-0.5 text-sm text-muted">{row.courierEmail}</dd>
+                ) : null}
               </div>
               <div>
                 <dt className="text-muted-soft">Agency</dt>
@@ -243,26 +248,73 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                   </dd>
                 </div>
               ) : null}
-              {preview.contents ? (
+              {preview.parcelRows && preview.parcelRows.length > 0 ? (
                 <div>
-                  <dt className="text-muted-soft">Contents</dt>
-                  <dd className="mt-0.5 text-ink">{preview.contents}</dd>
-                </div>
-              ) : null}
-              {preview.weightKg != null ? (
-                <div>
-                  <dt className="text-muted-soft">Weight</dt>
-                  <dd className="mt-0.5 text-ink">{preview.weightKg} kg</dd>
-                </div>
-              ) : null}
-              {preview.dimensionsCm ? (
-                <div>
-                  <dt className="text-muted-soft">Dimensions (cm)</dt>
-                  <dd className="mt-0.5 text-ink">
-                    {preview.dimensionsCm.l || "?"} x {preview.dimensionsCm.w || "?"} x {preview.dimensionsCm.h || "?"}
+                  <dt className="text-muted-soft">Parcels</dt>
+                  <dd className="mt-2 overflow-x-auto rounded-xl border border-border-strong">
+                    <table className="w-full min-w-[520px] border-collapse text-left text-sm">
+                      <thead className="border-b border-border-strong bg-canvas/40 text-xs font-semibold uppercase tracking-wide text-muted-soft">
+                        <tr>
+                          <th className="px-3 py-2">#</th>
+                          <th className="px-3 py-2">Contents</th>
+                          <th className="px-3 py-2">Weight</th>
+                          <th className="px-3 py-2">Declared</th>
+                          <th className="px-3 py-2">Size (cm)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border-strong">
+                        {preview.parcelRows.map((pr) => (
+                          <tr key={pr.index} className="align-top">
+                            <td className="whitespace-nowrap px-3 py-2 text-muted-soft">
+                              {pr.index}
+                            </td>
+                            <td className="px-3 py-2 text-ink">{pr.contents || "—"}</td>
+                            <td className="whitespace-nowrap px-3 py-2 text-ink">
+                              {pr.weightKg != null ? `${pr.weightKg} kg` : "—"}
+                            </td>
+                            <td className="px-3 py-2 text-muted">
+                              {pr.declaredValue?.trim() || "—"}
+                            </td>
+                            <td className="px-3 py-2 text-muted">
+                              {pr.dimensionsLabel || "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </dd>
+                  {preview.weightKg != null ? (
+                    <p className="mt-2 text-xs text-muted-soft">
+                      Total weight (all parcels):{" "}
+                      <span className="font-semibold text-ink">{preview.weightKg} kg</span>
+                    </p>
+                  ) : null}
                 </div>
-              ) : null}
+              ) : (
+                <>
+                  {preview.contents ? (
+                    <div>
+                      <dt className="text-muted-soft">Contents</dt>
+                      <dd className="mt-0.5 text-ink">{preview.contents}</dd>
+                    </div>
+                  ) : null}
+                  {preview.weightKg != null ? (
+                    <div>
+                      <dt className="text-muted-soft">Weight</dt>
+                      <dd className="mt-0.5 text-ink">{preview.weightKg} kg</dd>
+                    </div>
+                  ) : null}
+                  {preview.dimensionsCm ? (
+                    <div>
+                      <dt className="text-muted-soft">Dimensions (cm)</dt>
+                      <dd className="mt-0.5 text-ink">
+                        {preview.dimensionsCm.l || "?"} x {preview.dimensionsCm.w || "?"} x{" "}
+                        {preview.dimensionsCm.h || "?"}
+                      </dd>
+                    </div>
+                  ) : null}
+                </>
+              )}
               {preview.instructions ? (
                 <div>
                   <dt className="text-muted-soft">Special instructions</dt>
@@ -364,7 +416,9 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                       instructionsLabel={preview.instructions || "-"}
                       trackingNotesLabel={row.customerTrackingNote || "-"}
                       agencyLabel={row.assignedAgency || "-"}
-                      courierNameLabel={row.courierName || "-"}
+                      courierNameLabel={
+                        [row.courierName, row.courierEmail].filter(Boolean).join(" · ") || "-"
+                      }
                       trackUrl={trackUrl}
                       settings={pdfSettings}
                     />
@@ -380,10 +434,10 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                               currency: inv.currency ?? null,
                               subtotal: inv.subtotal ?? null,
                               tax: inv.tax ?? null,
-                              insurance: inv.insurance ?? null,
                               customsDuties: inv.customsDuties ?? null,
-                              discount: inv.discount ?? null,
+                              insurancePremium: inv.insurancePremium ?? null,
                               total: inv.total ?? null,
+                              insurance: inv.insurance ?? null,
                               lineDescription: inv.lineDescription ?? null,
                               notes: inv.notes ?? null,
                             }
@@ -433,7 +487,9 @@ export default async function ProfileBookingDetailPage({ params }: Props) {
                       instructionsLabel={preview.instructions || "-"}
                       trackingNotesLabel={row.customerTrackingNote || "-"}
                       agencyLabel={row.assignedAgency || "-"}
-                      courierNameLabel={row.courierName || "-"}
+                      courierNameLabel={
+                        [row.courierName, row.courierEmail].filter(Boolean).join(" · ") || "-"
+                      }
                       trackUrl={trackUrl}
                       settings={pdfSettings}
                     />

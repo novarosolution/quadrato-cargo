@@ -6,6 +6,7 @@ import { PublicPageSection } from "@/components/public/PublicPageSection";
 import { Container } from "@/components/Wrap";
 import { PageHero } from "@/components/Hero";
 import { servicesPageCards } from "@/lib/site-content";
+import { publicUi } from "@/components/public/public-ui";
 import { siteDescription } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function ServicesPage() {
   return (
-    <div className="stack-page content-full">
+    <div className={publicUi.page}>
       <PageHero
         eyebrow="Services"
         title="International courier at your doorstep"
@@ -30,8 +31,8 @@ export default function ServicesPage() {
               <li key={s.title}>
                 <PublicCard interactive className="h-full sm:p-7">
                   <PublicCardIcon Icon={s.Icon} />
-                  <h2 className="font-display text-lg font-semibold text-ink">{s.title}</h2>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">{s.body}</p>
+                  <h2 className={publicUi.sectionTitleMd}>{s.title}</h2>
+                  <p className={`mt-2 ${publicUi.proseSingle}`}>{s.body}</p>
                 </PublicCard>
               </li>
             ))}

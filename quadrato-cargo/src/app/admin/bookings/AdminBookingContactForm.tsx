@@ -15,6 +15,7 @@ export type BookingContactInitial = {
   recipientPhone: string;
   recipientStreet: string;
   recipientCity: string;
+  recipientState: string;
   recipientPostal: string;
   recipientCountry: string;
 };
@@ -166,7 +167,7 @@ export function AdminBookingContactForm({
               className={`mt-1 w-full ${field}`}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <label
                 htmlFor="admin-contact-recipient-city"
@@ -179,6 +180,23 @@ export function AdminBookingContactForm({
                 name="recipientCity"
                 type="text"
                 defaultValue={initial.recipientCity}
+                autoComplete="off"
+                className={`mt-1 w-full ${field}`}
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="admin-contact-recipient-state"
+                className="text-xs font-medium text-muted-soft"
+              >
+                State / province
+              </label>
+              <input
+                id="admin-contact-recipient-state"
+                name="recipientState"
+                type="text"
+                defaultValue={initial.recipientState}
+                placeholder="e.g. Gujarat"
                 autoComplete="off"
                 className={`mt-1 w-full ${field}`}
               />

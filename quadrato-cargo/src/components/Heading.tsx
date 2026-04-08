@@ -35,7 +35,7 @@ export function SectionHeading({
       </motion.p>
       <motion.h2
         variants={fadeUpTight}
-        className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-4xl"
+        className="type-display-premium mt-3 text-balance text-3xl sm:text-4xl lg:text-[2.5rem] lg:leading-[1.12] xl:text-[2.75rem]"
       >
         {title}
       </motion.h2>

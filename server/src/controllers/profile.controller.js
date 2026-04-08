@@ -36,12 +36,19 @@ const updatePasswordSchema = z.object({
   newPassword: passwordComplexitySchema,
   confirmPassword: z.string().min(MIN_PASSWORD_LENGTH).max(72)
 });
+const digitsPhoneSchema = z
+  .string()
+  .trim()
+  .transform((s) => s.replace(/\D/g, "").slice(0, 15))
+  .refine((d) => d.length >= 7 && d.length <= 15, "Phone must be 7–15 digits.");
+
 const addressSchema = z.object({
   name: z.string().trim().min(1),
   email: z.string().trim().email(),
-  phone: z.string().trim().regex(/^\d{7,15}$/),
+  phone: digitsPhoneSchema,
   street: z.string().trim().min(1),
   city: z.string().trim().min(1),
+  state: z.string().trim().max(120).optional().default(""),
   postal: z.string().trim().min(1),
   country: z.string().trim().min(1)
 });
@@ -140,13 +147,20 @@ export async function listMyBookings(req, res, next) {
     const courierMap = new Map(
       couriers.map((courier) => [
         String(courier._id),
-        String(courier?.name || courier?.email || "").trim() || null
+        {
+          name: String(courier?.name ?? "").trim() || null,
+          email: String(courier?.email ?? "").trim() || null
+        }
       ])
     );
-    const bookings = rows.map((row) => ({
-      ...row,
-      courierName: row?.courierId ? courierMap.get(String(row.courierId)) || null : null
-    }));
+    const bookings = rows.map((row) => {
+      const c = row?.courierId ? courierMap.get(String(row.courierId)) : null;
+      return {
+        ...row,
+        courierName: c?.name ?? null,
+        courierEmail: c?.email ?? null
+      };
+    });
     const db = await getDb();
     const mapped = await mapBookingsAssignedAgencyForCustomer(db, bookings);
     const bookingsForCustomer = mapped.map(withCustomerFacingBookingDates);
@@ -171,9 +185,11 @@ export async function getMyBookingById(req, res, next) {
       return sendNotFound(res, "Booking not found.");
     }
     let courierName = null;
+    let courierEmail = null;
     if (row.courierId) {
       const courier = await findUserById(row.courierId);
-      courierName = String(courier?.name || courier?.email || "").trim() || null;
+      courierName = String(courier?.name ?? "").trim() || null;
+      courierEmail = String(courier?.email ?? "").trim() || null;
     }
     const db = await getDb();
     const agencyDisplay = await resolveAssignedAgencyDisplayName(db, row.assignedAgency);
@@ -181,6 +197,7 @@ export async function getMyBookingById(req, res, next) {
       booking: withCustomerFacingBookingDates({
         ...row,
         courierName,
+        courierEmail,
         assignedAgency: agencyDisplay || null
       })
     });

@@ -1,57 +1,26 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useState } from "react";
-import { getApiBaseUrl } from "@/lib/api/base-url";
+import { useActionState } from "react";
+import { adminLogin, type AdminLoginState } from "./actions";
 
-type AdminLoginState = { ok: boolean; message: string };
-const initial: AdminLoginState = { ok: true, message: "" };
+const initial: AdminLoginState = { ok: false, message: "" };
 
 export function AdminLoginForm() {
-  const [state, setState] = useState<AdminLoginState>(initial);
-  const [pending, setPending] = useState(false);
-
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const email = String(fd.get("email") ?? "").trim();
-    const password = String(fd.get("password") ?? "");
-    setPending(true);
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/api/admin/auth/login`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = (await res.json().catch(() => ({}))) as {
-        ok?: boolean;
-        message?: string;
-      };
-      if (!res.ok || !data.ok) {
-        setState({
-          ok: false,
-          message: data.message || "Invalid admin credentials.",
-        });
-      } else {
-        setState({ ok: true, message: "Login successful. Redirecting..." });
-        window.location.assign("/admin/dashboard");
-      }
-    } catch {
-      setState({
-        ok: false,
-        message: "Unable to reach admin server. Please try again.",
-      });
-    } finally {
-      setPending(false);
-    }
-  }
+  const [state, formAction, pending] = useActionState(adminLogin, initial);
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
+    <form action={formAction} className="space-y-5">
+      {state.message ? (
+        <p
+          className={`rounded-lg px-3 py-2 text-sm ${state.ok ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200" : "bg-rose-500/15 text-rose-800 dark:text-rose-200"}`}
+          role="status"
+        >
+          {state.message}
+        </p>
+      ) : null}
       <div>
         <label htmlFor="admin-email" className="text-sm font-medium text-ink">
-          Admin email
+          Email
         </label>
         <input
           id="admin-email"
@@ -59,8 +28,7 @@ export function AdminLoginForm() {
           type="email"
           autoComplete="username"
           required
-          placeholder="admin@yourcompany.com"
-          className="mt-2 w-full rounded-xl border border-ghost-border bg-canvas/60 px-4 py-3 text-sm text-ink placeholder:text-muted-soft/70 focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/30"
+          className="mt-1.5 w-full rounded-xl border border-border-strong bg-canvas px-4 py-3 text-ink"
         />
       </div>
       <div>
@@ -73,23 +41,16 @@ export function AdminLoginForm() {
           type="password"
           autoComplete="current-password"
           required
-          className="mt-2 w-full rounded-xl border border-ghost-border bg-canvas/60 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/30"
+          className="mt-1.5 w-full rounded-xl border border-border-strong bg-canvas px-4 py-3 text-ink"
         />
       </div>
-      {!state.ok && state.message ? (
-        <p className="text-sm text-rose-400" role="alert">
-          {state.message}
-        </p>
-      ) : null}
-      <motion.button
+      <button
         type="submit"
         disabled={pending}
-        whileHover={{ scale: pending ? 1 : 1.01 }}
-        whileTap={{ scale: pending ? 1 : 0.99 }}
-        className="w-full rounded-xl border border-teal/70 bg-teal py-3 text-sm font-semibold text-slate-950 transition hover:bg-teal/90 disabled:opacity-60"
+        className="btn-primary w-full rounded-xl py-3 text-sm font-semibold disabled:opacity-50"
       >
-        {pending ? "Signing in…" : "Sign in to admin"}
-      </motion.button>
+        {pending ? "Signing in…" : "Sign in"}
+      </button>
     </form>
   );
 }

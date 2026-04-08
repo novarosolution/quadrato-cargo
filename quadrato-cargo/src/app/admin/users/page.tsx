@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminCollapsible } from "@/components/admin/AdminCollapsible";
+import { AdminPageBody, AdminTableShell } from "@/components/admin/AdminPrimitives";
+import { adminClass, adminUi } from "@/components/admin/admin-ui";
 import { AdminListFilters } from "@/components/admin/ListFilters";
 import { AdminPagination } from "@/components/admin/Pager";
 import { fetchAdminUsers } from "@/lib/api/admin-server";
+import { adminUsersCopy } from "@/lib/admin-users-content";
 import { normalizeUserRole } from "@/lib/user-role";
 import { AdminCreateCourierForm } from "./createcuriyar";
 import { AdminCreateAgencyForm } from "./createacagence";
@@ -61,52 +64,64 @@ export default async function AdminUsersPage({ searchParams }: Props) {
               : "customers"
       }`
     : "";
-  const subtitle = `${total} account${total === 1 ? "" : "s"}${q ? ` matching “${q}”` : ""}${roleSuffix}${totalPages > 1 ? ` · page ${page} of ${totalPages}` : ""}`;
+  const metaLine = `${q ? `“${q}”` : "All"}${roleSuffix}${totalPages > 1 ? ` · p.${page}/${totalPages}` : ""}`;
 
   return (
-    <div className="stack-page content-wide">
-      <AdminPageHeader title="Users & team" description={subtitle} />
-      <p className="max-w-2xl text-sm text-muted-soft">
-        Customers register on the public site. Here you add team logins, set{" "}
-        <strong className="font-medium text-muted">Customer</strong>,{" "}
-        <strong className="font-medium text-muted">Team</strong>, or{" "}
-        <strong className="font-medium text-muted">Courier / Agency</strong> on a user’s profile, and attach
-        bookings to a customer from{" "}
-        <Link href="/admin/bookings" className="text-teal hover:underline">
-          Bookings
-        </Link>{" "}
-        → open a shipment → link by email and update status.
-      </p>
+    <AdminPageBody className="gap-8 max-sm:gap-6">
+      <AdminPageHeader
+        eyebrow={adminUsersCopy.listEyebrow}
+        title={adminUsersCopy.listTitle}
+        description={
+          <span className="text-sm text-muted">
+            {adminUsersCopy.listLead}{" "}
+            <Link href="/admin/bookings" className="font-medium text-teal hover:underline">
+              {adminUsersCopy.listLeadBookingsLabel}
+            </Link>
+            .
+          </span>
+        }
+        actions={
+          <div
+            className={adminClass(
+              adminUi.statTile,
+              "flex min-w-26 flex-col justify-center py-3 text-center sm:min-w-30",
+            )}
+          >
+            <span className="font-display text-2xl font-semibold tabular-nums text-ink">{total}</span>
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-soft">accounts</span>
+            <span className="mt-1 text-[10px] text-muted-soft">{metaLine}</span>
+          </div>
+        }
+      />
 
       <AdminCollapsible
         id="admin-create-accounts"
-        title="Create accounts"
-        description="Add team, courier, or agency logins. Forms stay mounted while collapsed so drafts are not lost."
+        title={adminUsersCopy.createCollapsibleTitle}
+        description={adminUsersCopy.createCollapsibleDesc}
       >
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-5 lg:grid-cols-2">
           <AdminCreateStaffForm />
           <AdminCreateCourierForm />
-          <AdminCreateAgencyForm />
+          <div className="lg:col-span-2">
+            <AdminCreateAgencyForm />
+          </div>
         </div>
       </AdminCollapsible>
 
       <AdminListFilters
         basePath="/admin/users"
-        placeholder="Name or email…"
+        placeholder={adminUsersCopy.filterPlaceholder}
         defaultQuery={q}
       >
         <div className="min-w-[160px]">
-          <label
-            htmlFor="admin-users-role"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
+          <label htmlFor="admin-users-role" className={adminUi.labelBlock}>
             Account type
           </label>
           <select
             id="admin-users-role"
             name="role"
             defaultValue={roleFilter ?? ""}
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-3 py-2.5 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={adminUi.selectMt}
           >
             <option value="">All</option>
             <option value="customer">Customers</option>
@@ -117,28 +132,24 @@ export default async function AdminUsersPage({ searchParams }: Props) {
         </div>
       </AdminListFilters>
 
-      <div className="overflow-x-auto rounded-2xl border border-border-strong">
+      <AdminTableShell>
         <table className="w-full min-w-[800px] text-left text-sm">
-          <thead className="border-b border-border-strong bg-surface-elevated/80">
+          <thead className={adminUi.thead}>
             <tr>
-              <th className="px-4 py-3 font-medium text-muted-soft">Joined</th>
-              <th className="px-4 py-3 font-medium text-muted-soft">Type</th>
-              <th className="px-4 py-3 font-medium text-muted-soft">Availability</th>
-              <th className="px-4 py-3 font-medium text-muted-soft">Name</th>
-              <th className="px-4 py-3 font-medium text-muted-soft">Email</th>
-              <th className="px-4 py-3 font-medium text-muted-soft">
-                Bookings / jobs
-              </th>
-              <th className="px-4 py-3 font-medium text-muted-soft">Actions</th>
+              <th className={adminUi.th}>Joined</th>
+              <th className={adminUi.th}>Type</th>
+              <th className={adminUi.th}>Status</th>
+              <th className={adminUi.th}>Name</th>
+              <th className={adminUi.th}>Email</th>
+              <th className={adminUi.th}>Jobs / bookings</th>
+              <th className={adminUi.th}> </th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-muted">
-                  {q || roleFilter
-                    ? "No users match your filters."
-                    : "No users yet."}
+                <td colSpan={7} className="px-4 py-10 text-center text-sm text-muted">
+                  {q || roleFilter ? "No matches." : "No users yet."}
                 </td>
               </tr>
             ) : (
@@ -146,14 +157,11 @@ export default async function AdminUsersPage({ searchParams }: Props) {
                 const role = normalizeUserRole(u.role);
                 const courierOpenJobs = u.courierActiveJobCount ?? 0;
                 return (
-                  <tr
-                    key={u.id}
-                    className="border-b border-border transition hover:bg-pill-hover"
-                  >
-                    <td className="whitespace-nowrap px-4 py-3 text-muted-soft">
+                  <tr key={u.id} className={adminUi.trHover}>
+                    <td className="whitespace-nowrap px-4 py-3.5 text-xs text-muted-soft">
                       {u.createdAt.toLocaleString()}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3">
+                    <td className="whitespace-nowrap px-4 py-3.5">
                       <span
                         className={
                           role === "staff"
@@ -162,7 +170,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
                               ? "rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"
                               : role === "agency"
                                 ? "rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"
-                              : "rounded-full bg-canvas px-2 py-0.5 text-xs text-muted"
+                                : "rounded-full bg-canvas px-2 py-0.5 text-xs text-muted"
                         }
                       >
                         {role === "staff"
@@ -171,10 +179,10 @@ export default async function AdminUsersPage({ searchParams }: Props) {
                             ? "Courier"
                             : role === "agency"
                               ? "Agency"
-                            : "Customer"}
+                              : "Customer"}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3">
+                    <td className="whitespace-nowrap px-4 py-3.5">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span
                           className={
@@ -198,32 +206,24 @@ export default async function AdminUsersPage({ searchParams }: Props) {
                         ) : null}
                       </div>
                     </td>
-                    <td className="max-w-[160px] truncate px-4 py-3 text-ink">
+                    <td className="max-w-[160px] truncate px-4 py-3.5 font-medium text-ink">
                       {u.name ?? "—"}
                     </td>
-                    <td className="max-w-[200px] truncate px-4 py-3 text-muted">
-                      {u.email}
-                    </td>
-                    <td className="px-4 py-3 text-muted">
+                    <td className="max-w-[200px] truncate px-4 py-3.5 text-muted">{u.email}</td>
+                    <td className="px-4 py-3.5 text-xs text-muted">
                       {role === "courier"
                         ? `${courierOpenJobs} open · ${
-                            u.readyForJob
-                              ? "Ready"
-                              : u.isOnDuty
-                                ? "Busy"
-                                : "Off duty"
+                            !u.isActive ? "Inactive" : !u.isOnDuty ? "Off duty" : "Available"
                           }`
                         : u.bookingCount ?? 0}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          href={`/admin/users/${u.id}`}
-                          className="text-teal hover:underline"
-                        >
-                          View / edit
-                        </Link>
-                      </div>
+                    <td className="px-4 py-3.5">
+                      <Link
+                        href={`/admin/users/${u.id}`}
+                        className="inline-flex rounded-lg border border-border-strong/80 bg-canvas/35 px-3 py-1.5 text-xs font-semibold text-teal transition hover:border-teal/35 hover:bg-teal/10"
+                      >
+                        {adminUsersCopy.tableViewEdit}
+                      </Link>
                     </td>
                   </tr>
                 );
@@ -231,7 +231,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
             )}
           </tbody>
         </table>
-      </div>
+      </AdminTableShell>
 
       <AdminPagination
         basePath="/admin/users"
@@ -242,6 +242,6 @@ export default async function AdminUsersPage({ searchParams }: Props) {
           role: roleFilter,
         }}
       />
-    </div>
+    </AdminPageBody>
   );
 }

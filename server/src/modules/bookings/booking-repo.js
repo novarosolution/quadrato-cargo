@@ -180,6 +180,10 @@ export async function listBookingsByUserId(
         userId: 1,
         createdAt: 1,
         updatedAt: 1,
+        estimatedDeliveryAt: 1,
+        publicTrackingNote: 1,
+        customerDisplayCreatedAt: 1,
+        customerDisplayUpdatedAt: 1,
         "payload.sender": 1,
         "payload.recipient": 1
       }

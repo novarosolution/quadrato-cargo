@@ -18,7 +18,8 @@ import { createContactSubmission } from "../modules/contacts/contact-repo.js";
 import { verifyAuthToken } from "../modules/auth/token.js";
 import { findUserById } from "../modules/users/user-repo.js";
 import {
-  resolveAssignedAgencyDisplayName
+  resolveAssignedAgencyDisplayName,
+  resolveAssignedAgencyForPublicTrack
 } from "../shared/agency-display-name.js";
 import { computePublicBarcodeCode } from "../shared/public-barcode-code.js";
 import { readFileSync } from "node:fs";
@@ -99,25 +100,58 @@ const bookingPayloadSchema = z
       postal: z.string().trim().min(3),
       country: z.string().trim().min(1)
     }),
-    shipment: z.object({
-      contentsDescription: z.string().trim().min(5),
-      weightKg: z.number().positive().max(1000),
-      dimensionsCm: z
-        .object({
-          l: z.string().trim().regex(/^\d+(\.\d+)?$/),
-          w: z.string().trim().regex(/^\d+(\.\d+)?$/),
-          h: z.string().trim().regex(/^\d+(\.\d+)?$/)
-        })
-        .optional(),
-      declaredValue: z.string().trim().max(120).optional()
-    }),
+    shipment: z
+      .object({
+        contentsDescription: z.string().trim().min(5),
+        weightKg: z.number().positive().max(1000),
+        parcelCount: z.number().int().min(1).max(99).optional(),
+        parcels: z
+          .array(
+            z.object({
+              contentsDescription: z.string().trim().min(5),
+              weightKg: z.number().positive().max(1000),
+              dimensionsCm: z
+                .object({
+                  l: z.string().trim().max(32),
+                  w: z.string().trim().max(32),
+                  h: z.string().trim().max(32)
+                })
+                .optional(),
+              declaredValue: z.string().trim().max(500).optional()
+            })
+          )
+          .max(25)
+          .optional(),
+        dimensionsCm: z
+          .object({
+            l: z.string().trim().regex(/^\d+(\.\d+)?$/),
+            w: z.string().trim().regex(/^\d+(\.\d+)?$/),
+            h: z.string().trim().regex(/^\d+(\.\d+)?$/)
+          })
+          .optional(),
+        declaredValue: z.string().trim().max(500).optional()
+      })
+      .superRefine((shipment, ctx) => {
+        const n = shipment.parcelCount;
+        const arr = shipment.parcels;
+        if (arr == null || arr.length === 0) return;
+        if (typeof n === "number" && arr.length !== n) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["parcels"],
+            message: "Parcel list length must match parcel count."
+          });
+        }
+      }),
     collectionMode: z.enum(["instant", "scheduled"]),
     pickupDate: z.string().trim().optional(),
     pickupTimeSlot: z.string().trim().optional(),
     pickupTimeSlotCustom: z.string().trim().max(64).optional(),
     pickupPreference: z.string().trim().min(1).max(240),
     instructions: z.string().trim().max(1000).optional(),
-    agreedInternational: z.boolean().optional()
+    agreedInternational: z.boolean().optional(),
+    pickupCityHint: z.string().trim().min(2).max(120),
+    deliveryCityHint: z.string().trim().min(2).max(120)
   })
   .superRefine((payload, ctx) => {
     if (payload.collectionMode !== "scheduled") return;
@@ -209,6 +243,21 @@ function normalizeTrackingReference(value) {
     .replace(/^-|-$/g, "");
 }
 
+function resolveTrackRouteCities(payload) {
+  const p = payload && typeof payload === "object" ? payload : {};
+  const sender = p.sender && typeof p.sender === "object" ? p.sender : {};
+  const recipient = p.recipient && typeof p.recipient === "object" ? p.recipient : {};
+  const fromCity =
+    String(sender.city ?? "").trim() || String(p.pickupCityHint ?? "").trim() || null;
+  const toCity =
+    String(recipient.city ?? "").trim() ||
+    String(p.deliveryCityHint ?? "").trim() ||
+    null;
+  const senderCountry = String(sender.country ?? "").trim() || null;
+  const recipientCountry = String(recipient.country ?? "").trim() || null;
+  return { fromCity, toCity, senderCountry, recipientCountry };
+}
+
 function buildBookingFieldErrors(issues = []) {
   const out = {};
   const mapping = {
@@ -217,6 +266,8 @@ function buildBookingFieldErrors(issues = []) {
     "bookingPayload.pickupDate": "pickupDate",
     "bookingPayload.pickupTimeSlot": "pickupTimeSlot",
     "bookingPayload.pickupTimeSlotCustom": "pickupTimeSlotCustom",
+    "bookingPayload.pickupCityHint": "pickupCityHint",
+    "bookingPayload.deliveryCityHint": "deliveryCityHint",
     "bookingPayload.pickupPreference": "pickupPreference",
     "bookingPayload.sender.name": "senderName",
     "bookingPayload.sender.email": "senderEmail",
@@ -296,6 +347,15 @@ function esc(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function escHtmlLines(value, maxChars) {
+  const t = String(value ?? "").trim().slice(0, maxChars);
+  if (!t) return "";
+  return t
+    .split(/\r?\n/)
+    .map((line) => esc(line))
+    .join("<br/>");
 }
 
 function normalizeHex(color, fallback) {
@@ -421,6 +481,126 @@ function payloadValue(payload, path, fallback = "-") {
   return out || fallback;
 }
 
+function parcelSizeCmHint(hint) {
+  if (!hint || typeof hint !== "object") return "";
+  const dm = hint.dimensionsCm;
+  if (dm && typeof dm === "object") {
+    const l = String(dm.l ?? "").trim();
+    const w = String(dm.w ?? "").trim();
+    const h = String(dm.h ?? "").trim();
+    const parts = [l, w, h].filter(Boolean);
+    if (parts.length === 3) return `${l} × ${w} × ${h} cm`;
+    if (parts.length) return `${parts.join(" × ")} cm`;
+  }
+  return "";
+}
+
+/** If only a plain number was entered under Size, show it under Wt (common data-entry mistake). */
+function normalizePdfLineWeightSize(weightKg, sizeCm) {
+  let w = String(weightKg ?? "").trim();
+  let s = String(sizeCm ?? "").trim();
+  if (!w && s && /^\d+(\.\d+)?$/.test(s) && !/[×x]/.test(s)) {
+    w = s;
+    s = "";
+  }
+  return { weightKg: w, sizeCm: s };
+}
+
+function isInvoiceLineRowEmpty(row) {
+  if (!row || typeof row !== "object") return true;
+  return (
+    !String(row.description ?? "").trim() &&
+    !String(row.amount ?? "").trim() &&
+    !String(row.weightKg ?? "").trim() &&
+    !String(row.sizeCm ?? "").trim() &&
+    !String(row.declaredValue ?? "").trim()
+  );
+}
+
+function trimTrailingEmptyInvoiceRows(rows) {
+  const out = Array.isArray(rows) ? [...rows] : [];
+  while (out.length > 0 && isInvoiceLineRowEmpty(out[out.length - 1])) {
+    out.pop();
+  }
+  return out;
+}
+
+/** Merge saved invoice lines with shipment.parcels (admin rows win; parcel rows only when empty). */
+function mergeInvoiceLineItemsWithParcels(rawLineItems, payload) {
+  const shipment =
+    payload && typeof payload === "object" && payload.shipment && typeof payload.shipment === "object"
+      ? payload.shipment
+      : {};
+  const pcRaw = shipment.parcelCount;
+  const parcelN =
+    typeof pcRaw === "number" && Number.isFinite(pcRaw)
+      ? Math.round(pcRaw)
+      : Number.parseInt(String(pcRaw ?? "1").trim(), 10) || 1;
+  const nClamped = Math.min(25, Math.max(1, parcelN));
+  const rawParcels = Array.isArray(shipment.parcels) ? shipment.parcels : [];
+  const parcels = [];
+  for (const pr of rawParcels) {
+    if (!pr || typeof pr !== "object") continue;
+    parcels.push(pr);
+  }
+  if (parcels.length === 0) {
+    const contentsBase = String(shipment.contentsDescription ?? "").trim();
+    const weightFromShipment =
+      typeof shipment.weightKg === "number" && Number.isFinite(shipment.weightKg)
+        ? String(shipment.weightKg)
+        : String(shipment.weightKg ?? "").trim();
+    const dm =
+      shipment.dimensionsCm && typeof shipment.dimensionsCm === "object" ? shipment.dimensionsCm : null;
+    parcels.push({
+      contentsDescription: contentsBase,
+      weightKg: weightFromShipment,
+      declaredValue: String(shipment.declaredValue ?? "").trim(),
+      ...(dm ? { dimensionsCm: dm } : {})
+    });
+  }
+  while (parcels.length < nClamped) {
+    parcels.push({});
+  }
+  if (parcels.length > nClamped) parcels.length = nClamped;
+
+  const savedRowsRaw = [];
+  for (const row of Array.isArray(rawLineItems) ? rawLineItems : []) {
+    if (!row || typeof row !== "object") continue;
+    savedRowsRaw.push({
+      description: String(row.description ?? "").trim(),
+      amount: String(row.amount ?? "").trim(),
+      weightKg: String(row.weightKg ?? "").trim(),
+      sizeCm: String(row.sizeCm ?? "").trim(),
+      declaredValue: String(row.declaredValue ?? "").trim(),
+    });
+  }
+  const savedRows = trimTrailingEmptyInvoiceRows(savedRowsRaw);
+  const anySavedInvoiceRow = savedRows.some((r) => !isInvoiceLineRowEmpty(r));
+
+  const rowCount = anySavedInvoiceRow
+    ? Math.min(25, Math.max(savedRows.length, 1))
+    : Math.min(25, Math.max(nClamped, 1));
+
+  const merged = [];
+  for (let i = 0; i < rowCount; i++) {
+    const saved = savedRows[i] || {};
+    const hint = parcels[i] || {};
+    const wHint =
+      typeof hint.weightKg === "number" && Number.isFinite(hint.weightKg)
+        ? String(hint.weightKg)
+        : String(hint.weightKg ?? "").trim();
+    const dvHint = String(hint.declaredValue ?? "").trim();
+    const defaultDesc = i < nClamped ? `Item ${i + 1}` : `Line ${i + 1}`;
+    const description = saved.description || (anySavedInvoiceRow ? "" : defaultDesc);
+    const weightKg = saved.weightKg || wHint || "";
+    const sizeCm = saved.sizeCm || parcelSizeCmHint(hint) || "";
+    const declaredValue = saved.declaredValue || dvHint || "";
+    const amount = String(saved.amount ?? "").trim();
+    merged.push({ description, amount, weightKg, sizeCm, declaredValue });
+  }
+  return merged;
+}
+
 async function buildPdfDataFromBooking(req, parsedData) {
   const token = req.cookies?.[env.authCookieName];
   if (!token) {
@@ -455,23 +635,35 @@ async function buildPdfDataFromBooking(req, parsedData) {
   const reference = normalizeTrackingReference(referenceRaw) || referenceRaw;
   const senderStreet = payloadValue(payload, ["sender", "street"], "");
   const senderCity = payloadValue(payload, ["sender", "city"], "");
+  const senderState = payloadValue(payload, ["sender", "state"], "");
   const senderPostal = payloadValue(payload, ["sender", "postal"], "");
   const senderCountry = payloadValue(payload, ["sender", "country"], "");
   const recipientStreet = payloadValue(payload, ["recipient", "street"], "");
   const recipientCity = payloadValue(payload, ["recipient", "city"], "");
+  const recipientState = payloadValue(payload, ["recipient", "state"], "");
   const recipientPostal = payloadValue(payload, ["recipient", "postal"], "");
   const recipientCountry = payloadValue(payload, ["recipient", "country"], "");
-  let senderAddress = [senderStreet, senderCity, senderPostal, senderCountry]
-    .map((v) => String(v || "").trim())
-    .filter(Boolean)
-    .join(", ") || "-";
+  const addrPart = (v) => {
+    const s = String(v ?? "").trim();
+    return s && s !== "-" ? s : "";
+  };
+  let senderAddress =
+    [addrPart(senderStreet), addrPart(senderCity), addrPart(senderState), addrPart(senderPostal), addrPart(senderCountry)]
+      .filter(Boolean)
+      .join(", ") || "-";
   if (senderAddress === "-") {
     senderAddress = String(booking.senderAddress || "").trim() || "-";
   }
-  const recipientAddress = [recipientStreet, recipientCity, recipientPostal, recipientCountry]
-    .map((v) => String(v || "").trim())
-    .filter(Boolean)
-    .join(", ") || "-";
+  const recipientAddress =
+    [
+      addrPart(recipientStreet),
+      addrPart(recipientCity),
+      addrPart(recipientState),
+      addrPart(recipientPostal),
+      addrPart(recipientCountry)
+    ]
+      .filter(Boolean)
+      .join(", ") || "-";
   const weightValue = payloadValue(payload, ["shipment", "weightKg"], "-");
   const dimL = payloadValue(payload, ["shipment", "dimensionsCm", "l"], "?");
   const dimW = payloadValue(payload, ["shipment", "dimensionsCm", "w"], "?");
@@ -486,20 +678,47 @@ async function buildPdfDataFromBooking(req, parsedData) {
     `${website.replace(/\/$/, "")}/public/tsking?reference=${encodeURIComponent(reference)}`;
 
   const inv = booking.invoice && typeof booking.invoice === "object" ? booking.invoice : null;
-  const adminInvoice = inv
-    ? {
-        number: String(inv.number ?? "").trim() || null,
-        currency: String(inv.currency ?? "INR").trim().slice(0, 12) || "INR",
-        subtotal: String(inv.subtotal ?? "").trim() || null,
-        tax: String(inv.tax ?? "").trim() || null,
-        insurance: String(inv.insurance ?? "").trim() || null,
-        customsDuties: String(inv.customsDuties ?? "").trim() || null,
-        discount: String(inv.discount ?? "").trim() || null,
-        total: String(inv.total ?? "").trim() || null,
-        lineDescription: String(inv.lineDescription ?? "").trim() || null,
-        notes: String(inv.notes ?? "").trim() || null
-      }
-    : null;
+  const rawLineItems = Array.isArray(inv?.lineItems) ? inv.lineItems : [];
+  const mergedLineItems = mergeInvoiceLineItemsWithParcels(rawLineItems, payload);
+  const normalizedLineItems = mergedLineItems
+    .map((row) => {
+      if (!row || typeof row !== "object") return null;
+      const description = String(row.description ?? "").trim();
+      const amount = String(row.amount ?? "").trim();
+      const { weightKg: wNorm, sizeCm: sNorm } = normalizePdfLineWeightSize(
+        row.weightKg,
+        row.sizeCm
+      );
+      const weightKg = String(wNorm ?? "").trim();
+      const sizeCm = String(sNorm ?? "").trim();
+      const declaredValue = String(row.declaredValue ?? "").trim();
+      if (!description && !amount && !weightKg && !sizeCm && !declaredValue) return null;
+      const out = { description: description || "—", amount: amount ? String(amount).trim() : null };
+      if (weightKg) out.weightKg = weightKg;
+      if (sizeCm) out.sizeCm = sizeCm;
+      if (declaredValue) out.declaredValue = declaredValue;
+      return out;
+    })
+    .filter(Boolean);
+  const lineItemsForPdf = normalizedLineItems.length ? normalizedLineItems : null;
+  const adminInvoice =
+    inv || lineItemsForPdf
+      ? {
+          number: inv ? String(inv.number ?? "").trim() || null : null,
+          currency: inv
+            ? String(inv.currency ?? "INR").trim().slice(0, 12) || "INR"
+            : "INR",
+          subtotal: inv ? String(inv.subtotal ?? "").trim() || null : null,
+          tax: inv ? String(inv.tax ?? "").trim() || null : null,
+          customsDuties: inv ? String(inv.customsDuties ?? "").trim() || null : null,
+          insurancePremium: inv ? String(inv.insurancePremium ?? "").trim() || null : null,
+          total: inv ? String(inv.total ?? "").trim() || null : null,
+          insurance: inv ? String(inv.insurance ?? "").trim() || null : null,
+          lineDescription: inv ? String(inv.lineDescription ?? "").trim() || null : null,
+          notes: inv ? String(inv.notes ?? "").trim() || null : null,
+          lineItems: lineItemsForPdf,
+        }
+      : null;
   const contentsBase = payloadValue(payload, ["shipment", "contentsDescription"], "-");
   const lineDesc = adminInvoice?.lineDescription ? String(adminInvoice.lineDescription).trim() : "";
   const contentsLabel =
@@ -507,7 +726,23 @@ async function buildPdfDataFromBooking(req, parsedData) {
       ? `${lineDesc} — ${contentsBase}`
       : lineDesc || contentsBase;
   const adminTotal = adminInvoice?.total ? String(adminInvoice.total).trim() : "";
-  const amountLabel = adminTotal || payloadValue(payload, ["shipment", "declaredValue"], "-");
+  const lineTotalsFromInvoiceLines = normalizedLineItems.reduce((acc, row) => {
+    if (!row || typeof row !== "object") return acc;
+    const n = Number.parseFloat(String(row.amount ?? "").replace(/[^0-9.-]/g, ""));
+    return acc + (Number.isFinite(n) ? n : 0);
+  }, 0);
+  const amountLabel =
+    adminTotal ||
+    (lineTotalsFromInvoiceLines > 0 ? lineTotalsFromInvoiceLines.toFixed(2) : "") ||
+    payloadValue(payload, ["shipment", "declaredValue"], "-");
+  const pdfUpdatedSource = booking.customerFacingUpdatedAt ?? booking.updatedAt ?? booking.createdAt;
+  const pdfCacheKey = String(
+    Math.floor(
+      (pdfUpdatedSource instanceof Date
+        ? pdfUpdatedSource.getTime()
+        : new Date(pdfUpdatedSource).getTime()) / 1000,
+    ) || 0,
+  );
 
   return {
     ...parsedData,
@@ -515,6 +750,7 @@ async function buildPdfDataFromBooking(req, parsedData) {
     updatedAtLabel: safeDateLabel(
       booking.customerFacingUpdatedAt ?? booking.updatedAt ?? booking.createdAt
     ),
+    pdfCacheKey,
     reference,
     routeTypeLabel: String(booking.routeType || "-"),
     consignmentNumber: String(booking.consignmentNumber || "-"),
@@ -567,15 +803,27 @@ async function buildPdfDataFromBooking(req, parsedData) {
   };
 }
 
+/** Strip legacy one-cell “Shipment / Parcel 1 | Parcel 2 …” text so each PDF row stays short. */
+function simplifyPdfLineDescription(desc, rowIndex) {
+  let s = String(desc ?? "").trim();
+  if (!s) return `Item ${rowIndex + 1}`;
+  const segments = s.split(/\s*\|\s*(?=Parcel\s+\d+)/i);
+  if (segments.length > 1) s = segments[0].trim();
+  s = s.replace(/^Shipment\s+/i, "").trim();
+  const pm = s.match(/^Parcel\s+\d+\s*[—–\-]\s*(.*)$/i);
+  if (pm) {
+    const rest = (pm[1] || "").trim();
+    return (rest || `Item ${rowIndex + 1}`).slice(0, 160);
+  }
+  return s.slice(0, 160);
+}
+
 /** Shared field normalisation for invoice PDFs (server-rendered). */
 function prepareInvoicePdfData(input) {
   const primary = normalizeHex(input.settings.primaryColor, "#0f766e");
   const accent = normalizeHex(input.settings.accentColor, "#16a34a");
   const card = normalizeHex(input.settings.cardColor, "#f8fafc");
   const ai = input.adminInvoice && typeof input.adminInvoice === "object" ? input.adminInvoice : null;
-  const useAdminCharges = Boolean(
-    ai && (String(ai.total || "").trim() || String(ai.subtotal || "").trim())
-  );
   const amountRaw = String(input.amountLabel || "").trim();
   const amountNumber = Number.parseFloat(amountRaw.replace(/[^0-9.-]/g, ""));
   const amount = Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : amountRaw || "0.00";
@@ -597,23 +845,52 @@ function prepareInvoicePdfData(input) {
   const subtotal = Number.isFinite(amountNumber) ? amountNumber.toFixed(2) : amount;
   const declaredTotal = Number.isFinite(amountNumber) ? (amountNumber * 1.03).toFixed(2) : amount;
   const currencyLabel = String(ai?.currency || "INR").trim() || "INR";
-  const chargeDiscount = useAdminCharges ? String(ai.discount || "").trim() || "0" : "0";
-  const chargeInsurance = useAdminCharges
-    ? String(ai.insurance || "").trim() || fixedCharge
-    : fixedCharge;
-  const chargeCustoms = useAdminCharges
-    ? String(ai.customsDuties || "").trim() || "—"
-    : "1";
-  const chargeTax = useAdminCharges ? String(ai.tax || "").trim() || "—" : "0";
-  const chargeDeclaredTotal = useAdminCharges
-    ? String(ai.total || "").trim() || declaredTotal
-    : declaredTotal;
-  const chargeDeclaredValue = useAdminCharges
-    ? String(ai.subtotal || "").trim() || declaredValue
-    : declaredValue;
-  const chargeTotalEnvio = useAdminCharges
-    ? `${currencyLabel} ${String(ai.total || ai.subtotal || subtotal).trim()}`
-    : `INR ${subtotal}`;
+  const invoiceLineItems = Array.isArray(ai?.lineItems)
+    ? ai.lineItems
+        .map((row, rowIndex) => {
+          if (!row || typeof row !== "object") return null;
+          const description = String(row.description ?? "").trim();
+          const amountRaw = row.amount;
+          const amountStr =
+            amountRaw != null && String(amountRaw).trim() !== "" ? String(amountRaw).trim() : "";
+          const weightKgIn = String(row.weightKg ?? "").trim();
+          const sizeCmIn = String(row.sizeCm ?? "").trim();
+          const { weightKg, sizeCm } = normalizePdfLineWeightSize(weightKgIn, sizeCmIn);
+          const declaredValue = String(row.declaredValue ?? "").trim();
+          if (!description && !amountStr && !weightKg && !sizeCm && !declaredValue) return null;
+          return {
+            description: simplifyPdfLineDescription(description || "—", rowIndex),
+            amount: amountStr,
+            weightKg,
+            sizeCm,
+            declaredValue
+          };
+        })
+        .filter(Boolean)
+    : [];
+  const lineTotalsSum = invoiceLineItems.reduce((acc, row) => {
+    const n = Number.parseFloat(String(row.amount ?? "").replace(/[^0-9.-]/g, ""));
+    return acc + (Number.isFinite(n) ? n : 0);
+  }, 0);
+  const adminTotalRaw = String(ai?.total ?? "").trim();
+  const totalFigure =
+    adminTotalRaw || (lineTotalsSum > 0 ? lineTotalsSum.toFixed(2) : "") || subtotal;
+  const chargeTotalEnvio = `${currencyLabel} ${totalFigure}`.trim();
+  const adminInvoiceInsurance = ai?.insurance ? String(ai.insurance).trim().slice(0, 4000) : "";
+  const pdfMoneyBreakRow = (label, rawAmt) => {
+    const s = String(rawAmt ?? "").trim();
+    if (!s) return null;
+    return {
+      label,
+      value: `${currencyLabel} ${s}`.trim().slice(0, 44)
+    };
+  };
+  const invoiceBreakdownRows = [
+    pdfMoneyBreakRow("Subtotal", ai?.subtotal),
+    pdfMoneyBreakRow("Tax", ai?.tax),
+    pdfMoneyBreakRow("Customs", ai?.customsDuties),
+    pdfMoneyBreakRow("Insurance", ai?.insurancePremium)
+  ].filter(Boolean);
   return {
     ...input,
     settings: {
@@ -636,15 +913,12 @@ function prepareInvoicePdfData(input) {
     scanCode,
     showAltTrackingRef,
     displayInvoiceId,
-    chargeDiscount,
-    chargeInsurance,
-    chargeCustoms,
-    chargeTax,
-    chargeDeclaredTotal,
-    chargeDeclaredValue,
     chargeTotalEnvio,
     currencyLabel,
-    adminInvoiceNotes: ai?.notes ? String(ai.notes).trim() : ""
+    adminInvoiceNotes: ai?.notes ? String(ai.notes).trim() : "",
+    adminInvoiceInsurance,
+    invoiceBreakdownRows,
+    invoiceLineItems
   };
 }
 
@@ -655,11 +929,11 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
   const data = prepareInvoicePdfData(input);
   const p = data.settings.primary;
   const card = data.settings.card;
-
-  const chargeRow = (label, value) =>
-    value != null && String(value).trim()
-      ? `<div class="chg"><span>${esc(label)}</span><strong>${esc(String(value).trim())}</strong></div>`
-      : "";
+  const isInternational = String(data.routeTypeLabel || "")
+    .toLowerCase()
+    .includes("international");
+  const stampText = isInternational ? "INT'L INVOICE" : "INVOICE";
+  const routeShort = isInternational ? "International" : "Domestic";
 
   return `<!doctype html>
 <html>
@@ -681,9 +955,22 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
       }
       .top {
         display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 6px;
+        grid-template-columns: 1fr auto auto;
+        gap: 5px;
         align-items: start;
+      }
+      .inv-stamp {
+        background: ${p};
+        color: #fff;
+        font-size: 7px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        padding: 4px 6px;
+        border-radius: 4px;
+        text-align: center;
+        line-height: 1.2;
+        white-space: nowrap;
+        align-self: start;
       }
       .brand-lockup img { display: block; height: 38px; width: auto; max-width: 100%; object-fit: contain; }
       .brand {
@@ -700,7 +987,6 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
         text-align: right;
         max-width: 48mm;
       }
-      .co-meta .co { font-weight: 700; color: #0f172a; font-size: 7.5px; }
       .bc-wrap {
         margin-top: 4px;
         text-align: center;
@@ -751,31 +1037,137 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
         font-weight: 700;
       }
       .person .nm { font-weight: 700; font-size: 7.5px; color: #111827; }
-      .kv {
-        margin-top: 4px;
-        font-size: 6.5px;
-        line-height: 1.35;
-        border-top: 1px solid #e5e7eb;
-        padding-top: 3px;
-      }
-      .kv div { margin-bottom: 1px; }
-      .kv strong { color: #374151; }
-      .ship {
+      .inv-detail {
         margin-top: 3px;
-        font-size: 6.5px;
+        font-size: 6px;
         line-height: 1.35;
-        color: #1f2937;
+        color: #374151;
+        border: 1px solid #e5e7eb;
+        border-radius: 5px;
+        padding: 3px 5px;
+        background: #fafafa;
         word-break: break-word;
       }
-      .chg-grid {
-        margin-top: 4px;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2px 8px;
-        font-size: 6.5px;
+      .inv-detail strong { color: ${p}; font-size: 6.5px; display: block; margin-bottom: 2px; }
+      .inv-detail-body, .note-body {
+        font-size: 6px;
+        line-height: 1.35;
+        color: #334155;
+        word-break: break-word;
+        white-space: normal;
       }
-      .chg { display: flex; justify-content: space-between; gap: 4px; border-bottom: 1px dotted #e5e7eb; padding-bottom: 1px; }
-      .chg span { color: #6b7280; }
+      .lines {
+        margin-top: 3px;
+        font-size: 6.5px;
+        line-height: 1.3;
+        color: #1f2937;
+        border: 1px solid #e5e7eb;
+        border-radius: 5px;
+        padding: 3px 4px;
+        background: #fafafa;
+      }
+      .sum-grid {
+        margin-top: 3px;
+        border: 1px solid #e5e7eb;
+        border-radius: 5px;
+        overflow: hidden;
+        font-size: 6px;
+        background: #fafafa;
+      }
+      .sum-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 6px;
+        padding: 2px 5px;
+        border-bottom: 1px solid #e5e7eb;
+        color: #334155;
+      }
+      .sum-row:last-child { border-bottom: none; }
+      .sum-row strong {
+        font-size: 6px;
+        font-weight: 700;
+        color: #0f172a;
+        white-space: nowrap;
+      }
+      .line-table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        font-size: 6px;
+        margin-top: 2px;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .line-table col.c-idx { width: 6%; }
+      .line-table col.c-item { width: 36%; }
+      .line-table col.c-wt { width: 11%; }
+      .line-table col.c-sz { width: 24%; }
+      .line-table col.c-amt { width: 13%; }
+      .line-table thead th {
+        color: ${p};
+        font-weight: 700;
+        font-size: 5.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.2px;
+        background: #f1f5f9;
+        border-bottom: 1px solid ${p};
+        padding: 4px 3px;
+        vertical-align: middle;
+      }
+      .line-table tbody td {
+        border-bottom: 1px solid #e5e7eb;
+        padding: 4px 3px;
+        vertical-align: top;
+        word-wrap: break-word;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        hyphens: auto;
+      }
+      .line-table tbody tr:last-child td { border-bottom: none; }
+      .line-table th.idx,
+      .line-table td.idx {
+        text-align: center;
+        color: #64748b;
+        font-weight: 600;
+      }
+      .line-table th.item,
+      .line-table td.item { text-align: left; }
+      .line-table th.wt,
+      .line-table td.wt {
+        text-align: center;
+        font-size: 5.5px;
+        color: #334155;
+      }
+      .line-table th.sz,
+      .line-table td.sz {
+        text-align: center;
+        font-size: 5.5px;
+        color: #475569;
+      }
+      .line-table th.amt,
+      .line-table td.amt {
+        text-align: right;
+        font-size: 5.5px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .line-table .item-main { font-weight: 600; color: #111827; font-size: 6px; }
+      .total-bar {
+        margin-top: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+        background: ${p};
+        color: #fff;
+        padding: 4px 6px;
+        border-radius: 4px;
+        font-size: 7px;
+        font-weight: 800;
+      }
+      .total-bar strong { font-size: 8px; font-weight: 800; letter-spacing: 0.02em; }
       .note {
         margin-top: 3px;
         font-size: 6px;
@@ -783,19 +1175,6 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
         color: #64748b;
         max-height: 14mm;
         overflow: hidden;
-      }
-      .terms {
-        margin-top: 3px;
-        font-size: 5.5px;
-        line-height: 1.3;
-        color: #64748b;
-      }
-      .a6-tag {
-        margin-top: 2px;
-        text-align: center;
-        font-size: 5px;
-        color: #94a3b8;
-        letter-spacing: 0.2px;
       }
       .footer {
         margin-top: 2px;
@@ -814,11 +1193,14 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
               ? `<div class="brand-lockup"><img src="${INVOICE_BRAND_LOGO_DATA_URL}" alt="${esc(data.settings.companyName)}" /></div>`
               : `<div class="brand">${esc(data.settings.companyName).slice(0, 36)}</div>`
           }
-          <div class="co-meta">
-            <div class="co">${esc(data.settings.companyName).slice(0, 40)}</div>
-            <div>${esc(data.settings.companyAddress || "—").slice(0, 120)}</div>
-            <div>${esc(data.settings.supportPhone)} · ${esc(data.settings.supportEmail)}</div>
-          </div>
+          <div class="inv-stamp" aria-hidden="true">${esc(stampText)}</div>
+          <div class="co-meta">${esc(
+            [data.settings.companyAddress, data.settings.supportPhone, data.settings.supportEmail]
+              .map((x) => String(x ?? "").trim())
+              .filter(Boolean)
+              .join(" · ")
+              .slice(0, 200) || "—"
+          )}</div>
         </section>
       </header>
 
@@ -835,13 +1217,14 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
       <div class="inv-title">Invoice · ${esc(data.displayInvoiceId).slice(0, 28)}</div>
       <div class="inv-sub">
         Booked ${esc(data.bookingDateLabel)} ·
-        ID <span style="font-family:monospace">${esc(data.bookingId)}</span> ·
-        ${esc(data.routeTypeLabel)} · ${esc(data.agencyLabel).slice(0, 22)}
+        <strong>${esc(routeShort)}</strong> ·
+        Currency <strong>${esc(data.currencyLabel)}</strong> ·
+        Updated ${esc(data.updatedAtLabel)}
       </div>
 
       <section class="people">
         <div class="person">
-          <h4>Sender</h4>
+          <h4>Bill from</h4>
           <div class="nm">${esc(data.senderName).slice(0, 48)}</div>
           <div>${esc((data.senderAddress || data.fromCity || "").slice(0, 140))}</div>
           <div>${esc(data.senderPhone)} ${esc(data.senderEmail).slice(0, 36)}</div>
@@ -854,40 +1237,77 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
         </div>
       </section>
 
-      <div class="kv">
-        <div><strong>Courier</strong> ${esc(data.courierNameLabel).slice(0, 42)}</div>
-        <div><strong>Consignment</strong> ${esc(data.scanCode)}</div>
-      </div>
+      ${
+        data.invoiceLineItems && data.invoiceLineItems.length
+          ? `<div class="lines">
+<table class="line-table">
+<colgroup>
+  <col class="c-idx" />
+  <col class="c-item" />
+  <col class="c-wt" />
+  <col class="c-sz" />
+  <col class="c-amt" />
+</colgroup>
+<thead><tr>
+<th class="idx">#</th>
+<th class="item">Item</th>
+<th class="wt">Wt (kg)</th>
+<th class="sz">Size (cm)</th>
+<th class="amt">Amt</th>
+</tr></thead>
+<tbody>${data.invoiceLineItems
+              .map((row, idx) => {
+                const mainLine = esc(String(row.description || "—")).slice(0, 120);
+                const rawAmt = String(row.amount ?? "").trim();
+                const am =
+                  rawAmt !== ""
+                    ? esc(`${data.currencyLabel} ${rawAmt}`.slice(0, 28))
+                    : "—";
+                const wt = row.weightKg ? esc(String(row.weightKg).slice(0, 14)) : "—";
+                const sz = row.sizeCm ? esc(String(row.sizeCm).slice(0, 40)) : "—";
+                return `<tr>
+<td class="idx">${idx + 1}</td>
+<td class="item"><span class="item-main">${mainLine}</span></td>
+<td class="wt">${wt}</td>
+<td class="sz">${sz}</td>
+<td class="amt">${am}</td>
+</tr>`;
+              })
+              .join("")}</tbody></table></div>`
+          : ""
+      }
+      ${
+        data.adminInvoice && String(data.adminInvoice.lineDescription || "").trim()
+          ? `<div class="inv-detail"><strong>Service description</strong><div class="inv-detail-body">${escHtmlLines(data.adminInvoice.lineDescription, 4000)}</div></div>`
+          : ""
+      }
+      ${
+        data.invoiceBreakdownRows && data.invoiceBreakdownRows.length
+          ? `<div class="sum-grid">${data.invoiceBreakdownRows
+              .map(
+                (r) =>
+                  `<div class="sum-row"><span>${esc(r.label)}</span><strong>${esc(r.value)}</strong></div>`
+              )
+              .join("")}</div>`
+          : ""
+      }
+      ${
+        data.adminInvoiceInsurance
+          ? `<div class="inv-detail"><strong>Insurance details</strong><div class="inv-detail-body">${escHtmlLines(data.adminInvoiceInsurance, 4000)}</div></div>`
+          : ""
+      }
 
-      <div class="ship">
-        <strong>Shipment</strong> ${esc(data.contentsLabel).slice(0, 200)} · Wt ${esc(String(data.weight))} ·
-        ${esc(data.length)}×${esc(data.width)}×${esc(data.height)} cm · Amt ${esc(data.amount)}
-      </div>
-
-      <div class="chg-grid">
-        ${chargeRow("Subtotal", data.subtotal)}
-        ${chargeRow("Tax", data.chargeTax)}
-        ${chargeRow("Insurance", data.chargeInsurance)}
-        ${chargeRow("Customs", data.chargeCustoms)}
-        ${chargeRow("Discount", data.chargeDiscount)}
-        ${chargeRow("Total", data.chargeTotalEnvio)}
+      <div class="total-bar">
+        <span>TOTAL</span>
+        <strong>${esc(data.chargeTotalEnvio)}</strong>
       </div>
 
       ${
         data.adminInvoiceNotes
-          ? `<div class="note"><strong>Note:</strong> ${esc(data.adminInvoiceNotes).slice(0, 280)}</div>`
-          : ""
-      }
-      ${
-        data.trackingNotesLabel && String(data.trackingNotesLabel).trim() !== "-"
-          ? `<div class="note"><strong>Tracking:</strong> ${esc(data.trackingNotesLabel).slice(0, 200)}</div>`
+          ? `<div class="note"><strong>Note</strong><div class="note-body">${escHtmlLines(data.adminInvoiceNotes, 2000)}</div></div>`
           : ""
       }
 
-      <div class="terms">
-        Sender declares details accurate; customs/duties may apply; transit varies by route and compliance.
-      </div>
-      <div class="a6-tag">ISO A6 · 105 × 148 mm</div>
       <div class="footer">${esc(data.settings.footerNote).slice(0, 90)}</div>
     </div>
   </body>
@@ -1304,9 +1724,17 @@ export async function trackBooking(req, res, next) {
     let courierName = null;
     if (row.courierId) {
       const courier = await findUserById(row.courierId);
-      courierName = String(courier?.name || courier?.email || "").trim() || null;
+      const n = String(courier?.name ?? "").trim();
+      courierName = n || "Pickup courier";
     }
-    const agencyName = await resolveAssignedAgencyDisplayName(db, row.assignedAgency);
+    const { agencyName, agencyCity } = await resolveAssignedAgencyForPublicTrack(
+      db,
+      row.assignedAgency
+    );
+    const { fromCity, toCity, senderCountry, recipientCountry } = resolveTrackRouteCities(
+      row.payload
+    );
+    const domesticMainHubCity = siteNorm.domesticMainHubCity || "Quadrato Cargo";
     return sendOk(res, {
       trackUi,
       tracking: {
@@ -1323,6 +1751,14 @@ export async function trackBooking(req, res, next) {
         customerTrackingNote: row.customerTrackingNote ?? null,
         courierName,
         agencyName,
+        /** City label for hub / linehaul on Track (not street address). */
+        agencyCity,
+        /** Network main hub for domestic linehaul copy (site setting). */
+        domesticMainHubCity,
+        fromCity,
+        toCity,
+        senderCountry,
+        recipientCountry,
         senderName: row.senderName || null,
         senderAddress: row.senderAddress || null,
         recipientName: row.recipientName || null,
@@ -1420,10 +1856,18 @@ export async function generateBookingPdf(req, res, next) {
       .replace(/[^a-zA-Z0-9-_]/g, "-")
       .trim();
     const pdfBinary = Buffer.from(pdfBuffer);
+    const cacheKey = String(input.pdfCacheKey || "0").replace(/[^0-9]/g, "") || "0";
+    const pdfKind = isTrackingTemplate ? "tracking" : "invoice";
     res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+    if (!isTrackingTemplate) {
+      res.setHeader("X-QC-Invoice-Template", "2026-04-v2");
+    }
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="courier-details-${filenameSafeRef || input.bookingId}.pdf"`
+      `attachment; filename="${pdfKind}-${filenameSafeRef || input.bookingId}-v${cacheKey}.pdf"`
     );
     return res.status(200).send(pdfBinary);
   } catch (error) {

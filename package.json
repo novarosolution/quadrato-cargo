@@ -1,0 +1,14 @@
+{
+  "name": "quadrato-cargo-workspace",
+  "private": true,
+  "description": "Run web and API from the repo root with npm run dev:web / dev:api",
+  "scripts": {
+    "dev": "npm run dev:web",
+    "dev:web": "npm run dev --prefix quadrato-cargo",
+    "dev:api": "npm run dev --prefix server",
+    "build:web": "npm run build --prefix quadrato-cargo",
+    "build:web:safe": "npm run build:safe --prefix quadrato-cargo",
+    "verify:web": "npm run lint --prefix quadrato-cargo && npm run typecheck --prefix quadrato-cargo && npm run build --prefix quadrato-cargo",
+    "install:all": "npm install --prefix quadrato-cargo && npm install --prefix server"
+  }
+}

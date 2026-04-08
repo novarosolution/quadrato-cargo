@@ -2,11 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { PublicCard } from "@/components/public/PublicCard";
-import { PublicPageSection } from "@/components/public/PublicPageSection";
-import { PublicPageHeader } from "@/components/layout/AppPageHeader";
-import { Container } from "@/components/Wrap";
+import { CustomerAuthLayout } from "@/components/auth/CustomerAuthLayout";
 import { safeRedirectPath } from "@/lib/auth-redirect";
+import { publicUi } from "@/components/public/public-ui";
 import { RegisterForm } from "./Register";
 
 export const metadata: Metadata = {
@@ -40,30 +38,23 @@ export default async function RegisterPage({ searchParams }: PageProps) {
     redirect(target);
   }
 
-  return (
-    <div className="stack-page content-full">
-      <section className="border-b border-border py-10 sm:py-14">
-        <Container className="max-w-lg">
-          <PublicPageHeader
-            eyebrow="Account"
-            title="Register"
-            description="Create your customer account in seconds. Book while logged in to keep all shipments and tracking in one place."
-          />
-        </Container>
-      </section>
+  const loginHref = `/public/login?callbackUrl=${encodeURIComponent(redirectAfterRegister)}`;
 
-      <PublicPageSection>
-        <Container className="max-w-lg">
-          <PublicCard className="shadow-2xl shadow-black/40 sm:p-8">
-            <RegisterForm redirectTo={redirectAfterRegister} />
-          </PublicCard>
-          <p className="mt-8 text-center text-xs text-muted-soft">
-            <Link href="/public" className="underline-offset-2 hover:underline">
-              Back to home
-            </Link>
-          </p>
-        </Container>
-      </PublicPageSection>
-    </div>
+  return (
+    <CustomerAuthLayout
+      title="Register"
+      description={
+        <>
+          Create your customer account in seconds. Book while logged in to keep all shipments
+          and tracking in one place. Already registered?{" "}
+          <Link href={loginHref} className={publicUi.link}>
+            Log in
+          </Link>
+          .
+        </>
+      }
+    >
+      <RegisterForm redirectTo={redirectAfterRegister} />
+    </CustomerAuthLayout>
   );
 }

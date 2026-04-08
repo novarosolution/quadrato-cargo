@@ -21,18 +21,19 @@ export function AppPageHeader({
   className = "",
 }: Props) {
   const isPublic = variant === "public";
+  const isApp = variant === "app";
 
   return (
     <header className={`flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4 ${className}`.trim()}>
       <div className="min-w-0 flex-1">
-        {isPublic && eyebrow ? (
-          <p className="section-eyebrow mb-2">{eyebrow}</p>
+        {eyebrow ? (
+          <p className={`section-eyebrow ${isPublic ? "mb-2" : "mb-1.5"}`}>{eyebrow}</p>
         ) : null}
         <h1
           className={
             isPublic
-              ? "font-display text-3xl font-semibold tracking-tight text-ink sm:text-4xl md:text-5xl"
-              : "font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl"
+              ? "type-display-premium text-3xl sm:text-4xl md:text-5xl"
+              : "admin-page-title type-display-premium text-2xl sm:text-3xl lg:text-[1.85rem] lg:tracking-tight"
           }
         >
           {title}
@@ -42,7 +43,9 @@ export function AppPageHeader({
             className={
               isPublic
                 ? "mt-3 max-w-2xl text-base leading-relaxed text-muted sm:text-lg"
-                : "mt-2 max-w-2xl text-sm leading-relaxed text-muted"
+                : isApp
+                  ? "mt-2 max-w-2xl text-sm leading-relaxed text-muted sm:text-[0.9375rem]"
+                  : "mt-2 max-w-2xl text-sm leading-relaxed text-muted sm:text-[0.9375rem]"
             }
           >
             {description}

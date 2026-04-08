@@ -177,8 +177,8 @@ function toPublicInvoice(row) {
     subtotal: pick("subtotal"),
     tax: pick("tax"),
     insurance: pick("insurance"),
+    insurancePremium: pick("insurancePremium"),
     customsDuties: pick("customsDuties"),
-    discount: pick("discount"),
     total: pick("total"),
     lineDescription: pick("lineDescription"),
     notes: pick("notes")

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { fetchAdminMonthlyReport } from "@/lib/api/admin-server";
+import { AdminMonthlyReportCsvButton } from "@/components/admin/AdminMonthlyReportCsvButton";
+import { AdminPageBody, AdminPanel } from "@/components/admin/AdminPrimitives";
+import { adminClass, adminUi } from "@/components/admin/admin-ui";
 import { AdminPageHeader } from "@/components/layout/AppPageHeader";
 import { AdminDatabaseError } from "../dashboard/DbError";
 
@@ -37,58 +40,62 @@ export default async function AdminReportsPage({ searchParams }: Props) {
   }
 
   return (
-    <div className="stack-page content-wide gap-8 max-sm:gap-6">
+    <AdminPageBody className="gap-8 max-sm:gap-6">
       <AdminPageHeader
-        title="Monthly reports"
-        description="Analyst-style summary for business activity, growth, and operations."
+        title="Reports"
+        description="Monthly totals — CSV matches the tables."
         actions={
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-muted-soft">Range:</span>
-            {[6, 12, 18].map((m) => (
-              <Link
-                key={m}
-                href={`/admin/reports?months=${m}`}
-                prefetch={false}
-                className={`rounded-lg px-3 py-1.5 ${
-                  m === months
-                    ? "bg-teal text-slate-950"
-                    : "border border-border-strong text-ink hover:bg-pill-hover"
-                }`}
-              >
-                {m} months
-              </Link>
-            ))}
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-soft">
+                Range
+              </span>
+              {[6, 12, 18].map((m) => (
+                <Link
+                  key={m}
+                  href={`/admin/reports?months=${m}`}
+                  prefetch={false}
+                  className={adminClass(
+                    adminUi.shortcutPill,
+                    m === months ? adminUi.presetActive : adminUi.shortcutPillIdle,
+                  )}
+                >
+                  {m} mo
+                </Link>
+              ))}
+            </div>
+            <AdminMonthlyReportCsvButton report={report} months={months} />
           </div>
         }
       />
 
       <section className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-border-strong bg-surface-elevated/60 p-6">
-          <p className="text-sm text-muted-soft">New users</p>
+        <div className={adminUi.statTile}>
+          <p className="text-sm text-muted-soft">Users</p>
           <p className="mt-2 font-display text-3xl font-semibold">{report.totals.users}</p>
         </div>
-        <div className="rounded-2xl border border-border-strong bg-surface-elevated/60 p-6">
-          <p className="text-sm text-muted-soft">Contact requests</p>
+        <div className={adminUi.statTile}>
+          <p className="text-sm text-muted-soft">Contacts</p>
           <p className="mt-2 font-display text-3xl font-semibold">{report.totals.contacts}</p>
         </div>
-        <div className="rounded-2xl border border-border-strong bg-surface-elevated/60 p-6">
-          <p className="text-sm text-muted-soft">Bookings submitted</p>
+        <div className={adminUi.statTile}>
+          <p className="text-sm text-muted-soft">Bookings</p>
           <p className="mt-2 font-display text-3xl font-semibold">{report.totals.bookings}</p>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
-        <h2 className="font-display text-lg font-semibold">Analyst insights</h2>
+      <AdminPanel as="section">
+        <h2 className={adminUi.sectionTitle}>Insights</h2>
         <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-ink">
           {report.insights.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
-      </section>
+      </AdminPanel>
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
-          <h2 className="font-display text-lg font-semibold">Booking status breakdown</h2>
+        <AdminPanel as="div">
+          <h2 className={adminUi.sectionTitle}>By status</h2>
           <div className="mt-4 space-y-2 text-sm">
             {report.bookingStatusBreakdown.length === 0 ? (
               <p className="text-muted">No data yet.</p>
@@ -104,10 +111,10 @@ export default async function AdminReportsPage({ searchParams }: Props) {
               ))
             )}
           </div>
-        </div>
+        </AdminPanel>
 
-        <div className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
-          <h2 className="font-display text-lg font-semibold">Route type breakdown</h2>
+        <AdminPanel as="div">
+          <h2 className={adminUi.sectionTitle}>By route</h2>
           <div className="mt-4 space-y-2 text-sm">
             {report.routeBreakdown.length === 0 ? (
               <p className="text-muted">No data yet.</p>
@@ -123,19 +130,20 @@ export default async function AdminReportsPage({ searchParams }: Props) {
               ))
             )}
           </div>
-        </div>
+        </AdminPanel>
       </section>
 
-      <section className="rounded-2xl border border-border-strong bg-surface-elevated/40 p-6">
-        <h2 className="font-display text-lg font-semibold">Month-by-month report</h2>
+      <AdminPanel as="section">
+        <h2 className={adminUi.sectionTitle}>By month</h2>
+        <p className={adminUi.sectionDesc}>New users, contacts, bookings — UTC months.</p>
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead>
-              <tr className="border-b border-border-strong text-left text-muted-soft">
-                <th className="px-3 py-2 font-medium">Month</th>
-                <th className="px-3 py-2 font-medium">Users</th>
-                <th className="px-3 py-2 font-medium">Contacts</th>
-                <th className="px-3 py-2 font-medium">Bookings</th>
+            <thead className={adminUi.theadSimple}>
+              <tr className="text-left">
+                <th className={adminUi.thRelaxed}>Month</th>
+                <th className={adminUi.thRelaxed}>Users</th>
+                <th className={adminUi.thRelaxed}>Contacts</th>
+                <th className={adminUi.thRelaxed}>Bookings</th>
               </tr>
             </thead>
             <tbody>
@@ -150,7 +158,7 @@ export default async function AdminReportsPage({ searchParams }: Props) {
             </tbody>
           </table>
         </div>
-      </section>
-    </div>
+      </AdminPanel>
+    </AdminPageBody>
   );
 }

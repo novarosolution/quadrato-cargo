@@ -7,7 +7,7 @@ import {
   updateBookingByAgency,
   verifyAgencyHandoverOtp
 } from "../modules/bookings/booking-repo.js";
-import { updateAgencyPartnerProfile } from "../modules/users/user-repo.js";
+import { findUsersByIds, updateAgencyPartnerProfile } from "../modules/users/user-repo.js";
 import { timelineOverridesBodySchema } from "../shared/timeline-overrides-zod.js";
 import { objectIdStringSchema } from "../shared/zod-helpers.js";
 
@@ -53,13 +53,44 @@ const agencyUpdateBookingSchema = z.object({
 const agencyProfilePatchSchema = z.object({
   name: z.string().trim().max(120).optional(),
   agencyAddress: z.string().trim().max(500).optional(),
-  agencyPhone: z.string().trim().max(40).optional()
+  agencyPhone: z.string().trim().max(40).optional(),
+  /** Shown on public tracking only (city); full street stays off customer Track. */
+  agencyCity: z.string().trim().max(80).optional()
 });
+
+/** Resolve pickup courier display name for agency surfaces (name, else login email). */
+async function attachCourierNamesToPublicBookings(bookings = []) {
+  if (!bookings.length) return bookings;
+  const ids = [
+    ...new Set(
+      bookings
+        .map((b) => String(b?.courierId ?? "").trim())
+        .filter(Boolean)
+    )
+  ];
+  if (ids.length === 0) {
+    return bookings.map((b) => ({ ...b, courierName: null }));
+  }
+  const couriers = await findUsersByIds(ids);
+  const map = new Map(
+    couriers.map((c) => {
+      const name = String(c?.name ?? "").trim();
+      const email = String(c?.email ?? "").trim();
+      const label = name || email || null;
+      return [String(c._id), label];
+    })
+  );
+  return bookings.map((b) => ({
+    ...b,
+    courierName: b.courierId ? map.get(String(b.courierId)) ?? null : null
+  }));
+}
 
 export async function listMyAgencyBookings(req, res, next) {
   try {
     const rows = await listBookingsByAgency(req.auth.user);
-    return sendOk(res, { bookings: rows });
+    const withNames = await attachCourierNamesToPublicBookings(rows);
+    return sendOk(res, { bookings: withNames });
   } catch (error) {
     return next(error);
   }
@@ -89,11 +120,12 @@ export async function verifyAgencyHandover(req, res, next) {
       }
       return sendError(res, "Invalid agency handover OTP.");
     }
+    const [booking] = await attachCourierNamesToPublicBookings([result.booking]);
     return sendOk(res, {
       message: result.alreadyVerified
         ? "Agency handover already verified."
         : "Agency handover verified. Agency processing started.",
-      booking: result.booking
+      booking
     });
   } catch (error) {
     return next(error);
@@ -106,9 +138,12 @@ export async function patchAgencyProfile(req, res, next) {
     if (!parsed.success) {
       return sendError(res, parsed.error.issues[0]?.message ?? "Invalid profile.");
     }
-    const { name, agencyAddress, agencyPhone } = parsed.data;
+    const { name, agencyAddress, agencyPhone, agencyCity } = parsed.data;
     const hasField =
-      name !== undefined || agencyAddress !== undefined || agencyPhone !== undefined;
+      name !== undefined ||
+      agencyAddress !== undefined ||
+      agencyPhone !== undefined ||
+      agencyCity !== undefined;
     if (!hasField) {
       return sendError(res, "Send at least one field to update.");
     }
@@ -118,7 +153,8 @@ export async function patchAgencyProfile(req, res, next) {
     const updated = await updateAgencyPartnerProfile(req.auth.user.id, {
       name,
       agencyAddress,
-      agencyPhone
+      agencyPhone,
+      agencyCity
     });
     if (!updated) {
       return sendError(res, "Could not update agency profile.", 400);
@@ -158,7 +194,8 @@ export async function updateMyAgencyBooking(req, res, next) {
     if (!row) {
       return sendNotFound(res, "Booking not found for this agency.");
     }
-    return sendOk(res, { message: "Agency update saved.", booking: row });
+    const [booking] = await attachCourierNamesToPublicBookings([row]);
+    return sendOk(res, { message: "Agency update saved.", booking });
   } catch (error) {
     return next(error);
   }
@@ -184,7 +221,8 @@ export async function patchAgencyBookingTimeline(req, res, next) {
     if (!row) {
       return sendNotFound(res, "Booking not found for this agency.");
     }
-    return sendOk(res, { message: "Customer timeline saved.", booking: row });
+    const [booking] = await attachCourierNamesToPublicBookings([row]);
+    return sendOk(res, { message: "Customer timeline saved.", booking });
   } catch (error) {
     return next(error);
   }

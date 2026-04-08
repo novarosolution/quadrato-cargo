@@ -33,6 +33,18 @@ export type AdminUser = {
   /** Agency hub profile (role agency only). */
   agencyAddress?: string | null;
   agencyPhone?: string | null;
+  agencyCity?: string | null;
+};
+
+export type AdminBookingInvoiceLineItem = {
+  description: string;
+  amount?: string | null;
+  /** Per-parcel weight on invoice line (optional). */
+  weightKg?: string | null;
+  /** L × W × H (optional). */
+  sizeCm?: string | null;
+  /** Per-parcel declared value text (optional). */
+  declaredValue?: string | null;
 };
 
 export type AdminBookingInvoice = {
@@ -41,11 +53,12 @@ export type AdminBookingInvoice = {
   subtotal?: string | null;
   tax?: string | null;
   insurance?: string | null;
+  insurancePremium?: string | null;
   customsDuties?: string | null;
-  discount?: string | null;
   total?: string | null;
   lineDescription?: string | null;
   notes?: string | null;
+  lineItems?: AdminBookingInvoiceLineItem[] | null;
 };
 
 export type AdminBooking = {
@@ -127,6 +140,8 @@ export type AdminSiteSettings = {
   trackShowTimeline: boolean;
   trackShowInternationalHelp: boolean;
   trackShowOnHoldBanner: boolean;
+  /** Main sort hub label on domestic / origin linehaul timeline (e.g. Quadrato Cargo). */
+  domesticMainHubCity: string;
 };
 
 export type AdminMonthlyReport = {
@@ -136,6 +151,26 @@ export type AdminMonthlyReport = {
   bookingStatusBreakdown: Array<{ status: string; count: number }>;
   routeBreakdown: Array<{ routeType: string; count: number }>;
   insights: string[];
+};
+
+/** Admin network overview: agencies + couriers with live booking mix. */
+export type AdminNetworkAgency = AdminUser & {
+  assignedBookingTotal: number;
+  assignedByStatus: Record<string, number>;
+};
+
+export type AdminNetworkCourier = AdminUser & {
+  courierJobTotal: number;
+  courierOpenJobs: number;
+  courierByStatus: Record<string, number>;
+  readyForJob: boolean;
+};
+
+export type AdminNetworkResponse = {
+  ok: boolean;
+  agencies: AdminNetworkAgency[];
+  couriers: AdminNetworkCourier[];
+  allBookingStatusCounts: Array<{ status: string; count: number }>;
 };
 
 async function adminFetch<T>(path: string): Promise<T> {
@@ -148,11 +183,34 @@ async function adminFetch<T>(path: string): Promise<T> {
       },
     });
   } catch {
-    throw new Error("Cannot connect to backend API. Ensure server is running on API base URL.");
+    throw new Error(
+      "Cannot reach the API. Start the backend and confirm NEXT_PUBLIC_API_URL (or your configured base URL) matches where the server listens.",
+    );
   }
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { message?: string };
-    throw new Error(body.message || `Admin API request failed: ${res.status}`);
+    const fromApi = typeof body.message === "string" && body.message.trim() ? body.message.trim() : "";
+    if (res.status === 401) {
+      throw new Error(
+        fromApi ||
+          "Unauthorized — ADMIN_API_SECRET in the Next.js app (.env or .env.local) must match ADMIN_API_SECRET on the API server. Restart Next and the API after changing either value.",
+      );
+    }
+    if (res.status === 403) {
+      throw new Error(fromApi || "Forbidden — this admin key cannot perform that action.");
+    }
+    if (res.status === 404) {
+      throw new Error(fromApi || "Not found — check the ID or refresh the page.");
+    }
+    if (res.status === 429) {
+      throw new Error(fromApi || "Too many requests — wait a moment and try again.");
+    }
+    if (res.status >= 500) {
+      throw new Error(
+        fromApi || "Server error — check API logs or try again shortly.",
+      );
+    }
+    throw new Error(fromApi || `Admin API request failed (${res.status}).`);
   }
   return (await res.json()) as T;
 }
@@ -161,6 +219,10 @@ export async function fetchAdminOverview() {
   return adminFetch<{ ok: boolean; snapshot: AdminOverviewSnapshot }>(
     "/api/admin/overview",
   );
+}
+
+export async function fetchAdminNetwork() {
+  return adminFetch<AdminNetworkResponse>("/api/admin/network");
 }
 
 export async function fetchAdminUsers(params: {
@@ -188,6 +250,11 @@ export async function fetchAdminBookings(params: {
   status?: string;
   route?: string;
   account?: string;
+  fromCity?: string;
+  toCity?: string;
+  courier?: string;
+  agency?: string;
+  pageSize?: number;
   page?: number;
 }) {
   const search = new URLSearchParams();
@@ -195,10 +262,21 @@ export async function fetchAdminBookings(params: {
   if (params.status) search.set("status", params.status);
   if (params.route) search.set("route", params.route);
   if (params.account) search.set("account", params.account);
+  if (params.fromCity) search.set("fromCity", params.fromCity);
+  if (params.toCity) search.set("toCity", params.toCity);
+  if (params.courier) search.set("courier", params.courier);
+  if (params.agency) search.set("agency", params.agency);
+  if (params.pageSize && (params.pageSize === 50 || params.pageSize === 100)) {
+    search.set("pageSize", String(params.pageSize));
+  }
   if (params.page) search.set("page", String(params.page));
-  return adminFetch<{ ok: boolean; total: number; bookings: AdminBooking[] }>(
-    `/api/admin/bookings?${search.toString()}`,
-  );
+  return adminFetch<{
+    ok: boolean;
+    total: number;
+    page: number;
+    pageSize: number;
+    bookings: AdminBooking[];
+  }>(`/api/admin/bookings?${search.toString()}`);
 }
 
 export async function fetchAdminBookingDetail(id: string) {

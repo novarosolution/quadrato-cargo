@@ -25,6 +25,8 @@ export type AgencyBooking = {
   /** International: 0–11 macro stage on customer Track; null = auto from status. */
   internationalAgencyStage?: number | null;
   courierId?: string | null;
+  /** Resolved from courier account (name, or email if name empty). */
+  courierName?: string | null;
   payload: unknown;
 };
 
@@ -99,6 +101,7 @@ export async function patchAgencyProfileApi(args: {
   name: string;
   agencyAddress: string;
   agencyPhone: string;
+  agencyCity: string;
 }): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
   try {
     const res = await fetch(`${getApiBaseUrl()}/api/agency/me/profile`, {
@@ -112,6 +115,7 @@ export async function patchAgencyProfileApi(args: {
         name: args.name,
         agencyAddress: args.agencyAddress,
         agencyPhone: args.agencyPhone,
+        agencyCity: args.agencyCity,
       }),
     });
     const data = (await res.json().catch(() => ({}))) as {

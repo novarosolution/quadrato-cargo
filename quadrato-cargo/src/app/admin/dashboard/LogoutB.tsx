@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { adminUi } from "@/components/admin/admin-ui";
 import { getApiBaseUrl } from "@/lib/api/base-url";
 import { csrfHeaderRecord } from "@/lib/api/csrf-headers";
 
-export function AdminLogoutButton() {
+export function AdminLogoutButton({ className = "" }: { className?: string }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   async function onLogout() {
@@ -30,7 +31,7 @@ export function AdminLogoutButton() {
       type="button"
       onClick={onLogout}
       disabled={isLoggingOut}
-      className="h-10 rounded-xl border border-border-strong bg-canvas/40 px-4 text-sm font-medium text-muted transition hover:border-rose-500/40 hover:text-rose-300 disabled:opacity-60"
+      className={`${adminUi.btnLogout} disabled:opacity-60 ${className}`.trim()}
     >
       {isLoggingOut ? "Logging out..." : "Log out"}
     </button>

@@ -13,6 +13,7 @@ import { fetchSiteSettings, type SiteSettings } from "@/lib/api/public-client";
 import { useMotionPreferences } from "@/lib/motion-preferences";
 import { QuadratoBrandLogo } from "@/components/QuadratoBrandLogo";
 import { authNav, mainNav } from "@/lib/nav";
+import { siteName } from "@/lib/site";
 
 const footerLinkClass =
   "text-sm font-medium text-muted transition hover:text-teal focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal";
@@ -84,13 +85,13 @@ export function Footer({ initialSiteSettings = null }: FooterProps) {
   }, []);
 
   return (
-    <footer className="relative mt-auto border-t border-border bg-surface/90 backdrop-blur-xl">
+    <footer className="site-footer relative mt-auto overflow-hidden border-t border-border-strong/80 bg-surface/96 backdrop-blur-xl">
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-teal/30"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_55%_at_12%_-8%,color-mix(in_oklab,var(--color-teal)_14%,transparent),transparent_52%),radial-gradient(ellipse_60%_40%_at_92%_100%,color-mix(in_oklab,var(--color-accent)_8%,transparent),transparent_50%)]"
         aria-hidden
       />
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid gap-12 lg:grid-cols-12 lg:gap-8">
+      <div className="relative mx-auto max-w-7xl px-4 py-[clamp(3.5rem,8vw,5.5rem)] sm:px-6 lg:px-8">
+        <div className="grid gap-14 lg:grid-cols-12 lg:gap-10">
           <motion.div
             className="lg:col-span-5"
             variants={colVariants}
@@ -114,9 +115,9 @@ export function Footer({ initialSiteSettings = null }: FooterProps) {
                 />
               </motion.div>
             </div>
-            <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted">
-              International courier service with simple booking and clear
-              tracking updates.
+            <p className="mt-6 max-w-sm text-base leading-relaxed text-muted sm:text-[1.02rem]">
+              International courier with simple booking, fast pickup where we
+              serve, and clear tracking from door to door.
             </p>
             <motion.div
               className="mt-8 inline-block"
@@ -147,7 +148,7 @@ export function Footer({ initialSiteSettings = null }: FooterProps) {
             }}
           >
             <motion.nav variants={colVariants} aria-label="Footer">
-              <p className="section-eyebrow text-muted-soft">Explore</p>
+              <p className="section-eyebrow !text-ink/80">Explore</p>
               <ul className="mt-4 flex flex-col gap-3">
                 {mainNav.map((item) => (
                   <motion.li
@@ -167,7 +168,7 @@ export function Footer({ initialSiteSettings = null }: FooterProps) {
               </ul>
             </motion.nav>
             <motion.nav variants={colVariants} aria-label="Account">
-              <p className="section-eyebrow text-muted-soft">Account</p>
+              <p className="section-eyebrow !text-ink/80">Account</p>
               <ul className="mt-4 flex flex-col gap-3">
                 {authState === "loading" ? (
                   <li className="text-sm text-muted-soft">…</li>
@@ -215,7 +216,7 @@ export function Footer({ initialSiteSettings = null }: FooterProps) {
               </ul>
             </motion.nav>
             <motion.div variants={colVariants}>
-              <p className="section-eyebrow text-muted-soft">Dispatch</p>
+              <p className="section-eyebrow !text-ink/80">Dispatch</p>
               <dl className="mt-4 space-y-4 text-sm">
                 <div>
                   <dt className="font-medium text-ink">Phone</dt>
@@ -268,13 +269,13 @@ export function Footer({ initialSiteSettings = null }: FooterProps) {
           </motion.div>
         </div>
 
-        <div className="mt-14 border-t border-border pt-8">
-          <div className="text-center sm:text-left">
-            <p className="text-xs text-muted-soft">
-              © {year} Quadrato Cargo. All rights reserved.
+        <div className="mt-16 border-t border-border-strong/60 pt-10">
+          <div className="flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+            <p className="text-xs font-medium tracking-wide text-muted-soft">
+              © {year} {siteName}. All rights reserved.
             </p>
-            <p className="mt-1 text-[11px] text-muted-soft/80">
-              Developed by{" "}
+            <p className="text-[11px] text-muted-soft/85">
+              Technology partner:{" "}
               <a
                 href="https://novarosolution.com/"
                 target="_blank"

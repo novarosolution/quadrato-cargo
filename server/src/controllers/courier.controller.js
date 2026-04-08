@@ -81,9 +81,7 @@ export async function getCourierStatus(req, res, next) {
         isActive: req.auth.user.isActive !== false,
         openJobCount,
         readyForJob:
-          req.auth.user.isActive !== false &&
-          req.auth.user.isOnDuty !== false &&
-          openJobCount === 0
+          req.auth.user.isActive !== false && req.auth.user.isOnDuty !== false
       }
     });
   } catch (error) {

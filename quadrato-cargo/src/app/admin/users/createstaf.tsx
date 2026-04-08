@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState } from "react";
-import {
-  createStaffUserAdmin,
-  type DataManageState,
-} from "../dashboard/actions";
+import { AdminPanel } from "@/components/admin/AdminPrimitives";
+import { adminUi } from "@/components/admin/admin-ui";
+import { adminUsersCopy } from "@/lib/admin-users-content";
+import { createStaffUserAdmin, type DataManageState } from "../dashboard/actions";
 
 export function AdminCreateStaffForm() {
   const [state, formAction, pending] = useActionState<
@@ -13,19 +13,12 @@ export function AdminCreateStaffForm() {
   >(createStaffUserAdmin, undefined);
 
   return (
-    <div className="rounded-2xl border border-border-strong bg-surface-elevated/50 p-6">
-      <h2 className="font-display text-lg font-semibold">Create team account</h2>
-      <p className="mt-1 text-xs text-muted-soft">
-        Staff sign in at <span className="font-mono text-[11px]">/admin/login</span>{" "}
-        to manage bookings, contacts, and users. They do not use the public site
-        profile.
-      </p>
-      <form action={formAction} className="mt-6 max-w-md space-y-4">
+    <AdminPanel>
+      <h2 className={adminUi.sectionTitle}>{adminUsersCopy.createStaffTitle}</h2>
+      <p className={adminUi.sectionDesc}>{adminUsersCopy.createStaffBlurb}</p>
+      <form action={formAction} className="mt-5 max-w-md space-y-4">
         <div>
-          <label
-            htmlFor="admin-staff-name"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
+          <label htmlFor="admin-staff-name" className={adminUi.labelBlock}>
             Full name
           </label>
           <input
@@ -34,15 +27,12 @@ export function AdminCreateStaffForm() {
             type="text"
             required
             autoComplete="name"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={`mt-2 ${adminUi.input}`}
           />
         </div>
         <div>
-          <label
-            htmlFor="admin-staff-email"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
-            Email (admin sign-in)
+          <label htmlFor="admin-staff-email" className={adminUi.labelBlock}>
+            Email
           </label>
           <input
             id="admin-staff-email"
@@ -50,14 +40,11 @@ export function AdminCreateStaffForm() {
             type="email"
             required
             autoComplete="email"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={`mt-2 ${adminUi.input}`}
           />
         </div>
         <div>
-          <label
-            htmlFor="admin-staff-pw"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
+          <label htmlFor="admin-staff-pw" className={adminUi.labelBlock}>
             Password
           </label>
           <input
@@ -66,14 +53,11 @@ export function AdminCreateStaffForm() {
             type="password"
             required
             autoComplete="new-password"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={`mt-2 ${adminUi.input}`}
           />
         </div>
         <div>
-          <label
-            htmlFor="admin-staff-pw2"
-            className="text-xs font-semibold uppercase tracking-wide text-muted-soft"
-          >
+          <label htmlFor="admin-staff-pw2" className={adminUi.labelBlock}>
             Confirm password
           </label>
           <input
@@ -82,7 +66,7 @@ export function AdminCreateStaffForm() {
             type="password"
             required
             autoComplete="new-password"
-            className="mt-2 w-full rounded-xl border border-border-strong bg-canvas/50 px-4 py-3 text-sm text-ink focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/25"
+            className={`mt-2 ${adminUi.input}`}
           />
         </div>
         {state?.ok === false && state.error ? (
@@ -95,14 +79,10 @@ export function AdminCreateStaffForm() {
             {state.message}
           </p>
         ) : null}
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex rounded-xl bg-teal px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-        >
+        <button type="submit" disabled={pending} className={`${adminUi.btnPrimary} disabled:opacity-50`}>
           {pending ? "Creating…" : "Create team account"}
         </button>
       </form>
-    </div>
+    </AdminPanel>
   );
 }

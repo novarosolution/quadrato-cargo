@@ -16,6 +16,8 @@ export type SavedAddress = {
   phone: string;
   street: string;
   city: string;
+  /** State / province / region (optional). */
+  state?: string;
   postal: string;
   country: string;
 };
@@ -38,6 +40,7 @@ export type ProfileBooking = {
   customerTrackingNote?: string | null;
   assignedAgency?: string | null;
   courierName?: string | null;
+  courierEmail?: string | null;
   senderName?: string | null;
   senderAddress?: string | null;
   recipientName?: string | null;
@@ -202,9 +205,16 @@ export async function fetchProfileUserServer(cookieHeader: string) {
   );
 }
 
+export async function fetchAddressBookServer(cookieHeader: string) {
+  return serverFetch<{ ok: boolean; addressBook?: AddressBook }>(
+    "/api/users/me/address-book",
+    cookieHeader,
+  );
+}
+
 export async function fetchProfileBookingsServer(
   cookieHeader: string,
-  options?: { limit?: number; summary?: boolean }
+  options?: { limit?: number; summary?: boolean; backfill?: boolean }
 ) {
   const query = new URLSearchParams();
   if (typeof options?.limit === "number" && Number.isFinite(options.limit)) {
@@ -212,6 +222,9 @@ export async function fetchProfileBookingsServer(
   }
   if (options?.summary) {
     query.set("summary", "1");
+  }
+  if (options?.backfill === false) {
+    query.set("backfill", "0");
   }
   const path = query.size ? `/api/users/me/bookings?${query.toString()}` : "/api/users/me/bookings";
   return serverFetch<{ ok: boolean; bookings: ProfileBooking[] }>(

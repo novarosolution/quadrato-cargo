@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState } from "react";
-import { authFieldClass } from "@/components/auth/authStyles";
+import { authAlertError, authFieldClass } from "@/components/auth/authStyles";
 import { emailLocalMinPattern, MIN_PASSWORD_LENGTH } from "@/lib/auth-validation";
 import { postRegisterApi } from "@/lib/api/auth-client";
 type RegisterState = {
@@ -182,10 +182,7 @@ export function RegisterForm({ redirectTo = "/public/profile" }: { redirectTo?: 
       </motion.button>
 
       {!state.ok && state.message ? (
-        <p
-          className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300"
-          role="alert"
-        >
+        <p className={authAlertError} role="alert">
           {state.message}
         </p>
       ) : null}
@@ -204,7 +201,7 @@ export function RegisterForm({ redirectTo = "/public/profile" }: { redirectTo?: 
       <p className="text-center text-sm text-muted">
         Already registered?{" "}
         <Link
-          href="/public/login"
+          href={`/public/login?callbackUrl=${encodeURIComponent(redirectTo)}`}
           className="font-semibold text-teal underline-offset-4 hover:underline"
         >
           Log in

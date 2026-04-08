@@ -1,8 +1,9 @@
 import type { BookingStatusId } from "@/lib/booking-status";
+import { siteName } from "@/lib/site";
 
 /**
  * Professional international courier journey (example / product data).
- * Rajkot → Ahmedabad → Mumbai export → USA — mirrors customer-facing tracking copy.
+ * Origin hub city and main sort hub come from agency + site settings on live Track.
  */
 export type InternationalTrackingStep = {
   id: string;
@@ -19,7 +20,7 @@ export type InternationalTrackingPhase = {
 export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
   {
     key: "pickup_origin",
-    title: "Pickup stage (Origin – Rajkot)",
+    title: `Pickup stage (${siteName})`,
     steps: [
       {
         id: "intl_shipment_created",
@@ -29,7 +30,7 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       {
         id: "intl_pickup_scheduled",
         label: "Pickup scheduled",
-        hint: "Pickup window assigned for the origin (e.g. Rajkot) area.",
+        hint: "Pickup window assigned for the sender / origin area.",
       },
       {
         id: "intl_shipment_picked_up",
@@ -38,18 +39,18 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       },
       {
         id: "intl_picked_up_rajkot",
-        label: "Picked up – Rajkot",
-        hint: "Parcel confirmed at origin city / first scan.",
+        label: "Picked up – origin",
+        hint: "Parcel confirmed at origin; first hub scan.",
       },
     ],
   },
   {
     key: "origin_hub",
-    title: "Origin processing (Rajkot hub)",
+    title: "Origin processing (agency hub)",
     steps: [
       {
         id: "intl_arrived_origin_rajkot",
-        label: "Arrived at origin facility – Rajkot",
+        label: "Arrived at origin facility",
         hint: "Shipment scanned into the origin hub.",
       },
       {
@@ -59,14 +60,14 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       },
       {
         id: "intl_departed_rajkot",
-        label: "Departed from facility – Rajkot",
-        hint: "Dispatched toward Ahmedabad / Mumbai domestic corridor.",
+        label: "Departed from origin facility",
+        hint: "Dispatched toward main sort hub and export corridor.",
       },
     ],
   },
   {
     key: "domestic_transit",
-    title: "Domestic transit (Rajkot → Ahmedabad / Mumbai)",
+    title: "Domestic transit (agency hub → main sort hub)",
     steps: [
       {
         id: "intl_in_transit_next",
@@ -75,7 +76,7 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       },
       {
         id: "intl_arrived_ahmedabad",
-        label: "Arrived at hub – Ahmedabad",
+        label: "Arrived at main sort hub",
         hint: "Arrived at sorting hub for onward routing.",
       },
       {
@@ -85,19 +86,19 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       },
       {
         id: "intl_departed_ahmedabad",
-        label: "Departed from hub – Ahmedabad",
-        hint: "En route to export hub (Mumbai / Delhi).",
+        label: "Departed from main sort hub",
+        hint: "En route to international export gateway.",
       },
     ],
   },
   {
     key: "export_hub",
-    title: "Export hub processing (Mumbai / Delhi)",
+    title: "Export hub processing",
     steps: [
       {
         id: "intl_arrived_export_mumbai",
-        label: "Arrived at export hub – Mumbai",
-        hint: "Received at international export gateway (Mumbai / Delhi as routed).",
+        label: "Arrived at export gateway",
+        hint: "Received at international export gateway for your route.",
       },
       {
         id: "intl_received_gateway",
@@ -112,22 +113,22 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       {
         id: "intl_handed_customs_export",
         label: "Handed over to customs",
-        hint: "Tendered to Indian export customs for clearance.",
+        hint: "Tendered to origin export customs for clearance.",
       },
     ],
   },
   {
     key: "export_customs_in",
-    title: "Export customs (India)",
+    title: "Export customs (origin)",
     steps: [
       {
         id: "intl_customs_progress_in",
-        label: "Customs clearance in progress (India export)",
+        label: "Export customs in progress",
         hint: "Export declaration under review.",
       },
       {
         id: "intl_customs_cleared_in",
-        label: "Customs cleared (India export)",
+        label: "Export customs cleared",
         hint: "Cleared to tender to airline.",
       },
     ],
@@ -143,7 +144,7 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       },
       {
         id: "intl_departed_india",
-        label: "Departed from origin country – India",
+        label: "Departed origin country",
         hint: "Flight departed export airport.",
       },
       {
@@ -153,14 +154,14 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       },
       {
         id: "intl_arrived_usa",
-        label: "Arrived at destination country – USA",
+        label: "Arrived in destination country",
         hint: "Landed and handed to import gateway.",
       },
     ],
   },
   {
     key: "import_customs_us",
-    title: "Import customs (USA)",
+    title: "Import customs (destination)",
     steps: [
       {
         id: "intl_received_import_hub",
@@ -169,19 +170,19 @@ export const INTERNATIONAL_TRACKING_PHASES: InternationalTrackingPhase[] = [
       },
       {
         id: "intl_customs_progress_us",
-        label: "Customs clearance in progress (USA import)",
-        hint: "CBP / broker processing as applicable.",
+        label: "Import customs in progress",
+        hint: "Local customs or broker processing as applicable.",
       },
       {
         id: "intl_customs_cleared_us",
-        label: "Customs cleared (USA import)",
+        label: "Import customs cleared",
         hint: "Released for domestic delivery network.",
       },
     ],
   },
   {
     key: "destination_hub",
-    title: "Destination processing (USA hub)",
+    title: "Destination processing (import hub)",
     steps: [
       {
         id: "intl_arrived_dest_facility",
@@ -298,16 +299,34 @@ export function internationalStepLocationLabel(
     senderAddress: string | null;
     recipientAddress: string | null;
     agencyName: string | null;
+    agencyCity?: string | null;
+    domesticMainHubCity?: string | null;
+    fromCity?: string | null;
+    toCity?: string | null;
+    senderCountry?: string | null;
+    recipientCountry?: string | null;
   },
 ): string {
-  if (stepIndex <= 4) return ctx.senderAddress || "Rajkot (origin)";
-  if (stepIndex <= 6) return "Rajkot hub";
-  if (stepIndex <= 10) return "Ahmedabad hub / linehaul";
-  if (stepIndex <= 14) return "Export hub – Mumbai / Delhi";
-  if (stepIndex <= 16) return "India export customs";
-  if (stepIndex <= 20) return "International air cargo";
-  if (stepIndex <= 23) return "USA import gateway / customs";
-  if (stepIndex <= 26) return ctx.agencyName || "USA destination hub";
+  const ac = ctx.agencyCity?.trim() || null;
+  const hub = ctx.domesticMainHubCity?.trim() || null;
+  const fc = ctx.fromCity?.trim() || null;
+  const tc = ctx.toCity?.trim() || null;
+  const oc = String(ctx.senderCountry ?? "").trim() || (fc ? `${fc} (origin)` : "Origin country");
+  const dc =
+    String(ctx.recipientCountry ?? "").trim() || (tc ? `${tc} (destination)` : "Destination country");
+  if (stepIndex <= 4)
+    return ctx.senderAddress || (fc ? `${fc} (origin)` : ac ? `${ac} (origin)` : "Origin");
+  if (stepIndex <= 6) return ac ? `${ac} hub` : ctx.agencyName ? `${ctx.agencyName} hub` : "Origin hub";
+  if (stepIndex <= 10) {
+    const o = ac || fc || "Origin";
+    const d = hub || "Quadrato Cargo";
+    return `${o} → ${d} linehaul`;
+  }
+  if (stepIndex <= 14) return `${oc} export gateway`;
+  if (stepIndex <= 16) return `${oc} export customs`;
+  if (stepIndex <= 20) return `International air cargo (${oc} → ${dc})`;
+  if (stepIndex <= 23) return `${dc} import gateway / customs`;
+  if (stepIndex <= 26) return ctx.agencyName?.trim() || `${dc} destination hub`;
   return ctx.recipientAddress || "Delivery location";
 }
 
