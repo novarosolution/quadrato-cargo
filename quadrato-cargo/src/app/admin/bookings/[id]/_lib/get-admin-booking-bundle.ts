@@ -209,6 +209,7 @@ export const getAdminBookingBundle = cache(async (id: string): Promise<BookingBu
     description: string;
     amount: string;
     weightKg: string;
+    declaredValue: string;
     sizeCm: string;
   }> = [];
   for (const row of rawLineItems) {
@@ -218,6 +219,7 @@ export const getAdminBookingBundle = cache(async (id: string): Promise<BookingBu
       description: String(o.description ?? "").trim(),
       amount: String(o.amount ?? "").trim(),
       weightKg: String(o.weightKg ?? "").trim(),
+      declaredValue: String(o.declaredValue ?? "").trim(),
       sizeCm: String(o.sizeCm ?? "").trim(),
     });
   }
@@ -227,6 +229,7 @@ export const getAdminBookingBundle = cache(async (id: string): Promise<BookingBu
     description: string;
     amount: string;
     weightKg: string;
+    declaredValue: string;
     sizeCm: string;
   }> = [];
   for (let i = 0; i < rowCount; i++) {
@@ -240,11 +243,12 @@ export const getAdminBookingBundle = cache(async (id: string): Promise<BookingBu
       str(hint?.dimW),
       str(hint?.dimH),
     );
-    const hintAmt = str(hint?.declaredValue).trim();
+    const hintDeclared = str(hint?.declaredValue).trim();
     lineItems.push({
       description: desc,
-      amount: saved?.amount?.trim() || hintAmt,
+      amount: saved?.amount?.trim() || "",
       weightKg: saved?.weightKg?.trim() || hintW,
+      declaredValue: saved?.declaredValue?.trim() || hintDeclared,
       sizeCm: saved?.sizeCm?.trim() || hintSize,
     });
   }

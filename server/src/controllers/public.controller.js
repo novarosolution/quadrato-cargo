@@ -358,6 +358,25 @@ function escHtmlLines(value, maxChars) {
     .join("<br/>");
 }
 
+function formatInvoicePdfWeightCell(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return "—";
+  if (/\bkg\b/i.test(s)) return esc(s.slice(0, 22));
+  return esc(`${s} kg`.slice(0, 24));
+}
+
+function formatInvoicePdfDeclaredCell(raw) {
+  const s = String(raw ?? "").trim();
+  return s ? esc(s.slice(0, 18)) : "—";
+}
+
+function formatInvoicePdfSizeCell(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return "—";
+  if (/\bcm\b/i.test(s)) return esc(s.slice(0, 44));
+  return esc(`${s} cm`.slice(0, 46));
+}
+
 function normalizeHex(color, fallback) {
   const value = String(color ?? "").trim();
   const match = value.match(/^#?([0-9a-fA-F]{6})$/);
@@ -1057,14 +1076,13 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
         white-space: normal;
       }
       .lines {
-        margin-top: 3px;
-        font-size: 6.5px;
-        line-height: 1.3;
-        color: #1f2937;
-        border: 1px solid #e5e7eb;
-        border-radius: 5px;
-        padding: 3px 4px;
-        background: #fafafa;
+        margin-top: 4px;
+        font-size: 6px;
+        line-height: 1.35;
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid #334155;
+        background: #0f172a;
       }
       .sum-grid {
         margin-top: 3px;
@@ -1095,65 +1113,49 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
         table-layout: fixed;
         border-collapse: collapse;
         font-size: 6px;
-        margin-top: 2px;
-        border: 1px solid #e2e8f0;
-        border-radius: 4px;
-        overflow: hidden;
+        margin: 0;
+        color: #cbd5e1;
+        background: #0f172a;
       }
       .line-table col.c-idx { width: 6%; }
-      .line-table col.c-item { width: 36%; }
-      .line-table col.c-wt { width: 11%; }
-      .line-table col.c-sz { width: 24%; }
-      .line-table col.c-amt { width: 13%; }
+      .line-table col.c-contents { width: 32%; }
+      .line-table col.c-wt { width: 14%; }
+      .line-table col.c-decl { width: 14%; }
+      .line-table col.c-sz { width: 34%; }
       .line-table thead th {
-        color: ${p};
+        color: #e2e8f0;
         font-weight: 700;
         font-size: 5.5px;
         text-transform: uppercase;
-        letter-spacing: 0.2px;
-        background: #f1f5f9;
-        border-bottom: 1px solid ${p};
-        padding: 4px 3px;
+        letter-spacing: 0.12em;
+        background: #1e293b;
+        border-bottom: 1px solid #475569;
+        padding: 5px 4px;
         vertical-align: middle;
+        text-align: left;
       }
       .line-table tbody td {
-        border-bottom: 1px solid #e5e7eb;
-        padding: 4px 3px;
+        border-bottom: 1px solid #334155;
+        padding: 5px 4px;
         vertical-align: top;
+        text-align: left;
         word-wrap: break-word;
         overflow-wrap: anywhere;
         word-break: break-word;
-        hyphens: auto;
+        color: #cbd5e1;
       }
       .line-table tbody tr:last-child td { border-bottom: none; }
       .line-table th.idx,
       .line-table td.idx {
-        text-align: center;
-        color: #64748b;
+        color: #94a3b8;
         font-weight: 600;
-      }
-      .line-table th.item,
-      .line-table td.item { text-align: left; }
-      .line-table th.wt,
-      .line-table td.wt {
-        text-align: center;
-        font-size: 5.5px;
-        color: #334155;
-      }
-      .line-table th.sz,
-      .line-table td.sz {
-        text-align: center;
-        font-size: 5.5px;
-        color: #475569;
-      }
-      .line-table th.amt,
-      .line-table td.amt {
-        text-align: right;
-        font-size: 5.5px;
         font-variant-numeric: tabular-nums;
-        white-space: nowrap;
       }
-      .line-table .item-main { font-weight: 600; color: #111827; font-size: 6px; }
+      .line-table .contents-main {
+        font-weight: 600;
+        color: #f1f5f9;
+        font-size: 6px;
+      }
       .total-bar {
         margin-top: 4px;
         display: flex;
@@ -1243,34 +1245,30 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
 <table class="line-table">
 <colgroup>
   <col class="c-idx" />
-  <col class="c-item" />
+  <col class="c-contents" />
   <col class="c-wt" />
+  <col class="c-decl" />
   <col class="c-sz" />
-  <col class="c-amt" />
 </colgroup>
 <thead><tr>
 <th class="idx">#</th>
-<th class="item">Item</th>
-<th class="wt">Wt (kg)</th>
-<th class="sz">Size (cm)</th>
-<th class="amt">Amt</th>
+<th>Contents</th>
+<th>Weight</th>
+<th>Declared</th>
+<th>Size (cm)</th>
 </tr></thead>
 <tbody>${data.invoiceLineItems
               .map((row, idx) => {
                 const mainLine = esc(String(row.description || "—")).slice(0, 120);
-                const rawAmt = String(row.amount ?? "").trim();
-                const am =
-                  rawAmt !== ""
-                    ? esc(`${data.currencyLabel} ${rawAmt}`.slice(0, 28))
-                    : "—";
-                const wt = row.weightKg ? esc(String(row.weightKg).slice(0, 14)) : "—";
-                const sz = row.sizeCm ? esc(String(row.sizeCm).slice(0, 40)) : "—";
+                const wt = formatInvoicePdfWeightCell(row.weightKg);
+                const decl = formatInvoicePdfDeclaredCell(row.declaredValue);
+                const sz = formatInvoicePdfSizeCell(row.sizeCm);
                 return `<tr>
 <td class="idx">${idx + 1}</td>
-<td class="item"><span class="item-main">${mainLine}</span></td>
-<td class="wt">${wt}</td>
-<td class="sz">${sz}</td>
-<td class="amt">${am}</td>
+<td><span class="contents-main">${mainLine}</span></td>
+<td>${wt}</td>
+<td>${decl}</td>
+<td>${sz}</td>
 </tr>`;
               })
               .join("")}</tbody></table></div>`

@@ -11,6 +11,7 @@ export type InvoiceLineItemInitial = {
   description: string;
   amount: string;
   weightKg: string;
+  declaredValue: string;
   sizeCm: string;
 };
 
@@ -77,10 +78,10 @@ export function AdminBookingInvoiceForm({
         </label>
       </div>
       <p className="text-xs text-muted-soft">
-        Enter each charge line: <strong className="font-medium text-ink">item</strong>, optional{" "}
-        <strong className="font-medium text-ink">weight</strong> and <strong className="font-medium text-ink">size (cm)</strong>, and{" "}
-        <strong className="font-medium text-ink">amt</strong> (line total). The customer PDF matches this table, then shows
-        one <strong className="font-medium text-ink">grand total</strong> (currency + total below).
+        <strong className="font-medium text-ink">Contents</strong>, <strong className="font-medium text-ink">weight</strong>,{" "}
+        <strong className="font-medium text-ink">declared value</strong>, and <strong className="font-medium text-ink">size</strong>{" "}
+        print on the customer invoice grid. <strong className="font-medium text-ink">Line amt</strong> feeds the PDF{" "}
+        <strong className="font-medium text-ink">TOTAL</strong> (with currency + grand total below).
       </p>
 
       <div className="space-y-2 rounded-xl border border-border bg-canvas/20 p-3">
@@ -95,10 +96,11 @@ export function AdminBookingInvoiceForm({
             <thead>
               <tr className="border-b border-border/80 bg-canvas/40 text-muted-soft">
                 <th className="w-8 px-2 py-2 font-medium text-ink/80">#</th>
-                <th className="min-w-32 px-2 py-2 font-medium text-ink/80">Item / service</th>
-                <th className="w-24 px-2 py-2 font-medium text-ink/80">Wt (kg)</th>
+                <th className="min-w-28 px-2 py-2 font-medium text-ink/80">Contents</th>
+                <th className="w-20 px-2 py-2 font-medium text-ink/80">Weight</th>
+                <th className="w-24 px-2 py-2 font-medium text-ink/80">Declared</th>
                 <th className="min-w-28 px-2 py-2 font-medium text-ink/80">Size (cm)</th>
-                <th className="w-28 px-2 py-2 font-medium text-ink/80">Amt</th>
+                <th className="w-24 px-2 py-2 font-medium text-ink/80">Line amt</th>
               </tr>
             </thead>
             <tbody>
@@ -129,9 +131,21 @@ export function AdminBookingInvoiceForm({
                         type="text"
                         defaultValue={saved?.weightKg ?? ""}
                         className={inputClass}
-                        placeholder="kg"
+                        placeholder="e.g. 20"
                         autoComplete="off"
                         aria-label={`Invoice line ${i + 1} weight kg`}
+                      />
+                    </td>
+                    <td className="px-2 py-1.5 align-middle">
+                      <input
+                        id={`admin-inv-line-dv-${i}`}
+                        name={`invoiceLineDeclared_${i}`}
+                        type="text"
+                        defaultValue={saved?.declaredValue ?? ""}
+                        className={inputClass}
+                        placeholder="e.g. 150"
+                        autoComplete="off"
+                        aria-label={`Invoice line ${i + 1} declared value`}
                       />
                     </td>
                     <td className="px-2 py-1.5 align-middle">
@@ -141,7 +155,7 @@ export function AdminBookingInvoiceForm({
                         type="text"
                         defaultValue={saved?.sizeCm ?? ""}
                         className={inputClass}
-                        placeholder="L × W × H"
+                        placeholder="L × W × H cm"
                         autoComplete="off"
                         aria-label={`Invoice line ${i + 1} size cm`}
                       />

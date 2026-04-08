@@ -619,17 +619,25 @@ function parseInvoiceLineItemsFromForm(formData: FormData): Array<{
   description: string;
   amount: string;
   weightKg: string;
+  declaredValue: string;
   sizeCm: string;
 }> {
   const slotRaw = Number.parseInt(String(formData.get("invoiceLineSlotCount") ?? "1"), 10);
   const slotCount = Math.min(25, Math.max(1, Number.isFinite(slotRaw) ? slotRaw : 1));
   /** One element per table row index so row N always maps to parcel/line N in the API and PDF. */
-  const out: Array<{ description: string; amount: string; weightKg: string; sizeCm: string }> = [];
+  const out: Array<{
+    description: string;
+    amount: string;
+    weightKg: string;
+    declaredValue: string;
+    sizeCm: string;
+  }> = [];
   for (let i = 0; i < slotCount; i++) {
     out.push({
       description: String(formData.get(`invoiceLineDesc_${i}`) ?? "").trim(),
       amount: String(formData.get(`invoiceLineAmt_${i}`) ?? "").trim(),
       weightKg: String(formData.get(`invoiceLineWeight_${i}`) ?? "").trim(),
+      declaredValue: String(formData.get(`invoiceLineDeclared_${i}`) ?? "").trim(),
       sizeCm: String(formData.get(`invoiceLineSizeCm_${i}`) ?? "").trim(),
     });
   }
