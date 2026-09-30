@@ -44,6 +44,11 @@ async function start() {
 }
 
 start().catch((error) => {
+  if (error?.code === 8000 || /bad auth/i.test(String(error?.message ?? ""))) {
+    console.error(
+      "MongoDB Atlas rejected MONGODB_URI. Use the database user's real password (percent-encode reserved characters such as @ : / # ?), and authenticate Atlas users with authSource=admin.",
+    );
+  }
   console.error("Failed to start server:", error);
   process.exit(1);
 });

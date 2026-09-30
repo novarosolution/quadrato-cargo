@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { normalizeMongoUri } from "./mongo-uri.js";
 
 function required(name, fallback) {
   const value = process.env[name]?.trim();
@@ -45,7 +46,7 @@ const defaultCookieSameSite = isProdEnv ? "none" : "lax";
 export const env = {
   nodeEnv: process.env.NODE_ENV?.trim() || "development",
   port: Number.parseInt(process.env.PORT?.trim() || "4000", 10),
-  mongoUri: required("MONGODB_URI"),
+  mongoUri: normalizeMongoUri(required("MONGODB_URI")),
   mongoDb: required("MONGODB_DB"),
   jwtSecret: required("JWT_SECRET"),
   jwtTtl: required("JWT_TTL", "7d"),
