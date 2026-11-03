@@ -310,7 +310,7 @@ export function createBookingDoc({ routeType, payload, userId }) {
     agencyHandoverVerifiedAt: null,
     userId: userId ?? null,
     courierId: null,
-    invoicePdfReady: false,
+    invoicePdfReady: true,
     invoice: null,
     publicTimelineStatusPath: ["submitted"],
     createdAt: now,

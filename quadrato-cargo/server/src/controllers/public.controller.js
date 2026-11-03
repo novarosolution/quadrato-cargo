@@ -10,7 +10,6 @@ import {
   publicTrackUiFromSettings
 } from "../models/site-settings.model.js";
 import {
-  backfillGuestBookingsToUserId,
   createBooking,
   findBookingByReference,
   findBookingByUserAndId
@@ -350,7 +349,6 @@ function esc(value) {
     .replaceAll("'", "&#039;");
 }
 
-/** Preserve newlines for invoice notes / descriptions (HTML fragment). */
 function escHtmlLines(value, maxChars) {
   const t = String(value ?? "").trim().slice(0, maxChars);
   if (!t) return "";
@@ -437,36 +435,40 @@ async function launchPdfBrowser() {
   const preferredExecutablePath =
     process.env.PUPPETEER_EXECUTABLE_PATH || process.env.GOOGLE_CHROME_BIN;
 
+  async function launchSparticuz() {
+    const [{ default: puppeteerCore }, chromiumModule] = await Promise.all([
+      import("puppeteer-core"),
+      import("@sparticuz/chromium")
+    ]);
+    const chromium = chromiumModule.default || chromiumModule;
+    const chromiumPath =
+      preferredExecutablePath || (await chromium.executablePath());
+    return puppeteerCore.launch({
+      headless: true,
+      executablePath: chromiumPath,
+      args: [...chromium.args, ...safeArgs]
+    });
+  }
+
+  // EC2/Linux images usually lack Chrome shared libs — try serverless Chromium first.
+  if (!preferredExecutablePath && process.platform === "linux") {
+    try {
+      return await launchSparticuz();
+    } catch {
+      // fall through to full puppeteer
+    }
+  }
+
   try {
     return await puppeteer.launch({
       headless: true,
+      args: safeArgs,
       executablePath: preferredExecutablePath || undefined,
       timeout: 15000
     });
   } catch (primaryError) {
     try {
-      return await puppeteer.launch({
-        headless: true,
-        args: safeArgs,
-        executablePath: preferredExecutablePath || undefined,
-        timeout: 15000
-      });
-    } catch {
-      // Try serverless Chromium as final fallback.
-    }
-    try {
-      const [{ default: puppeteerCore }, chromiumModule] = await Promise.all([
-        import("puppeteer-core"),
-        import("@sparticuz/chromium")
-      ]);
-      const chromium = chromiumModule.default || chromiumModule;
-      const chromiumPath =
-        preferredExecutablePath || (await chromium.executablePath());
-      return await puppeteerCore.launch({
-        headless: true,
-        executablePath: chromiumPath,
-        args: [...chromium.args, ...safeArgs]
-      });
+      return await launchSparticuz();
     } catch (secondaryError) {
       const error = new Error("Unable to launch PDF browser in this environment.");
       error.cause = secondaryError || primaryError;
@@ -546,11 +548,7 @@ function trimTrailingEmptyInvoiceRows(rows) {
   return out;
 }
 
-/**
- * Merge saved invoice lines with shipment.parcels (by index). When the admin has not
- * entered any charge lines, expand to one row per parcel for prefilled weight/size.
- * When the admin has saved lines, row count follows the saved rows (not parcel count).
- */
+/** Merge saved invoice lines with shipment.parcels (admin rows win; parcel rows only when empty). */
 function mergeInvoiceLineItemsWithParcels(rawLineItems, payload) {
   const shipment =
     payload && typeof payload === "object" && payload.shipment && typeof payload.shipment === "object"
@@ -641,11 +639,7 @@ async function buildPdfDataFromBooking(req, parsedData) {
   const userEmail = String(authPayload?.email || "").trim();
   if (!userId) throw new Error("Unable to build booking PDF context.");
 
-  let booking = await findBookingByUserAndId(userId, parsedData.bookingId, userEmail);
-  if (!booking) {
-    await backfillGuestBookingsToUserId(userId, userEmail);
-    booking = await findBookingByUserAndId(userId, parsedData.bookingId, userEmail);
-  }
+  const booking = await findBookingByUserAndId(userId, parsedData.bookingId, userEmail);
   if (!booking) {
     throw new Error("Unable to build booking PDF context.");
   }
@@ -1733,7 +1727,6 @@ export async function trackBooking(req, res, next) {
     if (row.courierId) {
       const courier = await findUserById(row.courierId);
       const n = String(courier?.name ?? "").trim();
-      /** Customers see the courier’s name when set; otherwise a neutral label if someone is assigned. */
       courierName = n || "Pickup courier";
     }
     const { agencyName, agencyCity } = await resolveAssignedAgencyForPublicTrack(
@@ -1776,10 +1769,8 @@ export async function trackBooking(req, res, next) {
         updatedAt: row.customerFacingUpdatedAt ?? row.updatedAt ?? row.createdAt,
         shipment: buildShipmentSummaryForPublicTrack(row.payload),
         publicTimelineOverrides: row.publicTimelineOverrides ?? null,
-        /** Admin-only map of hidden steps (`false`); omitted index = visible on Track. */
         publicTimelineStepVisibility: row.publicTimelineStepVisibility ?? null,
         estimatedDeliveryAt: row.estimatedDeliveryAt ?? null,
-        /** Status transitions for customer timeline; null = show full ladder (legacy). */
         publicTimelineStatusPath: row.publicTimelineStatusPath ?? null,
         internationalAgencyStage: row.internationalAgencyStage ?? null
       }

@@ -29,6 +29,7 @@ async function adminMutation(
       },
       body: method === "DELETE" ? undefined : JSON.stringify(body),
       cache: "no-store",
+      signal: AbortSignal.timeout(25_000),
     });
     const data = (await res.json().catch(() => ({}))) as {
       ok?: boolean;
@@ -649,7 +650,8 @@ export async function updateBookingInvoiceAdmin(
   formData: FormData,
 ): Promise<DataManageState> {
   const bookingId = String(formData.get("bookingId") ?? "").trim();
-  const invoicePdfReady = String(formData.get("invoicePdfReady") ?? "") === "on";
+  // Saving invoice implies customer PDF should be available (checkbox still honored when off).
+  const invoicePdfReady = String(formData.get("invoicePdfReady") ?? "on") !== "off";
   const lineItems = parseInvoiceLineItemsFromForm(formData);
   const result = await adminMutation(
     `/api/admin/bookings/${encodeURIComponent(bookingId)}/invoice`,

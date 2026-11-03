@@ -232,14 +232,12 @@ export function toPublicBooking(row) {
       ? String(row.publicBarcodeCode).trim().toUpperCase()
       : null,
     publicTimelineOverrides: normalizePublicTimelineOverrides(row?.publicTimelineOverrides),
-    /** Per-step visibility on public Track; only `false` stored = hidden (except current step always shown). */
     publicTimelineStepVisibility: normalizePublicTimelineStepVisibility(
       row?.publicTimelineStepVisibility
     ),
     /** International: which of 12 Track cards is current; null = use coarse status mapping. */
     internationalAgencyStage: normalizeInternationalAgencyStage(row?.internationalAgencyStage),
     estimatedDeliveryAt: row.estimatedDeliveryAt ?? null,
-    /** Status transition history for public timeline (omit = legacy full ladder). */
     publicTimelineStatusPath: Array.isArray(row?.publicTimelineStatusPath)
       ? row.publicTimelineStatusPath.map((s) => String(s ?? "").trim()).filter(Boolean)
       : null
@@ -312,7 +310,7 @@ export function createBookingDoc({ routeType, payload, userId }) {
     agencyHandoverVerifiedAt: null,
     userId: userId ?? null,
     courierId: null,
-    invoicePdfReady: false,
+    invoicePdfReady: true,
     invoice: null,
     publicTimelineStatusPath: ["submitted"],
     createdAt: now,

@@ -403,17 +403,11 @@ export function DownloadBookingPdfButton({
     } catch (error) {
       const msg =
         error instanceof Error ? error.message : "PDF download failed. Please try again.";
-      if (template === "tracking") {
-        try {
-          await runFallbackPdf();
-          setDownloadError(null);
-        } catch {
-          setDownloadError(msg);
-        }
-      } else {
-        setDownloadError(
-          `${msg} If the API is unreachable, start the backend (e.g. npm run dev:api from the repo root) and try again.`,
-        );
+      try {
+        await runFallbackPdf();
+        setDownloadError(null);
+      } catch {
+        setDownloadError(msg);
       }
     } finally {
       setIsDownloading(false);

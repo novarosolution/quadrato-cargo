@@ -435,36 +435,40 @@ async function launchPdfBrowser() {
   const preferredExecutablePath =
     process.env.PUPPETEER_EXECUTABLE_PATH || process.env.GOOGLE_CHROME_BIN;
 
+  async function launchSparticuz() {
+    const [{ default: puppeteerCore }, chromiumModule] = await Promise.all([
+      import("puppeteer-core"),
+      import("@sparticuz/chromium")
+    ]);
+    const chromium = chromiumModule.default || chromiumModule;
+    const chromiumPath =
+      preferredExecutablePath || (await chromium.executablePath());
+    return puppeteerCore.launch({
+      headless: true,
+      executablePath: chromiumPath,
+      args: [...chromium.args, ...safeArgs]
+    });
+  }
+
+  // EC2/Linux images usually lack Chrome shared libs — try serverless Chromium first.
+  if (!preferredExecutablePath && process.platform === "linux") {
+    try {
+      return await launchSparticuz();
+    } catch {
+      // fall through to full puppeteer
+    }
+  }
+
   try {
     return await puppeteer.launch({
       headless: true,
+      args: safeArgs,
       executablePath: preferredExecutablePath || undefined,
       timeout: 15000
     });
   } catch (primaryError) {
     try {
-      return await puppeteer.launch({
-        headless: true,
-        args: safeArgs,
-        executablePath: preferredExecutablePath || undefined,
-        timeout: 15000
-      });
-    } catch {
-      // Try serverless Chromium as final fallback.
-    }
-    try {
-      const [{ default: puppeteerCore }, chromiumModule] = await Promise.all([
-        import("puppeteer-core"),
-        import("@sparticuz/chromium")
-      ]);
-      const chromium = chromiumModule.default || chromiumModule;
-      const chromiumPath =
-        preferredExecutablePath || (await chromium.executablePath());
-      return await puppeteerCore.launch({
-        headless: true,
-        executablePath: chromiumPath,
-        args: [...chromium.args, ...safeArgs]
-      });
+      return await launchSparticuz();
     } catch (secondaryError) {
       const error = new Error("Unable to launch PDF browser in this environment.");
       error.cause = secondaryError || primaryError;
