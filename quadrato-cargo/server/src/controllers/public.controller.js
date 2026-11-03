@@ -966,9 +966,13 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
       * { box-sizing: border-box; }
       body {
         margin: 0;
-        font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+        /* Prefer fonts present on EC2/headless Chromium (fc-list). Missing system
+           fonts = blank boxes/barcode only, no glyphs in PDF. */
+        font-family: "Liberation Sans", "DejaVu Sans", Arial, Helvetica, sans-serif;
         color: #0f172a;
         background: #fff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
       .page { width: 100%; padding: 5px 7px 6px; }
       .inv-head {
@@ -1000,7 +1004,7 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
         color: ${p};
         font-weight: 700;
         font-size: 14px;
-        font-family: "Times New Roman", serif;
+        font-family: "Liberation Serif", "DejaVu Serif", "Times New Roman", serif;
         line-height: 1.1;
       }
       .co-meta {
@@ -1020,7 +1024,7 @@ function buildInvoiceA6PdfHtml(input, barcodeDataUrl) {
       }
       .bc-wrap img { width: 100%; max-width: 100%; height: 28px; object-fit: contain; }
       .bc-id {
-        font-family: "Courier New", monospace;
+        font-family: "Liberation Mono", "DejaVu Sans Mono", "Courier New", monospace;
         font-size: 8px;
         letter-spacing: 0.25px;
         margin-top: 1px;
@@ -1332,9 +1336,11 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
       * { box-sizing: border-box; }
       body {
         margin: 0;
-        font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+        font-family: "Liberation Sans", "DejaVu Sans", Arial, Helvetica, sans-serif;
         color: #111827;
         background: #fff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
       .page {
         width: 100%;
@@ -1370,7 +1376,7 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
         color: ${primary};
         font-weight: 700;
         font-size: 16px;
-        font-family: "Times New Roman", serif;
+        font-family: "Liberation Serif", "DejaVu Serif", "Times New Roman", serif;
         line-height: 1;
       }
       .meta {
@@ -1400,7 +1406,7 @@ function buildTrackingPdfHtml(input, qrDataUrl, barcodeDataUrl) {
         object-fit: contain;
       }
       .barcode-id {
-        font-family: "Courier New", monospace;
+        font-family: "Liberation Mono", "DejaVu Sans Mono", "Courier New", monospace;
         font-size: 10px;
         letter-spacing: .35px;
         margin-top: 2px;
